@@ -18,27 +18,6 @@ extern void Bdisp_AllClr_VRAM();
 #define color_white 0xffff
 #endif
 
-
-/* print() - formatted printing shorthand */
-static void print(int x, int y, const char *format, ...)
-{
-	char str[45];
-	va_list args;
-	va_start(args, format);
-
-	vsprintf(str + 2, format, args);
-
-	#ifdef FX9860G
-	dtext(6 * (x - 1) + 1, 7 * (y - 1), str + 2, color_black, color_white);
-	#endif
-
-	#ifdef FXCG50
-	PrintXY(x, y, str, 0, 0);
-	#endif
-
-	va_end(args);
-}
-
 void print_bin(int x, int y, uint32_t bin, int digits)
 {
 	char str[33];
@@ -53,66 +32,7 @@ void print_bin(int x, int y, uint32_t bin, int digits)
 	print(x, y, str);
 }
 
-void debug(uint32_t event_code)
-{
-	print(1, 6, "%8x", event_code);
-	dupdate();
-}
-
-void debug_exc(uint32_t event_code)
-{
-	uint32_t spc;
-	__asm__("stc spc, %0": "=r"(spc));
-
-	print(1, 1, "EXCEPTION==%8x==", event_code);
-	print(1, 2, "SPC=%8x=========", spc);
-
-	if(isSH4())
-	{
-		volatile uint32_t *TEA = (void *)0xff00000c;
-		print(1, 3, "TEA=%8x=========", *TEA);
-	}
-	dupdate();
-}
-
 #if 0
-volatile int delay_one_ended = 0;
-int stop(__attribute__((unused)) void *arg)
-{
-	delay_one_ended = 1;
-	return 1;
-}
-void delay_one(void)
-{
-	int delay_us = 50000;
-	static int tid = 1;
-
-/*	if(tid == (isSH3() ? 3 : 7)) tid = (tid + 1) % timer_count();
-
-	delay_one_ended = 0;
-	timer_setup(tid, timer_delay(tid,delay_us), timer_default, stop, NULL);
-	timer_start(tid);
-
-	while(!delay_one_ended) __asm__("sleep");
-	timer_free(tid); */
-
-//	tid = (tid  + 1) % timer_count();
-}
-void delay(int k)
-{
-	for(int i = k; i > 0; i--)
-	{
-#ifdef FX9860G
-		Bdisp_ClearLineVRAM(127, 0, 127, 63);
-		Bdisp_DrawLineVRAM(127, 0, 127, (63 * i) / k);
-		Bdisp_PutDisp_DD();
-#endif
-		delay_one();
-	}
-}
-
-#include <gint/timer.h>
-
 int callback(void *arg)
 {
 	volatile int *counter = arg;
@@ -124,7 +44,7 @@ void test_clock(void)
 {
 	const clock_frequency_t *freq = clock_freq();
 
-	Bdisp_AllClr_VRAM();
+	dclear(color_white);
 	print(1, 1, "FLL: %8d", freq->FLL);
 	print(1, 2, "PLL: %8d", freq->PLL);
 
@@ -135,28 +55,27 @@ void test_clock(void)
 	print(1, 6, "Iphi = %10d", freq->Iphi_f);
 	print(1, 7, "Pphi = %10d", freq->Pphi_f);
 
-	Bdisp_PutDisp_DD();
-	delay(100);
+	dupdate();
+	getkey();
 
 	volatile unsigned int *FRQCRA	= (void *)0xa4150000;
 	volatile unsigned int *FRQCRB	= (void *)0xa4150004;
 	volatile unsigned int *PLLCR	= (void *)0xa4150024;
 	volatile unsigned int *FLLFRQ	= (void *)0xa4150050;
 
-	Bdisp_AllClr_VRAM();
+	dclear(color_white);
 	print(1, 1, "%8x", *FRQCRA);
 	print(1, 2, "%8x", *FRQCRB);
 	print(1, 3, "%8x", *PLLCR);
 	print(1, 4, "%8x", *FLLFRQ);
-	Bdisp_PutDisp_DD();
-	delay(100);
+	dupdate();
+	getkey();
 }
 
 void test_timer_simultaneous(void)
 {
 	volatile int counters[9] = { 0 };
 	int count = timer_count();
-	Bdisp_AllClr_VRAM();
 
 	for(int tid = 0; tid < count; tid++)
 	{
@@ -176,12 +95,12 @@ void test_timer_simultaneous(void)
 
 	for(int i = 0; i < limit; i++)
 	{
-		Bdisp_AllClr_VRAM();
+		dclear(color_white);
 		for(int k = 0; k < 9; k++)
 			print(2 * k + 1, 1, "%1x", counters[k]);
 
 		print(1, 8, "%4d", i);
-		Bdisp_PutDisp_DD();
+		dupdate();
 	}
 
 	for(int tid = 0; tid < count; tid++) timer_free(tid);
@@ -204,7 +123,7 @@ void test_rtc_time(void)
 			"Sunday", "Monday", "Tuesday", "Wednesday",
 			"Thursday", "Friday", "Saturday",
 		};
-		Bdisp_AllClr_VRAM();
+		dclear(color_white);
 		rtc_get_time(&time);
 
 		print(1, 1, "%2d:%2d:%2d",
@@ -214,7 +133,7 @@ void test_rtc_time(void)
 			days[time.week_day]);
 
 		print(1, 8, "%4d", i);
-		Bdisp_PutDisp_DD();
+		dupdate();
 	}
 }
 
@@ -581,13 +500,37 @@ void fx_frame2(void)
 typedef void asm_text_t(uint32_t *v1, uint32_t *v2, uint32_t *op, int height);
 extern asm_text_t *topti_asm_text[8];
 
+static void show_bootlog(void)
+{
+	extern char gint_bootlog[22*9];
+
+	int i = 0;
+	for(int y = 0; y < 9; y++)
+	{
+		for(int x = 0; x < 21; x++)
+		{
+			if(!gint_bootlog[i]) gint_bootlog[i] = ' ';
+			i++;
+		}
+		gint_bootlog[i] = 0;
+		i++;
+	}
+
+	dclear(color_white);
+
+	for(int y = 0; y < 9; y++)
+		print(1, y + 1, gint_bootlog + 22 * y);
+	dupdate();
+
+	getkey();
+}
+
 int main(GUNUSED int isappli, GUNUSED int optnum)
 {
-	getkey();
 #ifdef FX9860G
 
-	extern image_t pattern;
-	extern image_t pattern2;
+//	extern image_t pattern;
+//	extern image_t pattern2;
 
 /*	image_t *img = &pattern;
 

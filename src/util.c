@@ -1,0 +1,193 @@
+#define GINT_NEED_VRAM
+#include <gint/display.h>
+#include <gint/std/stdio.h>
+
+#include <gintctl/util.h>
+
+/* Short-shorthand for calling out vsprintf() */
+#define shortprint(str, format) {	\
+	va_list _args;			\
+	va_start(_args, format);	\
+	vsprintf(str, format, _args);	\
+	va_end(_args);			\
+}
+
+//---
+//	Row manipulation functions
+//---
+
+#ifdef FX9860G
+#define ROW_X      1
+#define ROW_W      6
+#define ROW_Y      8
+#define ROW_YPAD   0
+#define ROW_H      8
+#define ROW_COUNT  6
+#endif /* FX9860G */
+
+#ifdef FXCG50
+#define ROW_X      6
+#define ROW_W      0
+#define ROW_Y      20
+#define ROW_YPAD   2
+#define ROW_H      14
+#define ROW_COUNT  14
+#endif /* FXCG50 */
+
+/* row_title(): Render the main title */
+void row_title(char const *format, ...)
+{
+	char str[80];
+	shortprint(str, format);
+
+	#ifdef FX9860G
+	dtext(1, 0, str, C_BLACK, C_NONE);
+	#endif
+
+	#ifdef FXCG50
+	dtext(ROW_X, 3, str, C_BLACK, C_NONE);
+	uint32_t *long_vram = (void *)vram;
+	for(int i = 0; i < 198 * 16; i++) long_vram[i] = ~long_vram[i];
+	#endif
+}
+
+/* row_print(): Formatted printing in a predefined row */
+void row_print(int row, int x, char const *format, ...)
+{
+	if(row < 1 || row > ROW_COUNT) return;
+
+	char str[80];
+	shortprint(str, format);
+
+	dtext(ROW_X + ROW_W * (x - 1), ROW_Y + ROW_H * (row - 1) + ROW_YPAD,
+		str, C_BLACK, C_NONE);
+}
+
+/* row_highlight(): Invert a row's pixels to highlight it */
+void row_highlight(int row)
+{
+	int y1 = ROW_Y + ROW_H * (row - 1);
+	int y2 = y1 + ROW_H;
+
+	#ifdef FX9860G
+	drect(0, y1, 127, y2 - 1, C_INVERT);
+	#endif
+
+	#ifdef FXCG50
+	uint32_t *long_vram = (void *)vram;
+	for(int i = 198 * y1; i < 198 * y2; i++) long_vram[i] = ~long_vram[i];
+	#endif
+}
+
+/* row_right(): Print at the last column of a row */
+void row_right(int row, char const *character)
+{
+	#ifdef FX9860G
+	row_print(row, 21, character);
+	#endif
+
+	#ifdef FXCG50
+	dtext(370, ROW_Y + ROW_H * (row - 1) + ROW_YPAD, character,
+		C_BLACK, C_NONE);
+	#endif
+}
+
+/* scrollbar(): Show a scrollbar */
+void scrollbar(int offset, int length)
+{
+	int area_x      = _(127, 391);
+	int area_width  = _(1, 2);
+	int area_top    = ROW_Y;
+	int area_height = ROW_H * ROW_COUNT;
+
+	int bar_top = (offset * area_height) / length;
+	int bar_height = (ROW_COUNT * area_height) / length;
+
+	drect(area_x, area_top + bar_top, area_x + area_width - 1,
+		area_top + bar_top + bar_height, C_BLACK);
+}
+
+/* row_count(): Number of rows available to row_print() */
+int row_count(void)
+{
+	return ROW_COUNT;
+}
+
+//---
+//	General (x,y) printing
+//---
+
+/* print(): Formatted printing shorthand */
+void print(int x, int y, char const *format, ...)
+{
+	char str[80];
+	shortprint(str, format);
+	dtext(x, y, str, C_BLACK, C_NONE);
+}
+
+
+#ifdef FXCG50
+
+/* printw(): Print in white */
+void printw(int x, int y, char const *format, ...)
+{
+	char str[80];
+	va_list args;
+	va_start(args, format);
+	vsprintf(str, format, args);
+
+	dtext(x, y, str, C_WHITE, C_NONE);
+
+	va_end(args);
+}
+
+/* fkey_action(): A black-on-white F-key */
+void fkey_action(int position, char const *text)
+{
+	int width;
+	dsize(text, NULL, &width, NULL);
+
+	int x = 4 + 65 * (position - 1);
+	int y = 207;
+	int w = 63;
+
+	dline(x + 1, y, x + w - 2, y, C_BLACK);
+	dline(x + 1, y + 14, x + w - 2, y + 14, C_BLACK);
+	drect(x, y + 1, x + 1, y + 13, C_BLACK);
+	drect(x + w - 2, y + 1, x + w - 1, y + 13, C_BLACK);
+
+	dtext(x + ((w - width) >> 1), y + 3, text, C_BLACK, C_NONE);
+}
+
+/* fkey_button(): A rectangular F-key */
+void fkey_button(int position, char const *text)
+{
+	int width;
+	dsize(text, NULL, &width, NULL);
+
+	int x = 4 + 65 * (position - 1);
+	int y = 207;
+	int w = 63;
+
+	dline(x + 1, y, x + w - 2, y, C_BLACK);
+	dline(x + 1, y + 14, x + w - 2, y + 14, C_BLACK);
+	drect(x, y + 1, x + w - 1, y + 13, C_BLACK);
+
+	dtext(x + ((w - width) >> 1), y + 3, text, C_WHITE, C_NONE);
+}
+
+/* fkey_menu(): A rectangular F-key with the bottom right corner removed */
+void fkey_menu(int position, char const *text)
+{
+	int x = 4 + 65 * (position - 1);
+	int y = 207;
+	int w = 63;
+
+	fkey_button(position, text);
+	dline(x + w - 1, y + 10, x + w - 5, y + 14, C_WHITE);
+	dline(x + w - 1, y + 11, x + w - 4, y + 14, C_WHITE);
+	dline(x + w - 1, y + 12, x + w - 3, y + 14, C_WHITE);
+	dline(x + w - 1, y + 13, x + w - 2, y + 14, C_WHITE);
+}
+
+#endif /* FXCG50 */
