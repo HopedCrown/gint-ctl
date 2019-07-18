@@ -39,8 +39,8 @@ static void hw_mpucpu(int *row)
 	else put(" %s", mpu_names[mpu]);
 
 	if(!isSH4()) return;
-	put(_(" PVR"," Processor Version Register") ": %08x", gint[HWCPUVR]);
-	put(_(" PRR"," Product Register") ": %08x", gint[HWCPUPR]);
+	put(_(" PVR:"," Processor Version Register: ") "%08x", gint[HWCPUVR]);
+	put(_(" PRR:"," Product Register: ") "%08x", gint[HWCPUPR]);
 }
 
 /* Memory */
@@ -54,10 +54,10 @@ static void hw_memory(int *row)
 	put("Memory and MMU" _(,":"));
 	load_barrier(mmu);
 
-	put(" ROM: %dM", rom >> 20);
+	put(" ROM:" _(," ") "%dM", rom >> 20);
 
 	#ifdef FX9860G
-	put(" RAM: %dk (%dk user)", ram >> 10, uram >> 10);
+	put(" RAM:%dk (%dk user)", ram >> 10, uram >> 10);
 	#else
 	put(" RAM: %dM (%dk mapped in userspace)", ram >> 20, uram >> 10);
 	#endif
@@ -72,13 +72,13 @@ static void hw_cpg(int *row)
 {
 	int cpg = gint[HWCPG];
 
-	put("Clock Pulse Generator" _(,":"));
+	put(_("Clock Generator", "Clock Pulse Generator:"));
 	load_barrier(cpg);
 
 	if(cpg & HWCPG_COMP) put(
 		_(" Input freq known"," Input clock frequency is known"));
 	if(cpg & HWCPG_EXT) put(
-		_(" CPG is extended"," SH7724-style extended module"));
+		_(" SH7724-style CPG"," SH7724-style extended module"));
 }
 
 /* Direct Memory Access Controller */
@@ -224,10 +224,13 @@ void gintctl_gint_hardware(void)
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
-		row_title(_("Hardware", "Hardware and loaded drivers"));
+
+		#ifdef FXCG50
+		row_title("Hardware and loaded drivers");
+		#endif
 
 		max = display_data(offset);
-		scrollbar(offset, max);
+		scrollbar(offset, max, 1, row_count() + 1);
 
 		dupdate();
 

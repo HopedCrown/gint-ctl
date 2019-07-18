@@ -20,15 +20,17 @@ struct menu {
 	int len;
 	int offset;
 	int pos;
-	int visible;
+	int top;
+	int bottom;
 
 	struct menuentry entries[];
 };
 
 /* menu_init(): Initialize a menu list
-   @menu     Any list menu, even unitialized
-   @visible  Number of lines that can be shown simultaneously */
-void menu_init(struct menu *menu, int visible);
+   @menu    Any list menu, even uninitialized
+   @top     Number of lines reserved on top (including title on fx9860g)
+   @bottom  Number of lines reserved at bottom */
+void menu_init(struct menu *menu, int top, int bottom);
 
 /* menu_move(): Move the cursor in a menu
    @menu  Initialized list menu

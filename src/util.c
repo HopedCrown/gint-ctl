@@ -19,10 +19,10 @@
 #ifdef FX9860G
 #define ROW_X      1
 #define ROW_W      6
-#define ROW_Y      8
+#define ROW_Y      0
 #define ROW_YPAD   0
 #define ROW_H      8
-#define ROW_COUNT  6
+#define ROW_COUNT  8
 #endif /* FX9860G */
 
 #ifdef FXCG50
@@ -54,7 +54,7 @@ void row_title(char const *format, ...)
 /* row_print(): Formatted printing in a predefined row */
 void row_print(int row, int x, char const *format, ...)
 {
-	if(row < 1 || row > ROW_COUNT) return;
+	if(row < _(0,1) || row > ROW_COUNT) return;
 
 	char str[80];
 	shortprint(str, format);
@@ -70,7 +70,7 @@ void row_highlight(int row)
 	int y2 = y1 + ROW_H;
 
 	#ifdef FX9860G
-	drect(0, y1, 127, y2 - 1, C_INVERT);
+	drect(0, y1, 125, y2 - 1, C_INVERT);
 	#endif
 
 	#ifdef FXCG50
@@ -93,15 +93,15 @@ void row_right(int row, char const *character)
 }
 
 /* scrollbar(): Show a scrollbar */
-void scrollbar(int offset, int length)
+void scrollbar(int offset, int length, int top, int bottom)
 {
 	int area_x      = _(127, 391);
 	int area_width  = _(1, 2);
-	int area_top    = ROW_Y;
-	int area_height = ROW_H * ROW_COUNT;
+	int area_top    = ROW_Y + ROW_H * (top - 1);
+	int area_height = ROW_H * (bottom - top);
 
 	int bar_top = (offset * area_height) / length;
-	int bar_height = (ROW_COUNT * area_height) / length;
+	int bar_height = ((bottom - top) * area_height) / length;
 
 	drect(area_x, area_top + bar_top, area_x + area_width - 1,
 		area_top + bar_top + bar_height, C_BLACK);

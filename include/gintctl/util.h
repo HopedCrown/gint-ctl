@@ -36,7 +36,7 @@ void row_highlight(int row);
 void row_right(int row, char const *character);
 
 /* scrollbar(): Show a scrollbar */
-void scrollbar(int offset, int length);
+void scrollbar(int offset, int length, int top, int bottom);
 
 /* row_count(): Number of rows available to row_print() */
 int row_count(void);

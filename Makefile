@@ -14,13 +14,14 @@ cf-cg     := $(cf) -m4-nofpu -DFXCG50
 
 # Linker flags
 lf-fx     := -Tfx9860g.ld -lprof -lgint-fx -lgcc -Wl,-Map=build.fx/map
-lf-cg     := -Tfxcg50.ld  -lprof -lgint-cg -lgcc -Wl,-Map=build.cg/map -L. -lfxcg
+lf-cg     := -Tfxcg50.ld  -lprof -lgint-cg -lgcc -Wl,-Map=build.cg/map
 
 dflags     = -MMD -MT $@ -MF $(@:.o=.d) -MP
 cpflags   := -R .bss -R .gint_bss
 
-g1af      := -i icon-fx.png -n gintctl --internal=@GINTCTL
-g3af      := -n basic:" " -i uns:icon-cg-uns.png -i sel:icon-cg-sel.png
+g1af      := -i assets-fx/icon.png -n gintctl --internal=@GINTCTL
+g3af      := -n basic:" " -i uns:assets-cg/icon-uns.png \
+             -i sel:assets-cg/icon-sel.png
 
 #
 #  File listings
@@ -33,13 +34,14 @@ target-cg := gintctl.g3a
 
 # Source and object files
 src       := $(shell find src -name '*.c')
-res       := $(wildcard resources/*.png)
-obj-fx    := $(src:%.c=build.fx/%.o) $(res:resources/%=build.fx/%.o)
-obj-cg    := $(src:%.c=build.cg/%.o) $(res:resources/%=build.cg/%.o)
+assets-fx := $(wildcard assets-fx/*.png)
+assets-cg := $(wildcard assets-cg/*.png)
+obj-fx    := $(src:%.c=build.fx/%.o) $(assets-fx:assets-fx/%=build.fx/%.o)
+obj-cg    := $(src:%.c=build.cg/%.o) $(assets-ch:assets-cg/%=build.cg/%.o)
 
 # Additional dependencies
-deps-fx   := icon-fx.png
-deps-cg   := icon-cg-uns.png icon-cg-sel.png
+deps-fx   := assets-fx/icon.png
+deps-cg   := assets-cg/icon-uns.png assets-cg/icon-sel.png
 
 #
 #  Build rules
@@ -71,10 +73,10 @@ build.cg/%.o: %.c
 	sh4eb-elf-gcc -c $< -o $@ $(cf-cg) $(dflags)
 
 # Images
-build.fx/%.png.o: resources/%.png
+build.fx/%.png.o: assets-fx/%.png
 	@ mkdir -p $(dir $@)
 	fxconv -i $< -o $@ name:$*
-build.cg/%.png.o: resources/%.png
+build.cg/%.png.o: assets-cg/%.png
 	@ echo -e "\e[31;1mWARNING: conversion for fxcg50 not supported yet\e[0m"
 	@ mkdir -p $(dir $@)
 	fxconv -i $< -o $@ name:$*

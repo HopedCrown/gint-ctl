@@ -5,6 +5,3 @@ build.cg/
 # Targets
 gintctl.g1a
 gintctl.g3a
-
-# Full, heavier version of libfxcg
-libfxcg-full.a

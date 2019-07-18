@@ -1,5 +1,6 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
+#include <gint/std/stdio.h>
 
 #include <gintctl/util.h>
 #include <gintctl/prof-contexts.h>
@@ -36,10 +37,20 @@ static void run_test(struct elapsed *time)
 		drect(1, 1, 32, 32, C_WHITE)
 	);
 	test(PROFCTX_DRECT3, time->rect3,
-		drect(0, 0, 395, 223, C_WHITE)
+		drect(0, 0, _(127,395), _(63,223), C_WHITE)
 	);
 
 	#undef test
+}
+
+char *printtime(uint32_t us)
+{
+	static char str[20];
+
+	if(us < 1000) sprintf(str, "%d us", us);
+	else sprintf(str, "%.1j ms", us / 100);
+
+	return str;
 }
 
 /* gintctl_perf_render(): Profile the display primitives */
@@ -51,13 +62,25 @@ void gintctl_perf_render(void)
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
-		row_title("Rendering primitives");
 
 		#ifdef FX9860G
-		#warning gintctl_perf_render not implemented on fx9860g
+		row_print(1, 1, "Rendering functions");
+
+		if(test)
+		{
+			row_print(2, 1, "dclear:  %s", printtime(time.clear));
+			row_print(3, 1, "dupdate: %s", printtime(time.update));
+			row_print(4, 1, "rect1:   %s", printtime(time.rect1));
+			row_print(5, 1, "rect2:   %s", printtime(time.rect2));
+			row_print(6, 1, "rect3:   %s", printtime(time.rect3));
+		}
+
+		extern image_t opt_perf_render;
+		dimage(0, 56, &opt_perf_render);
 		#endif
 
 		#ifdef FXCG50
+		row_title("Rendering functions");
 		row_print(1, 1, "This program measures the execution time of");
 		row_print(2, 1, "common drawing functions.");
 
@@ -66,24 +89,19 @@ void gintctl_perf_render(void)
 		if(test)
 		{
 			print(6, 90, "dclear:");
-			print(6, 105, "%.1j ms", time.clear / 100);
-			print(6, 120, "%05x us", time.clear);
+			print(6, 105, "%s", printtime(time.clear));
 
 			print(83, 90, "dupdate:");
-			print(83, 105, "%.1j ms", time.update / 100);
-			print(83, 120, "%05x us", time.update);
+			print(83, 105, "%s", printtime(time.update));
 
 			print(160, 90, "rect1:");
-			print(160, 105, "%.1j ms", time.rect1 / 100);
-			print(160, 120, "%05x us", time.rect1);
+			print(160, 105, "%s", printtime(time.rect1));
 
 			print(237, 90, "rect2:");
-			print(237, 105, "%.1j ms", time.rect2 / 100);
-			print(237, 120, "%05x us", time.rect2);
+			print(237, 105, "%s", printtime(time.rect2));
 
 			print(314, 90, "rect3:");
-			print(314, 105, "%.1j ms", time.rect3 / 100);
-			print(314, 120, "%05x us", time.rect3);
+			print(314, 105, "%s", printtime(time.rect3));
 		}
 
 		fkey_button(1, "START");

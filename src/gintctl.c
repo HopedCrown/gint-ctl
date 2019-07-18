@@ -50,8 +50,8 @@ struct menu menu_gint = {
 struct menu menu_perf = {
 	_("Performance", "Performance benchmarks"), .entries = {
 
-	{ "libprof basics",       gintctl_perf_libprof },
-	{ "Rendering primitives", gintctl_perf_render },
+	{ "libprof basics",      gintctl_perf_libprof },
+	{ "Rendering functions", gintctl_perf_render },
 	{ NULL, NULL },
 }};
 
@@ -115,18 +115,19 @@ void gintctl_main(void)
 {
 	#ifdef FX9860G
 	row_title("gint @%07x", GINT_VERSION);
-	row_print(2, 1, "F2:gint tests");
-	row_print(3, 1, "F3:MPU registers");
-	row_print(4, 1, "F4:Memory map/dump");
-	row_print(5, 1, "F5:Performance");
+
+	row_print(3, 1, "F2:gint tests");
+	row_print(4, 1, "F3:Performance");
+	row_print(5, 1, "F5:MPU registers");
+	row_print(6, 1, "F6:Memory map/dump");
 	#endif /* FX9860G */
 
 	#ifdef FXCG50
 	row_title("gint @%07x for fx-CG 50", GINT_VERSION);
 	row_print(1, 1, "F2: gint features and driver tests");
-	row_print(2, 1, "F3: MPU register browser");
-	row_print(3, 1, "F4: Hexadecimal memory editor");
-	row_print(4, 1, "F5: Performance benchmarks");
+	row_print(2, 1, "F3: Performance benchmarks");
+	row_print(3, 1, "F5: MPU register browser");
+	row_print(4, 1, "F6: Hexadecimal memory editor");
 
 	#ifdef GINT_BOOTLOG
 	extern char gint_bootlog[22 * 8];
@@ -142,22 +143,22 @@ void gintctl_main(void)
 int main(GUNUSED int isappli, GUNUSED int optnum)
 {
 	/* Initialize menu metadata */
-	menu_init(&menu_gint, row_count());
-	menu_init(&menu_perf, row_count());
+	int top = _(1, 0), bottom = _(1, 0);
+	menu_init(&menu_gint, top, bottom);
+	menu_init(&menu_perf, top, bottom);
 
 	/* Start the profiling library */
 	prof_init(PROFCTX_COUNT, 2);
 
-	int tab = 1, key = 0;
+	int key = 0;
 	struct menu *menu = NULL;
 
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
-		if(tab == 1) gintctl_main();
-		else if(menu) menu_show(menu);
-		else row_title("Nothing, essentially");
+		if(menu) menu_show(menu);
+		else gintctl_main();
 
 		#ifdef FX9860G
 		extern image_t opt_main;
@@ -165,24 +166,24 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		#else
 		fkey_action(1, "INFO");
 		fkey_menu(2, "GINT");
-		fkey_menu(3, "REGS");
-		fkey_button(4, "MEMORY");
-		fkey_menu(5, "PERF");
+		fkey_menu(3, "PERF");
+		fkey_button(5, "REGS");
+		fkey_button(6, "MEMORY");
 		#endif
 
 		dupdate();
 		key = getkey().key;
 
 		if(key == KEY_F1)
-			tab = 1, menu = NULL;
+			menu = NULL;
 		if(key == KEY_F2)
-			tab = 2, menu = &menu_gint;
+			menu = &menu_gint;
 		if(key == KEY_F3)
-			tab = 3, menu = NULL;
-		if(key == KEY_F4)
-			/* TODO: Launch memory explorer */ { }
+			menu = &menu_perf;
 		if(key == KEY_F5)
-			tab = 5, menu = &menu_perf;
+			gintctl_regs();
+		if(key == KEY_F6)
+			/* TODO: Launch memory explorer */ { }
 
 		if(!menu) continue;
 

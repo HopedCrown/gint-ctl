@@ -7,52 +7,77 @@
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
 
-/* tmu_print(): Print a TMU's details */
-void tmu_print(int x, int y, char const *name, tmu_t *tmu, int running)
+/* timer_print(): Print a timer's details */
+void timer_print(int x, int y, char const *name, uint32_t TCOR, uint32_t TCNT,
+	int UNIE, int UNF, int STR)
 {
-	int dx = _(27,45), dy = _(8,14);
+	int dy = _(8,14);
 	print(x, y, "%s:", name);
-	if(!tmu)
-	{
-		print(x, y + dy, "(null)");
-		return;
-	}
 
-	print(x, y + dy, "TCOR");
-	print(x + dx, y + dy, "%08x", tmu->TCOR);
+	#ifdef FXCG50
+	print(x, y+dy,   "TCOR");
+	print(x, y+2*dy, "TCNT");
+	#endif
 
-	print(x, y + 2 * dy, "TCNT");
-	print(x + dx, y + 2 * dy, "%08x", tmu->TCNT);
+	print(_(x+6, x+45), y+dy, "%08x", TCOR);
+	print(_(x+60, x+45), _(y+dy, y+2*dy), "%08x", TCNT);
 
-	print(x, y + 3 * dy, "%s%s%s",
-		tmu->TCR.UNIE ? "UNIE " : "",
-		tmu->TCR.UNF  ? "UNF "  : "",
-		running       ? "TSTR " : ""
+	print(_(x+36, x), _(y, y+3*dy), "%s%s%s",
+		UNIE ? "UNIE " : "",
+		UNF  ? "UNF "  : "",
+		STR  ? "STR "  : ""
 	);
+}
+
+/* tmu_print(): Print a TMU's details */
+void tmu_print(int x, int y, char const *name, tmu_t *tmu, int STR)
+{
+	timer_print(x, y, name, tmu->TCOR, tmu->TCNT, tmu->TCR.UNIE,
+		tmu->TCR.UNF, STR);
 }
 
 /* etmu_print(): Print an ETMU's details */
 void etmu_print(int x, int y, char const *name, etmu_t *etmu)
 {
-	int dx = _(27,45), dy = _(8,14);
-	print(x, y, "%s:", name);
-	if(!etmu)
-	{
-		print(x, y + dy, "(null)");
-		return;
-	}
+	timer_print(x, y, name, etmu->TCOR, etmu->TCNT, etmu->TCR.UNIE,
+		etmu->TCR.UNF, etmu->TSTR);
+}
 
-	print(x, y + dy, "TCOR");
-	print(x + dx, y + dy, "%08x", etmu->TCOR);
 
-	print(x, y + 2 * dy, "TCNT");
-	print(x + dx, y + 2 * dy, "%08x", etmu->TCNT);
+#ifdef FX9860G
+static int x[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+static int y[] = { 0, 16, 32, 0, 16, 32, 0, 16, 32 };
+#else
+static int x[] = { 6, 138, 270, 6, 138, 270, 6, 138, 270 };
+static int y[] = { 24, 24, 24, 84, 84, 84, 144, 144, 144 };
+#endif
 
-	print(x, y + 3 * dy, "%s%s%s",
-		etmu->TCR.UNIE ? "UNIE " : "",
-		etmu->TCR.UNF  ? "UNF "  : "",
-		etmu->TSTR     ? "TSTR " : ""
-	);
+void show_tmu(void)
+{
+	volatile uint8_t *TSTR;
+	timer_address(0, &TSTR);
+
+	tmu_print(x[0], y[0], "TMU0", timer_address(0, NULL), *TSTR & 0x1);
+	tmu_print(x[1], y[1], "TMU1", timer_address(1, NULL), *TSTR & 0x2);
+	tmu_print(x[2], y[2], "TMU2", timer_address(2, NULL), *TSTR & 0x4);
+}
+
+void show_etmu_1(void)
+{
+	etmu_print(x[3], y[3], "ETMU0", timer_address(3, NULL));
+
+	if(isSH3()) return;
+	etmu_print(x[4], y[4], "ETMU1", timer_address(4, NULL));
+	etmu_print(x[5], y[5], "ETMU2", timer_address(5, NULL));
+}
+
+void show_etmu_2(void)
+{
+	if(isSH3()) return;
+
+	etmu_print(x[6], y[6], "ETMU3", timer_address(6, NULL));
+	etmu_print(x[7], y[7], "ETMU4", timer_address(7, NULL));
+	etmu_print(x[8], y[8], "ETMU5", timer_address(8, NULL));
 }
 
 /* gintctl_gint_timer(): Show the timer status in real-time */
@@ -64,30 +89,29 @@ void gintctl_gint_timer(void)
 	   program to ~90 FPS.) */
 	int key = 0, timeout = 1;
 
+	#ifdef FX9860G
+	int tab = 1;
+	#endif
+
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		#warning gintctl_gint_timer not implemented yet
+		if(tab == 1) show_tmu();
+		if(tab == 2) show_etmu_1();
+		if(tab == 3) show_etmu_2();
+
+		extern image_t opt_gint_timers;
+		dimage(0, 56, &opt_gint_timers);
 		#endif
 
 		#ifdef FXCG50
 		row_title("Timer status");
 
-		volatile uint8_t *TSTR;
-		timer_address(0, &TSTR);
-
-		tmu_print(6,   24, "TMU0", timer_address(0, NULL),*TSTR & 0x1);
-		tmu_print(138, 24, "TMU1", timer_address(1, NULL),*TSTR & 0x2);
-		tmu_print(270, 24, "TMU2", timer_address(2, NULL),*TSTR & 0x4);
-
-		etmu_print(6,    84, "ETMU0", timer_address(3, NULL));
-		etmu_print(138,  84, "ETMU1", timer_address(4, NULL));
-		etmu_print(270,  84, "ETMU2", timer_address(5, NULL));
-		etmu_print(6,   144, "ETMU3", timer_address(6, NULL));
-		etmu_print(138, 144, "ETMU4", timer_address(7, NULL));
-		etmu_print(270, 144, "ETMU5", timer_address(8, NULL));
+		show_tmu();
+		show_etmu_1();
+		show_etmu_2();
 
 		fkey_button(1, "SLEEP");
 		#endif
@@ -95,15 +119,22 @@ void gintctl_gint_timer(void)
 		dupdate();
 		key = getkey_opt(GETKEY_DEFAULT, &timeout).key;
 
-
 		/* On F1, pretend to sleep and just see what happens */
 		if(key == KEY_F1)
 		{
 			volatile int flag = 0;
+			int tid = 0;
 
-			int free = timer_setup(5, timer_delay(5, 1000000), 0,
-				timer_timeout, &flag);
-			if(free >= 0) timer_start(5);
+			int free = timer_setup(tid, timer_delay(tid, 1000000),
+				0, timer_timeout, &flag);
+			if(free == tid) timer_start(tid);
 		}
+
+		#ifdef FX9860G
+		/* On F4, F5 and F6, switch tabs */
+		if(key == KEY_F4) tab = 1;
+		if(key == KEY_F5) tab = 2;
+		if(key == KEY_F6) tab = 3;
+		#endif
 	}
 }
