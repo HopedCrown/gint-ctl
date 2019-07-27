@@ -1,6 +1,6 @@
 # Build directories
-build.fx/
-build.cg/
+build-fx/
+build-cg/
 
 # Targets
 gintctl.g1a

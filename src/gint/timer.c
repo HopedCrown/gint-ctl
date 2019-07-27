@@ -102,8 +102,8 @@ void gintctl_gint_timer(void)
 		if(tab == 2) show_etmu_1();
 		if(tab == 3) show_etmu_2();
 
-		extern image_t opt_gint_timers;
-		dimage(0, 56, &opt_gint_timers);
+		extern image_t img_opt_gint_timers;
+		dimage(0, 56, &img_opt_gint_timers);
 		#endif
 
 		#ifdef FXCG50

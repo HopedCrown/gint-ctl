@@ -12,6 +12,7 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
+#include <gintctl/mem.h>
 
 #include <libprof.h>
 
@@ -41,7 +42,8 @@ struct menu menu_gint = {
 	{ "Image rendering",  NULL },
 	{ "Text rendering",   NULL },
 	#ifdef FX9860G
-	{ "Gray engine",      NULL },
+	{ "Gray engine",      gintctl_gint_gray },
+	{ "Gray rendering",   gintctl_gint_grayrender },
 	#endif
 	{ NULL, NULL },
 }};
@@ -139,7 +141,6 @@ void gintctl_main(void)
 	#endif /* FXCG50 */
 }
 
-
 int main(GUNUSED int isappli, GUNUSED int optnum)
 {
 	/* Initialize menu metadata */
@@ -161,8 +162,8 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		else gintctl_main();
 
 		#ifdef FX9860G
-		extern image_t opt_main;
-		dimage(0, 56, &opt_main);
+		extern image_t img_opt_main;
+		dimage(0, 56, &img_opt_main);
 		#else
 		fkey_action(1, "INFO");
 		fkey_menu(2, "GINT");
@@ -183,7 +184,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		if(key == KEY_F5)
 			gintctl_regs();
 		if(key == KEY_F6)
-			/* TODO: Launch memory explorer */ { }
+			gintctl_mem();
 
 		if(!menu) continue;
 

@@ -75,8 +75,8 @@ void gintctl_perf_render(void)
 			row_print(6, 1, "rect3:   %s", printtime(time.rect3));
 		}
 
-		extern image_t opt_perf_render;
-		dimage(0, 56, &opt_perf_render);
+		extern image_t img_opt_perf_render;
+		dimage(0, 56, &img_opt_perf_render);
 		#endif
 
 		#ifdef FXCG50
