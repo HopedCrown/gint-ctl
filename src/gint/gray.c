@@ -49,11 +49,15 @@ void gintctl_gint_gray(void)
 		else if(key == KEY_RIGHT)
 			delays[sel]++;
 		else if(key == KEY_F1)
-			/* TODO: Default settings */ ;
+			delays[0] = 680, delays[1] = 1078;
 		else if(key == KEY_F2)
-			/* TODO: Default settings */ ;
+			delays[0] = 762, delays[1] = 1311;
 		else if(key == KEY_F3)
-			/* TODO: Default settings */ ;
+			delays[0] = 869, delays[1] = 1097;
+		else if(key == KEY_F4)
+			delays[0] = 869, delays[1] = 1311;
+		else if(key == KEY_F5)
+			delays[0] = 937, delays[1] = 1425;
 		else continue;
 
 		if(delays[sel] < 100) delays[sel] = 100;
