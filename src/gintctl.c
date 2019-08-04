@@ -39,7 +39,7 @@ struct menu menu_gint = {
 	{ "Keyboard",         NULL },
 	{ "Timers",           gintctl_gint_timer },
 	{ "Real-time clock",  NULL },
-	{ "Image rendering",  NULL },
+	{ "Image rendering",  gintctl_gint_bopti },
 	{ "Text rendering",   NULL },
 	#ifdef FX9860G
 	{ "Gray engine",      gintctl_gint_gray },

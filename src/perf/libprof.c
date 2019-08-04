@@ -63,14 +63,14 @@ void gintctl_perf_libprof(void)
 		row_title("libprof basics");
 		row_print(1, 1, "This program shows the execution time "
 			"measured");
-		row_print(2, 1, "by libprof for a 100 ms sleep, with 256us "
+		row_print(2, 1, "by libprof for a 100 ms sleep, with 1 us "
 			"added");
 		row_print(3, 1, "each time.");
 		row_print(5, 1, "Press F1 to start the test.");
 
 		if(test)
 		{
-			row_print(7, 1, "Sleep: %.3j us", sleep_delay);
+			row_print(7, 1, "Sleep: %.3j ms", sleep_delay);
 			row_print(8, 1, "Empty: %d us", empty);
 			row_print(9, 1, "Tests: %d", test);
 		}

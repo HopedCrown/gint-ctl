@@ -11,6 +11,9 @@ void gintctl_gint_hardware(void);
 /* gintctl_gint_timer(): Show the timer status in real-time */
 void gintctl_gint_timer(void);
 
+/* gintctl_gint_bopti(): Test image rendering */
+void gintctl_gint_bopti(void);
+
 #ifdef FX9860G
 
 /* gintctl_gint_gray(): Gray engine tuning */

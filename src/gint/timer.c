@@ -19,8 +19,8 @@ void timer_print(int x, int y, char const *name, uint32_t TCOR, uint32_t TCNT,
 	print(x, y+2*dy, "TCNT");
 	#endif
 
-	print(_(x+6, x+45), y+dy, "%08x", TCOR);
-	print(_(x+60, x+45), _(y+dy, y+2*dy), "%08x", TCNT);
+	print(_(x+6, x+45), y+dy, "%08X", TCOR);
+	print(_(x+60, x+45), _(y+dy, y+2*dy), "%08X", TCNT);
 
 	print(_(x+36, x), _(y, y+3*dy), "%s%s%s",
 		UNIE ? "UNIE " : "",

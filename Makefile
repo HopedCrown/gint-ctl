@@ -23,7 +23,7 @@ dflags     = -MMD -MT $@ -MF $(@:.o=.d) -MP
 cpflags   := -R .bss -R .gint_bss
 
 g1af      := -i "$(ICON_FX)" -n "$(NAME)" --internal="$(INTERNAL)"
-g3af      := -n basic:"$(NAME)" -i uns:"$(ICON_CG_UNS)" -i sel:"$(ICON_CG_SEL)"
+g3af      := -n basic:"" -i uns:"$(ICON_CG_UNS)" -i sel:"$(ICON_CG_SEL)"
 
 #
 #  File listings
@@ -91,13 +91,11 @@ build-cg/%.o: %.c
 # Images
 build-fx/assets/img/%.o: assets-fx/img/%
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ name:img_$(basename $*)
+	fxconv -i $< -o $@ --fx name:img_$(basename $*)
 
 build-cg/assets/img/%.o: assets-cg/img/%
-	@ echo -ne "\e[31;1mWARNING: image conversion for fxcg50 is not "
-	@ echo -ne "supported yet\e[0m"
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ name:img_$(basename $*)
+	fxconv -i $< -o $@ --cg name:img_$(basename $*)
 
 # Fonts
 build-fx/assets/fonts/%.o: assets-fx/fonts/%
