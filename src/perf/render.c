@@ -12,33 +12,42 @@ struct elapsed {
 	uint32_t clear;
 	uint32_t update;
 	uint32_t rect1, rect2, rect3;
+	uint32_t fs_r5g6b5;
 };
 
 static void run_test(struct elapsed *time)
 {
-	#define test(ctx, out, command) {		\
-		prof_clear(ctx);			\
-		prof_enter(ctx);			\
+	#define test(out, command) {			\
+		prof_clear(PROFCTX_RENDER);		\
+		prof_enter(PROFCTX_RENDER);		\
 		command;				\
-		prof_leave(ctx);			\
-		out = prof_time(ctx);			\
+		prof_leave(PROFCTX_RENDER);		\
+		out = prof_time(PROFCTX_RENDER);	\
 	}
 
-	test(PROFCTX_DUPDATE, time->update,
+	extern image_t img_swift;
+
+	test(time->update,
 		dupdate()
 	);
-	test(PROFCTX_DCLEAR,  time->clear,
+	test(time->clear,
 		dclear(C_WHITE)
 	);
-	test(PROFCTX_DRECT1, time->rect1,
+	test(time->rect1,
 		drect(0, 0, 31, 31, C_WHITE)
 	);
-	test(PROFCTX_DRECT2, time->rect2,
+	test(time->rect2,
 		drect(1, 1, 32, 32, C_WHITE)
 	);
-	test(PROFCTX_DRECT3, time->rect3,
+	test(time->rect3,
 		drect(0, 0, _(127,395), _(63,223), C_WHITE)
 	);
+
+	#ifdef FXCG50
+	test(time->fs_r5g6b5,
+		dimage(0, 0, &img_swift)
+	);
+	#endif
 
 	#undef test
 }
@@ -102,6 +111,9 @@ void gintctl_perf_render(void)
 
 			print(314, 90, "rect3:");
 			print(314, 105, "%s", printtime(time.rect3));
+
+			print(6, 130, "fullscreen img:");
+			print(6, 145, "%s", printtime(time.fs_r5g6b5));
 		}
 
 		fkey_button(1, "START");

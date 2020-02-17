@@ -1,3 +1,4 @@
+#define GINT_NEED_VRAM
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gintctl/gint.h>
@@ -17,9 +18,8 @@ void gintctl_gint_bopti(void)
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
-		bopti_render_noclip(0, 0, &img_swift, 0, 0, 396, 224);
-		bopti_render_clip(x, y, &img_swords, 0, 0, img_swords.width,
-			img_swords.height);
+		dimage(0, 0, &img_swift);
+		dimage(x, y, &img_swords);
 		dupdate();
 
 		key = getkey().key;

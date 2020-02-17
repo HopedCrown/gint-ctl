@@ -35,9 +35,13 @@ struct menu menu_gint = {
 	_("gint tests", "gint features and driver tests"), .entries = {
 
 	{ "Hardware",         gintctl_gint_hardware },
-	{ "Boot log",         NULL },
+	{ "RAM discovery",    gintctl_gint_ram },
+	{ "Memory dump",      gintctl_gint_dump },
 	{ "Keyboard",         NULL },
 	{ "Timers",           gintctl_gint_timer },
+	#ifdef FXCG50
+	{ "DMA Control",      gintctl_gint_dma },
+	#endif
 	{ "Real-time clock",  NULL },
 	{ "Image rendering",  gintctl_gint_bopti },
 	{ "Text rendering",   NULL },
@@ -45,6 +49,7 @@ struct menu menu_gint = {
 	{ "Gray engine",      gintctl_gint_gray },
 	{ "Gray rendering",   gintctl_gint_grayrender },
 	#endif
+	{ "printf family",    gintctl_gint_printf },
 	{ NULL, NULL },
 }};
 
@@ -56,57 +61,6 @@ struct menu menu_perf = {
 	{ "Rendering functions", gintctl_perf_render },
 	{ NULL, NULL },
 }};
-
-void exch_debug_thing(__attribute__((unused)) int code)
-{
-	#ifdef FXCG50
-
-	uint32_t TEA = *((volatile uint32_t *)0xff00000c);
-	uint32_t TRA = *((volatile uint32_t *)0xff000020);
-	uint32_t PC;
-
-	__asm__("stc spc, %0" : "=r"(PC));
-	TRA = TRA >> 2;
-
-	dclear(C_WHITE);
-
-	print(6, 3, "An exception occured! (System ERROR)");
-
-	uint32_t *long_vram = (void *)vram;
-	for(int i = 0; i < 198 * 16; i++) long_vram[i] = ~long_vram[i];
-
-	char const *name = "";
-	if(code == 0x040) name = "TLB miss (nonexisting address) on read";
-	if(code == 0x060) name = "TLB miss (nonexisting address) on write";
-	if(code == 0x0e0) name = "Read address error (probably alignment)";
-	if(code == 0x100) name = "Write address error (probably alignment)";
-	if(code == 0x160) name = "Unconditional trap";
-	if(code == 0x180) name = "Illegal instruction";
-	if(code == 0x1a0) name = "Illegal delay slot instruction";
-
-	print(6, 25, "%03x %s", code, name);
-
-	print(6, 45, "PC");
-	print(38, 45, "= %08x", PC);
-	print(261, 45, "(Error location)");
-
-	print(6, 60, "TEA");
-	print(38, 60, "= %08x", TEA);
-	print(234, 60, "(Offending address)");
-
-	print(6, 75, "TRA");
-	print(38, 75, "= %#x", TRA);
-	print(281, 75, "(Trap number)");
-
-	print(6, 95,  "An unrecoverable error ocurred in the add-in.");
-	print(6, 108, "Please press the RESET button to restart the");
-	print(6, 121, "calculator.");
-
-	dupdate_noint();
-	#endif
-
-	while(1);
-}
 
 //---
 //	Main application

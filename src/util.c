@@ -1,4 +1,3 @@
-#define GINT_NEED_VRAM
 #include <gint/display.h>
 #include <gint/std/stdio.h>
 
@@ -46,7 +45,7 @@ void row_title(char const *format, ...)
 
 	#ifdef FXCG50
 	dtext(ROW_X, 3, str, C_BLACK, C_NONE);
-	uint32_t *long_vram = (void *)vram;
+	uint32_t *long_vram = (void *)gint_vram;
 	for(int i = 0; i < 198 * 16; i++) long_vram[i] = ~long_vram[i];
 	#endif
 }
@@ -74,7 +73,7 @@ void row_highlight(int row)
 	#endif
 
 	#ifdef FXCG50
-	uint32_t *long_vram = (void *)vram;
+	uint32_t *long_vram = (void *)gint_vram;
 	for(int i = 198 * y1; i < 198 * y2; i++) long_vram[i] = ~long_vram[i];
 	#endif
 }

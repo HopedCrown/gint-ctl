@@ -8,11 +8,24 @@
 /* gintctl_gint_hardware(): Detected hardware configuration */
 void gintctl_gint_hardware(void);
 
+/* gintctl_gint_ram(): Determine the size of some memory areas */
+void gintctl_gint_ram(void);
+
+/* gintctl_gint_dump(): Dump memory to filesystem */
+void gintctl_gint_dump(void);
+
 /* gintctl_gint_timer(): Show the timer status in real-time */
 void gintctl_gint_timer(void);
 
 /* gintctl_gint_bopti(): Test image rendering */
 void gintctl_gint_bopti(void);
+
+#ifdef FXCG50
+
+/* gintctl_gint_dma(): Test the Direct Access Memory Controller */
+void gintctl_gint_dma(void);
+
+#endif
 
 #ifdef FX9860G
 
@@ -23,5 +36,8 @@ void gintctl_gint_gray(void);
 void gintctl_gint_grayrender(void);
 
 #endif /* FX9860G */
+
+/* gintctl_gint_printf(): printf() function */
+void gintctl_gint_printf(void);
 
 #endif /* GINTCTL_GINT */

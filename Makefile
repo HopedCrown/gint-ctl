@@ -10,41 +10,70 @@
 include project.cfg
 
 # Compiler flags
-cf        := -mb -ffreestanding -nostdlib -Wall -Wextra \
-             -fstrict-volatile-bitfields $(CFLAGS)
-cf-fx     := $(cf) -m3 -DFX9860G
-cf-cg     := $(cf) -m4-nofpu -DFXCG50
+CFLAGSFX := $(CFLAGS) $(CFLAGS_FX) $(INCLUDE)
+CFLAGSCG := $(CFLAGS) $(CFLAGS_CG) $(INCLUDE)
 
 # Linker flags
-lf-fx     := $(LDFLAGS) -Tfx9860g.ld -lgint-fx -lgcc -Wl,-Map=build-fx/map
-lf-cg     := $(LDFLAGS) -Tfxcg50.ld  -lgint-cg -lgcc -Wl,-Map=build-cg/map
+LDFLAGSFX := $(LDFLAGS) $(LDFLAGS_FX)
+LDFLAGSCG := $(LDFLAGS) $(LDFLAGS_CG)
 
-dflags     = -MMD -MT $@ -MF $(@:.o=.d) -MP
-cpflags   := -R .bss -R .gint_bss
+# Dependency list generation flags
+depflags = -MMD -MT $@ -MF $(@:.o=.d) -MP
+# ELF to binary flags
+BINFLAGS := -R .bss -R .gint_bss
 
-g1af      := -i "$(ICON_FX)" -n "$(NAME)" --internal="$(INTERNAL)"
-g3af      := -n basic:"" -i uns:"$(ICON_CG_UNS)" -i sel:"$(ICON_CG_SEL)"
+# G1A and G3A generation flags
+NAME_G1A ?= $(NAME)
+NAME_G3A ?= $(NAME)
+G1AF := -i "$(ICON_FX)" -n "$(NAME_G1A)" --internal="$(INTERNAL)"
+G3AF := -n basic:"$(NAME_G3A)" -i uns:"$(ICON_CG_UNS)" -i sel:"$(ICON_CG_SEL)"
+
+ifeq "$(TOOLCHAIN_FX)" ""
+TOOLCHAIN_FX := sh3eb-elf
+endif
+
+ifeq "$(TOOLCHAIN_CG)" ""
+TOOLCHAIN_CG := sh4eb-elf
+endif
+
+# fxconv flags
+FXCONVFX := --fx --toolchain=$(TOOLCHAIN_FX)
+FXCONVCG := --cg --toolchain=$(TOOLCHAIN_CG)
 
 #
 #  File listings
 #
 
-null      :=
-filename  := $(subst $(null) $(null),-,$(NAME))
+NULL   :=
+TARGET := $(subst $(NULL) $(NULL),-,$(NAME))
 
-elf        = $(dir $<)$(filename).elf
-bin        = $(dir $<)$(filename).bin
-target-fx := $(filename).g1a
-target-cg := $(filename).g3a
+ifeq "$(TARGET_FX)" ""
+TARGET_FX := $(TARGET).g1a
+endif
+
+ifeq "$(TARGET_CG)" ""
+TARGET_CG := $(TARGET).g3a
+endif
+
+ELF_FX := build-fx/$(shell basename -s .g1a $(TARGET_FX)).elf
+BIN_FX := $(ELF_FX:.elf=.bin)
+
+ELF_CG := build-cg/$(shell basename -s .g3a $(TARGET_CG)).elf
+BIN_CG := $(ELF_CG:.elf=.bin)
 
 # Source files
-src       := $(wildcard src/*.c src/*/*.c src/*/*/*.c src/*/*/*/*.c)
+src       := $(wildcard src/*.[csS] \
+                        src/*/*.[csS] \
+                        src/*/*/*.[csS] \
+                        src/*/*/*/*.[csS])
 assets-fx := $(wildcard assets-fx/*/*)
 assets-cg := $(wildcard assets-cg/*/*)
 
 # Object files
-obj-fx  := $(src:%.c=build-fx/%.o) $(assets-fx:assets-fx/%=build-fx/assets/%.o)
-obj-cg  := $(src:%.c=build-cg/%.o) $(assets-cg:assets-cg/%=build-cg/assets/%.o)
+obj-fx  := $(src:%=build-fx/%.o) \
+           $(assets-fx:assets-fx/%=build-fx/assets/%.o)
+obj-cg  := $(src:%=build-cg/%.o) \
+           $(assets-cg:assets-cg/%=build-cg/assets/%.o)
 
 # Additional dependencies
 deps-fx := $(ICON_FX)
@@ -65,46 +94,68 @@ endif
 
 all: $(all)
 
-all-fx: $(target-fx)
-all-cg: $(target-cg)
+all-fx: $(TARGET_FX)
+all-cg: $(TARGET_CG)
 
-$(target-fx): $(obj-fx) $(deps-fx)
+$(TARGET_FX): $(obj-fx) $(deps-fx)
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_FX)-gcc -o $(ELF_FX) $(obj-fx) $(CFLAGSFX) $(LDFLAGSFX)
+	$(TOOLCHAIN_FX)-objcopy -O binary $(BINFLAGS) $(ELF_FX) $(BIN_FX)
+	fxg1a $(BIN_FX) -o $@ $(G1AF)
 
-	sh3eb-elf-gcc -o $(elf) $(obj-fx) $(cf-fx) $(lf-fx)
-	sh3eb-elf-objcopy -O binary $(cpflags) $(elf) $(bin)
-	fxg1a $(bin) -o $@ $(g1af)
-
-$(target-cg): $(obj-cg) $(deps-cg)
-
-	sh4eb-elf-gcc -o $(elf) $(obj-cg) $(cf-cg) $(lf-cg)
-	sh4eb-elf-objcopy -O binary $(cpflags) $(elf) $(bin)
-	mkg3a $(g3af) $(bin) $@
+$(TARGET_CG): $(obj-cg) $(deps-cg)
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_CG)-gcc -o $(ELF_CG) $(obj-cg) $(CFLAGSCG) $(LDFLAGSCG)
+	$(TOOLCHAIN_CG)-objcopy -O binary $(BINFLAGS) $(ELF_CG) $(BIN_CG)
+	mkg3a $(G3AF) $(BIN_CG) $@
 
 # C sources
-build-fx/%.o: %.c
+build-fx/%.c.o: %.c
 	@ mkdir -p $(dir $@)
-	sh3eb-elf-gcc -c $< -o $@ $(cf-fx) $(dflags)
-build-cg/%.o: %.c
+	$(TOOLCHAIN_FX)-gcc -c $< -o $@ $(CFLAGSFX) $(depflags)
+build-cg/%.c.o: %.c
 	@ mkdir -p $(dir $@)
-	sh4eb-elf-gcc -c $< -o $@ $(cf-cg) $(dflags)
+	$(TOOLCHAIN_CG)-gcc -c $< -o $@ $(CFLAGSCG) $(depflags)
+
+# Assembler sources
+build-fx/%.s.o: %.s
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_FX)-gcc -c $< -o $@
+build-cg/%.s.o: %.s
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_CG)-gcc -c $< -o $@
+
+# Preprocessed assembler sources
+build-fx/%.S.o: %.S
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_FX)-gcc -c $< -o $@ $(INCLUDE)
+build-cg/%.S.o: %.S
+	@ mkdir -p $(dir $@)
+	$(TOOLCHAIN_CG)-gcc -c $< -o $@ $(INCLUDE)
 
 # Images
 build-fx/assets/img/%.o: assets-fx/img/%
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ --fx name:img_$(basename $*)
-
+	fxconv -i $< -o $@ $(FXCONVFX) name:img_$(basename $*) $(IMG.$*)
 build-cg/assets/img/%.o: assets-cg/img/%
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ --cg name:img_$(basename $*)
+	fxconv -i $< -o $@ $(FXCONVCG) name:img_$(basename $*) $(IMG.$*)
 
 # Fonts
 build-fx/assets/fonts/%.o: assets-fx/fonts/%
 	@ mkdir -p $(dir $@)
-	fxconv -f $< -o $@ name:font_$(basename $*) $(FONT.$*)
-
+	fxconv -f $< -o $@ $(FXCONVFX) name:font_$(basename $*) $(FONT.$*)
 build-cg/assets/fonts/%.o: assets-cg/fonts/%
 	@ mkdir -p $(dir $@)
-	fxconv -f $< -o $@ name:font_$(basename $*) $(FONT.$*)
+	fxconv -f $< -o $@ $(FXCONVCG) name:font_$(basename $*) $(FONT.$*)
+
+# Binaries
+build-fx/assets/bin/%.o: assets-fx/bin/%
+	@ mkdir -p $(dir $@)
+	fxconv -b $< -o $@ $(FXCONVFX) name:bin_$(basename $*) $(BIN.$*)
+build-cg/assets/bin/%.o: assets-cg/bin/%
+	@ mkdir -p $(dir $@)
+	fxconv -b $< -o $@ $(FXCONVCG) name:bin_$(basename $*) $(BIN.$*)
 
 #
 #  Cleaning and utilities
@@ -116,14 +167,23 @@ build-fx/%.d: ;
 build-cg/%.d: ;
 .PRECIOUS: build-fx build-cg build-fx/%.d build-cg/%.d %/
 
-clean:
-	@ rm -rf build*
-distclean: clean
-	@ rm -f $(target-fx) $(target-cg)
+clean-fx:
+	@ rm -rf build-fx/
+clean-cg:
+	@ rm -rf build-cg/
 
-install-fx: $(target-fx)
+distclean-fx: clean-fx
+	@ rm -f $(TARGET_FX)
+distclean-cg: clean-cg
+	@ rm -f $(TARGET_CG)
+
+clean: clean-fx clean-cg
+
+distclean: distclean-fx distclean-cg
+
+install-fx: $(TARGET_FX)
 	p7 send -f $<
-install-cg: $(target-cg)
+install-cg: $(TARGET_CG)
 	@ while [[ ! -h /dev/Prizm1 ]]; do sleep 0.25; done
 	@ while ! mount /dev/Prizm1; do sleep 0.25; done
 	@ rm -f /mnt/prizm/$<

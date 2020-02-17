@@ -40,4 +40,14 @@ void gintctl_regs(void)
 
 	dupdate();
 	getkey();
+
+	dclear(C_WHITE);
+	row_title("Register browser");
+
+	row_print(2, 1, "RAMCR: %08x", *(uint32_t *)0xff000074);
+	row_print(3, 1, "SAR0:  %08x", *(uint32_t *)0xfe008020);
+	row_print(4, 1, "CHCR0: %08x", *(uint32_t *)0xfe00802c);
+
+	dupdate();
+	getkey();
 }

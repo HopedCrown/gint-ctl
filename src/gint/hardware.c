@@ -84,12 +84,14 @@ static void hw_cpg(int *row)
 /* Direct Memory Access Controller */
 static void hw_dma(int *row)
 {
+	#ifdef FXCG50
 	int dma = gint[HWDMA];
 
 	put("Direct Memory Access" _(," Controller:"));
 	load_barrier(dma);
 
 	put(" (loaded)");
+	#endif
 }
 
 /* Timer Unit */
@@ -197,8 +199,10 @@ static int display_data(int offset)
 	hw_cpg(row);
 	put("");
 
+	#ifdef FXCG50
 	hw_dma(row);
 	put("");
+	#endif
 
 	hw_tmu(row);
 	hw_etmu(row);
