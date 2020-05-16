@@ -92,7 +92,7 @@ void gintctl_mem(void)
 
 		for(int i = 0; i < lines; i++)
 		{
-			int status = line(mem, header, bytes, ascii, size);
+			GUNUSED int status = line(mem,header,bytes,ascii,size);
 
 			#ifdef FX9860G
 			dtext( 5, 6*i + 1, view_ascii ? ascii : header,

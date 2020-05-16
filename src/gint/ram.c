@@ -74,8 +74,8 @@ void gintctl_gint_ram(void)
 
 	GUNUSED char const *reasons[] = {
 		"Not tested yet",
-		"Not writable past %d bytes",
-		"Wraps around after %d bytes",
+		"%d bytes (not writable)",
+		"%d bytes (wraps around)",
 	};
 
 	int key = 0;
@@ -102,14 +102,20 @@ void gintctl_gint_ram(void)
 		row_print(2, 1, "memory sections by checking how far it can "
 			"write.");
 
-		dprint(6,   78, C_BLACK, C_NONE, "ILRAM:");
-		dprint(6,   92, C_BLACK, C_NONE, "XRAM:");
-		dprint(6,  106, C_BLACK, C_NONE, "YRAM:");
-		dprint(6,  120, C_BLACK, C_NONE, "MERAM:");
-		dprint(61,  78, C_BLACK, C_NONE, reasons[ILr], IL);
-		dprint(61,  92, C_BLACK, C_NONE, reasons[Xr], X);
-		dprint(61, 106, C_BLACK, C_NONE, reasons[Yr], Y);
-		dprint(61, 120, C_BLACK, C_NONE, reasons[MEr], ME);
+		row_print(4, 2, "ILRAM:");
+		row_print(5, 2, "XRAM:");
+		row_print(6, 2, "YRAM:");
+		row_print(7, 2, "MERAM:");
+
+		row_print(4, 10, "E5200000");
+		row_print(5, 10, "E5007000");
+		row_print(6, 10, "E5017000");
+		row_print(7, 10, "E8080000");
+
+		row_print(4, 21, reasons[ILr], IL);
+		row_print(5, 21, reasons[Xr], X);
+		row_print(6, 21, reasons[Yr], Y);
+		row_print(7, 21, reasons[MEr], ME);
 
 		fkey_button(1, "ILRAM");
 		fkey_button(2, "XRAM");

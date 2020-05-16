@@ -96,11 +96,11 @@ void gintctl_gint_dma(void)
 		dprint(6,  158, "Source");
 		dprint(96, 158, "%s", source ? "IL" : "RAM");
 
-		fkey_button(1, "RUN");
+		fkey_action(1, "RUN");
 
-		fkey_action(4, "CHANNEL");
-		fkey_action(5, "INT");
-		fkey_action(6, "SOURCE");
+		fkey_button(4, "CHANNEL");
+		fkey_button(5, "INT");
+		fkey_button(6, "SOURCE");
 		#endif
 
 		dupdate();

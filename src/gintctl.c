@@ -12,6 +12,7 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
+#include <gintctl/libs.h>
 #include <gintctl/mem.h>
 
 #include <libprof.h>
@@ -37,7 +38,8 @@ struct menu menu_gint = {
 	{ "Hardware",         gintctl_gint_hardware },
 	{ "RAM discovery",    gintctl_gint_ram },
 	{ "Memory dump",      gintctl_gint_dump },
-	{ "Keyboard",         NULL },
+	{ "Switching to OS",  gintctl_gint_switch },
+	{ "Keyboard",         gintctl_gint_keyboard },
 	{ "Timers",           gintctl_gint_timer },
 	#ifdef FXCG50
 	{ "DMA Control",      gintctl_gint_dma },
@@ -62,6 +64,14 @@ struct menu menu_perf = {
 	{ NULL, NULL },
 }};
 
+/* External libraries */
+struct menu menu_libs = {
+	_("Libraries", "External libraries"), .entries = {
+
+	{ "libimg", gintctl_libs_libimg },
+	{ NULL, NULL },
+}};
+
 //---
 //	Main application
 //---
@@ -74,16 +84,22 @@ void gintctl_main(void)
 
 	row_print(3, 1, "F2:gint tests");
 	row_print(4, 1, "F3:Performance");
-	row_print(5, 1, "F5:MPU registers");
-	row_print(6, 1, "F6:Memory map/dump");
+	row_print(5, 1, "F4:Libraries");
+	row_print(6, 1, "F5:MPU registers");
+	row_print(7, 1, "F6:Memory map/dump");
 	#endif /* FX9860G */
 
 	#ifdef FXCG50
 	row_title("gint @%07x for fx-CG 50", GINT_VERSION);
-	row_print(1, 1, "F2: gint features and driver tests");
-	row_print(2, 1, "F3: Performance benchmarks");
-	row_print(3, 1, "F5: MPU register browser");
-	row_print(4, 1, "F6: Hexadecimal memory editor");
+	row_print(1,1, "F2: gint features and driver tests");
+	row_print(2,1, "F3: Performance benchmarks");
+	row_print(3,1, "F4: External libraries");
+	row_print(4,1, "F5: MPU register browser");
+	row_print(5,1, "F6: Hexadecimal memory browser");
+
+	row_print(7,1, "This add-in is running a unikernel called gint by");
+	row_print(8,1, "Lephe'. Information about the project is available");
+	row_print(9,1, "on planet-casio.com.");
 
 	#ifdef GINT_BOOTLOG
 	extern char gint_bootlog[22 * 8];
@@ -101,6 +117,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	int top = _(1, 0), bottom = _(1, 0);
 	menu_init(&menu_gint, top, bottom);
 	menu_init(&menu_perf, top, bottom);
+	menu_init(&menu_libs, top, bottom);
 
 	/* Start the profiling library */
 	prof_init(PROFCTX_COUNT, 2);
@@ -118,10 +135,13 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		#ifdef FX9860G
 		extern image_t img_opt_main;
 		dimage(0, 56, &img_opt_main);
-		#else
+		#endif
+
+		#ifdef FXCG50
 		fkey_action(1, "INFO");
 		fkey_menu(2, "GINT");
 		fkey_menu(3, "PERF");
+		fkey_menu(4, "LIBS");
 		fkey_button(5, "REGS");
 		fkey_button(6, "MEMORY");
 		#endif
@@ -135,6 +155,8 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 			menu = &menu_gint;
 		if(key == KEY_F3)
 			menu = &menu_perf;
+		if(key == KEY_F4)
+			menu = &menu_libs;
 		if(key == KEY_F5)
 			gintctl_regs();
 		if(key == KEY_F6)

@@ -54,30 +54,38 @@ static int y[] = { 24, 24, 24, 84, 84, 84, 144, 144, 144 };
 
 void show_tmu(void)
 {
-	volatile uint8_t *TSTR;
-	timer_address(0, &TSTR);
+	tmu_t *TMU = SH7305_TMU.TMU;
+	volatile uint8_t *TSTR = &SH7305_TMU.TSTR;
 
-	tmu_print(x[0], y[0], "TMU0", timer_address(0, NULL), *TSTR & 0x1);
-	tmu_print(x[1], y[1], "TMU1", timer_address(1, NULL), *TSTR & 0x2);
-	tmu_print(x[2], y[2], "TMU2", timer_address(2, NULL), *TSTR & 0x4);
+	if(isSH3())
+	{
+		TMU = SH7705_TMU.TMU;
+		TSTR = &SH7705_TMU.TSTR;
+	}
+
+	tmu_print(x[0], y[0], "TMU0", &TMU[0], *TSTR & 0x1);
+	tmu_print(x[1], y[1], "TMU1", &TMU[1], *TSTR & 0x2);
+	tmu_print(x[2], y[2], "TMU2", &TMU[2], *TSTR & 0x4);
 }
 
 void show_etmu_1(void)
 {
-	etmu_print(x[3], y[3], "ETMU0", timer_address(3, NULL));
+	etmu_t *ETMU = isSH3() ? SH7705_ETMU : SH7305_ETMU;
+	etmu_print(x[3], y[3], "ETMU0", &ETMU[0]);
 
 	if(isSH3()) return;
-	etmu_print(x[4], y[4], "ETMU1", timer_address(4, NULL));
-	etmu_print(x[5], y[5], "ETMU2", timer_address(5, NULL));
+	etmu_print(x[4], y[4], "ETMU1", &ETMU[1]);
+	etmu_print(x[5], y[5], "ETMU2", &ETMU[2]);
 }
 
 void show_etmu_2(void)
 {
-	if(isSH3()) return;
+	etmu_t *ETMU = SH7305_ETMU;
 
-	etmu_print(x[6], y[6], "ETMU3", timer_address(6, NULL));
-	etmu_print(x[7], y[7], "ETMU4", timer_address(7, NULL));
-	etmu_print(x[8], y[8], "ETMU5", timer_address(8, NULL));
+	if(isSH3()) return;
+	etmu_print(x[6], y[6], "ETMU3", &ETMU[3]);
+	etmu_print(x[7], y[7], "ETMU4", &ETMU[4]);
+	etmu_print(x[8], y[8], "ETMU5", &ETMU[5]);
 }
 
 /* gintctl_gint_timer(): Show the timer status in real-time */
@@ -87,13 +95,14 @@ void gintctl_gint_timer(void)
 	   hence ask getkey() to never wait. (The processor is still sleeping
 	   during the DMA transfer to the screen on fxcg50, limiting the
 	   program to ~90 FPS.) */
-	int key = 0, timeout = 1;
+	int key=0, timeout=1;
+	int tid=0;
 
 	#ifdef FX9860G
 	int tab = 1;
 	#endif
 
-	while(key != KEY_EXIT)
+	while(!keydown(KEY_EXIT))
 	{
 		dclear(C_WHITE);
 
@@ -104,6 +113,9 @@ void gintctl_gint_timer(void)
 
 		extern image_t img_opt_gint_timers;
 		dimage(0, 56, &img_opt_gint_timers);
+
+		if(tid < 3) dprint(23, 56, C_BLACK, C_NONE, "TMU%d", tid);
+		else        dprint(23, 56, C_BLACK, C_NONE, "ETMU%d", tid-3);
 		#endif
 
 		#ifdef FXCG50
@@ -113,18 +125,19 @@ void gintctl_gint_timer(void)
 		show_etmu_1();
 		show_etmu_2();
 
-		fkey_button(1, "SLEEP");
+		fkey_action(1, "SLEEP");
+
+		if(tid < 3) dprint(72, 210, C_BLACK, C_NONE, "TMU%d", tid);
+		else        dprint(72, 210, C_BLACK, C_NONE, "ETMU%d", tid-3);
 		#endif
 
 		dupdate();
-		key = getkey_opt(GETKEY_DEFAULT, &timeout).key;
+		clearevents();
 
 		/* On F1, pretend to sleep and just see what happens */
-		if(key == KEY_F1)
+		if(keydown(KEY_F1))
 		{
 			volatile int flag = 0;
-			int tid = 0;
-
 			int free = timer_setup(tid, timer_delay(tid, 1000000),
 				0, timer_timeout, &flag);
 			if(free == tid) timer_start(tid);
@@ -132,9 +145,12 @@ void gintctl_gint_timer(void)
 
 		#ifdef FX9860G
 		/* On F4, F5 and F6, switch tabs */
-		if(key == KEY_F4) tab = 1;
-		if(key == KEY_F5) tab = 2;
-		if(key == KEY_F6) tab = 3;
+		if(keydown(KEY_F4)) tab = 1;
+		if(keydown(KEY_F5)) tab = 2;
+		if(keydown(KEY_F6)) tab = 3;
 		#endif
+
+		if(key == KEY_UP) tid = (tid+timer_count()-1) % timer_count();
+		if(key == KEY_DOWN) tid = (tid + 1) % timer_count();
 	}
 }

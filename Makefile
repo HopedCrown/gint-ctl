@@ -136,10 +136,10 @@ build-cg/%.S.o: %.S
 # Images
 build-fx/assets/img/%.o: assets-fx/img/%
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ $(FXCONVFX) name:img_$(basename $*) $(IMG.$*)
+	fxconv --bopti-image $< -o $@ $(FXCONVFX) name:img_$(basename $*) $(IMG.$*)
 build-cg/assets/img/%.o: assets-cg/img/%
 	@ mkdir -p $(dir $@)
-	fxconv -i $< -o $@ $(FXCONVCG) name:img_$(basename $*) $(IMG.$*)
+	fxconv --bopti-image $< -o $@ $(FXCONVCG) name:img_$(basename $*) $(IMG.$*)
 
 # Fonts
 build-fx/assets/fonts/%.o: assets-fx/fonts/%
@@ -184,11 +184,9 @@ distclean: distclean-fx distclean-cg
 install-fx: $(TARGET_FX)
 	p7 send -f $<
 install-cg: $(TARGET_CG)
-	@ while [[ ! -h /dev/Prizm1 ]]; do sleep 0.25; done
-	@ while ! mount /dev/Prizm1; do sleep 0.25; done
+	@ prizm-mount
 	@ rm -f /mnt/prizm/$<
 	@ cp $< /mnt/prizm
-	@ umount /dev/Prizm1
-	@- eject /dev/Prizm1
+	@ prizm-eject
 
 .PHONY: all all-fx all-cg clean distclean install-fx install-cg

@@ -14,6 +14,12 @@ void gintctl_gint_ram(void);
 /* gintctl_gint_dump(): Dump memory to filesystem */
 void gintctl_gint_dump(void);
 
+/* gintctl_gint_switch(): Test the gint switch-in-out procedures */
+void gintctl_gint_switch(void);
+
+/* gintct_gint_keybaord: Real-time keyboard visualization */
+void gintctl_gint_keyboard(void);
+
 /* gintctl_gint_timer(): Show the timer status in real-time */
 void gintctl_gint_timer(void);
 
@@ -25,7 +31,7 @@ void gintctl_gint_bopti(void);
 /* gintctl_gint_dma(): Test the Direct Access Memory Controller */
 void gintctl_gint_dma(void);
 
-#endif
+#endif /* FXCG50 */
 
 #ifdef FX9860G
 

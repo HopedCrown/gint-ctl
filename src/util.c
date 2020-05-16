@@ -26,7 +26,7 @@
 
 #ifdef FXCG50
 #define ROW_X      6
-#define ROW_W      0
+#define ROW_W      8
 #define ROW_Y      20
 #define ROW_YPAD   2
 #define ROW_H      14

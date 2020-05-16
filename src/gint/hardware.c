@@ -82,7 +82,7 @@ static void hw_cpg(int *row)
 }
 
 /* Direct Memory Access Controller */
-static void hw_dma(int *row)
+static GUNUSED void hw_dma(GUNUSED int *row)
 {
 	#ifdef FXCG50
 	int dma = gint[HWDMA];
