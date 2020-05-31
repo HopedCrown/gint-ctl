@@ -66,9 +66,12 @@ struct menu menu_perf = {
 
 /* External libraries */
 struct menu menu_libs = {
-	_("Libraries", "External libraries"), .entries = {
+	_("Libraries", "External and standard libraries"), .entries = {
 
-	{ "libimg", gintctl_libs_libimg },
+	{ "libc: " _("TinyMT32", "TinyMT random number generation"),
+		gintctl_libs_tinymt },
+	{ "libimg" _(""," image transforms"),
+		gintctl_libs_libimg },
 	{ NULL, NULL },
 }};
 
