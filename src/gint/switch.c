@@ -3,6 +3,7 @@
 #include <gint/keyboard.h>
 #include <gint/drivers.h>
 #include <gint/clock.h>
+#include <gint/hardware.h>
 #include <gint/mpu/tmu.h>
 #include <gint/mpu/dma.h>
 #include <gint/std/string.h>
@@ -59,8 +60,9 @@ static void ctx_dd()
 static void ctx_rtc()
 {
 	uint8_t *ctx = driver_ctx("RTC");
-	uint8_t RCR1=ctx[0], RCR2=ctx[1];
+	if(!ctx) return;
 
+	uint8_t RCR1=ctx[0], RCR2=ctx[1];
 	row_print(1, 1, "RCR1:%02x", RCR1);
 	row_print(2, 1, "RCR2:%02x", RCR2);
 }
@@ -72,9 +74,12 @@ static void show_etmu(int line, int id, etmu_t *t)
 static void ctx_etmu(int start)
 {
 	etmu_t *t = driver_ctx("TMU") + 3 * sizeof(tmu_t);
-	t += start;
+	int length = 3;
 
-	for(int i = 0; i < 3; i++, t++)
+	if(isSH3()) length=1, start=0;
+
+	t += start;
+	for(int i = 0; i < length; i++, t++)
 	{
 		show_etmu(2*i+1, i+start, t);
 	}
@@ -114,8 +119,9 @@ static void ctx_dd()
 static void ctx_rtc()
 {
 	uint8_t *ctx = driver_ctx("RTC");
-	uint8_t RCR1=ctx[0], RCR2=ctx[1];
+	if(!ctx) return;
 
+	uint8_t RCR1=ctx[0], RCR2=ctx[1];
 	row_print(1, 1, "RCR1:%02x", RCR1);
 	row_print(2, 1, "RCR2:%02x", RCR2);
 }
@@ -148,8 +154,13 @@ static void system_contexts(void)
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
+		extern image_t img_opt_switch_ctx_sh3;
 		extern image_t img_opt_switch_ctx;
-		dimage(0, 56, &img_opt_switch_ctx);
+
+		if(isSH3())
+			dimage(0, 56, &img_opt_switch_ctx_sh3);
+		else
+			dimage(0, 56, &img_opt_switch_ctx);
 		#endif
 
 		#ifdef FXCG50
@@ -182,7 +193,7 @@ static void system_contexts(void)
 		if(key == KEY_F4) tab = 3;
 
 		#ifdef FX9860G
-		if(key == KEY_F5) tab = 4;
+		if(key == KEY_F5 && isSH3()) tab = 4;
 		#endif
 	}
 }
