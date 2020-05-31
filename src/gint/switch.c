@@ -4,6 +4,7 @@
 #include <gint/drivers.h>
 #include <gint/clock.h>
 #include <gint/mpu/tmu.h>
+#include <gint/mpu/dma.h>
 #include <gint/std/string.h>
 
 #include <gintctl/gint.h>
@@ -83,12 +84,58 @@ static void ctx_etmu(int start)
 #ifdef FXCG50
 static void ctx_tmu()
 {
+	tmu_t *t = driver_ctx("TMU");
+	etmu_t *e = (void *)(t + 3);
+	uint8_t *TSTR = (void *)(e + 6);
+
+	int const x[] = { 6, 138, 270, 6, 138, 270, 6, 138, 270 };
+	int const y[] = { 24, 24, 24, 84, 84, 84, 144, 144, 144 };
+
+	tmu_print(x[0], y[0], "TMU0", t+0, *TSTR & 0x1);
+	tmu_print(x[1], y[1], "TMU1", t+1, *TSTR & 0x2);
+	tmu_print(x[2], y[2], "TMU2", t+2, *TSTR & 0x4);
+
+	etmu_print(x[3], y[3], "ETMU0", e+0);
+	etmu_print(x[4], y[4], "ETMU1", e+1);
+	etmu_print(x[5], y[5], "ETMU2", e+2);
+
+	etmu_print(x[6], y[6], "ETMU3", e+3);
+	etmu_print(x[7], y[7], "ETMU4", e+4);
+	etmu_print(x[8], y[8], "ETMU5", e+5);
 }
 static void ctx_dd()
 {
+	uint16_t *win = driver_ctx("R61524");
+	uint16_t HSA = win[0], HEA = win[1], VSA = win[2], VEA = win[3];
+
+	row_print(1, 1, "Horizontal range: %d..%d", HSA, HEA);
+	row_print(2, 1, "Vertical range: %d..%d", VSA, VEA);
 }
 static void ctx_rtc()
 {
+	uint8_t *ctx = driver_ctx("RTC");
+	uint8_t RCR1=ctx[0], RCR2=ctx[1];
+
+	row_print(1, 1, "RCR1:%02x", RCR1);
+	row_print(2, 1, "RCR2:%02x", RCR2);
+}
+static void ctx_dma()
+{
+	sh7305_dma_channel_t *ch = driver_ctx("DMA0");
+	int *clock = (void *)(ch + 6);
+	uint16_t *OR = (void *)(clock + 1);
+
+	show_dma(6,   24, 0, ch+0);
+	show_dma(138, 24, 1, ch+1);
+	show_dma(270, 24, 2, ch+2);
+
+	show_dma(6,   104, 3, ch+3);
+	show_dma(138, 104, 4, ch+4);
+	show_dma(270, 104, 5, ch+5);
+
+	dprint(6, 184, C_BLACK, C_WHITE, "DMAOR: %08X", *OR);
+	dprint(198, 184, C_BLACK, C_WHITE, "Clock enabled: %s",
+		(*clock ? "No" : "Yes"));
 }
 #endif /* FXCG50 */
 
@@ -110,6 +157,7 @@ static void system_contexts(void)
 		fkey_button(1, "TMU");
 		fkey_button(2, "R61524");
 		fkey_button(3, "RTC");
+		fkey_button(4, "DMA");
 		#endif
 
 		if(tab == 0) ctx_tmu();
@@ -121,15 +169,19 @@ static void system_contexts(void)
 		if(tab == 4) ctx_etmu(3);
 		#endif
 
+		#ifdef FXCG50
+		if(tab == 3) ctx_dma();
+		#endif
+
 		dupdate();
 
 		key = getkey().key;
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
 		if(key == KEY_F3) tab = 2;
+		if(key == KEY_F4) tab = 3;
 
 		#ifdef FX9860G
-		if(key == KEY_F4) tab = 3;
 		if(key == KEY_F5) tab = 4;
 		#endif
 	}

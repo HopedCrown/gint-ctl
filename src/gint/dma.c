@@ -12,14 +12,8 @@
 #define DMA SH7305_DMA
 #define dprint(x, y, ...) dprint(x, y, C_BLACK, C_NONE, __VA_ARGS__)
 
-void show_dma(int x, int y, int channel)
+void show_dma(int x, int y, int channel, sh7305_dma_channel_t *dma)
 {
-	sh7305_dma_channel_t *addr[6] = {
-		&DMA.DMA0, &DMA.DMA1, &DMA.DMA2,
-		&DMA.DMA3, &DMA.DMA4, &DMA.DMA5,
-	};
-	sh7305_dma_channel_t *dma = addr[channel];
-
 	#ifdef FX9860G
 	dma->SAR = 0x12345678;
 	dma->DAR = 0x9abcdef0;
@@ -81,11 +75,16 @@ void gintctl_gint_dma(void)
 		#endif
 
 		#ifdef FXCG50
+		sh7305_dma_channel_t *addr[6] = {
+			&DMA.DMA0, &DMA.DMA1, &DMA.DMA2,
+			&DMA.DMA3, &DMA.DMA4, &DMA.DMA5,
+		};
+
 		row_title("Direct Memory Access status");
 
-		show_dma(6,   24, 0);
-		show_dma(138, 24, 1);
-		show_dma(270, 24, 2);
+		show_dma(6,   24, 0, addr[0]);
+		show_dma(138, 24, 1, addr[1]);
+		show_dma(270, 24, 2, addr[2]);
 
 		dprint(6, 102, "DMAOR: %08X", DMA.OR);
 

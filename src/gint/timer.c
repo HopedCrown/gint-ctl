@@ -3,6 +3,7 @@
 #include <gint/timer.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/clock.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
@@ -132,10 +133,14 @@ void gintctl_gint_timer(void)
 		#endif
 
 		dupdate();
-		clearevents();
+
+		int timeout = 1;
+		key_event_t ev = getkey_opt(GETKEY_DEFAULT, &timeout);
+		if(ev.type == KEYEV_NONE) continue;
+		key = ev.key;
 
 		/* On F1, pretend to sleep and just see what happens */
-		if(keydown(KEY_F1))
+		if(key == KEY_F1)
 		{
 			volatile int flag = 0;
 			int free = timer_setup(tid, timer_delay(tid, 1000000),
@@ -145,9 +150,9 @@ void gintctl_gint_timer(void)
 
 		#ifdef FX9860G
 		/* On F4, F5 and F6, switch tabs */
-		if(keydown(KEY_F4)) tab = 1;
-		if(keydown(KEY_F5)) tab = 2;
-		if(keydown(KEY_F6)) tab = 3;
+		if(key == KEY_F4) tab = 1;
+		if(key == KEY_F5) tab = 2;
+		if(key == KEY_F6) tab = 3;
 		#endif
 
 		if(key == KEY_UP) tid = (tid+timer_count()-1) % timer_count();
