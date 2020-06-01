@@ -35,7 +35,7 @@ void gintctl_gint_gray(void)
 		grect(96, 16, 127, 31, C_LIGHT);
 		grect(96, 32, 127, 47, C_DARK);
 
-		extern image_t img_opt_gint_gray;
+		extern bopti_image_t img_opt_gint_gray;
 		gimage(0, 56, &img_opt_gint_gray);
 
 		gupdate();
@@ -101,10 +101,10 @@ void gintctl_gint_grayrender(void)
 	gtext(x + 8, y + 9,  "Darken",  C_DARKEN,  C_NONE);
 	gtext(x + 8, y + 17, "Invert",  C_INVERT,  C_NONE);
 
-	extern image_t img_profile_mono;
-	extern image_t img_profile_mono_alpha;
-	extern image_t img_profile_gray;
-	extern image_t img_profile_gray_alpha;
+	extern bopti_image_t img_profile_mono;
+	extern bopti_image_t img_profile_mono_alpha;
+	extern bopti_image_t img_profile_gray;
+	extern bopti_image_t img_profile_gray_alpha;
 
 	x = 8, y = 32;
 	for(int c = 0; c < 8; c++)

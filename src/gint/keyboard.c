@@ -30,8 +30,8 @@ void render_keyboard(void)
 	GUNUSED int x, y, w, h;
 
 	#ifdef FXCG50
-	extern image_t img_kbd_pressed;
-	extern image_t img_kbd_released;
+	extern bopti_image_t img_kbd_pressed;
+	extern bopti_image_t img_kbd_released;
 	dimage(15, 21, &img_kbd_released);
 	#endif
 
@@ -53,8 +53,8 @@ void render_keyboard(void)
 			#endif
 
 			#ifdef FX9860G
-			extern image_t img_keypress;
-			extern image_t img_keyrelease;
+			extern bopti_image_t img_keypress;
+			extern bopti_image_t img_keyrelease;
 			position(row, col, &x, &y, &w, &h);
 			if(keydown(code)) dimage(x, y, &img_keypress);
 			else dimage(x, y, &img_keyrelease);

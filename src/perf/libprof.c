@@ -55,7 +55,7 @@ void gintctl_perf_libprof(void)
 			row_print(6, 1, "Empty: %d us", empty);
 		}
 
-		extern image_t img_opt_perf_libprof;
+		extern bopti_image_t img_opt_perf_libprof;
 		dimage(0, 56, &img_opt_perf_libprof);
 		#endif /* FX9860G */
 

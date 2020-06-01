@@ -105,7 +105,7 @@ void gintctl_gint_dump(void)
 			regs[region].segment_count);
 		row_print(5, 1, "File:    %s", filename);
 
-		extern image_t img_opt_dump;
+		extern bopti_image_t img_opt_dump;
 		dimage(0, 56, &img_opt_dump);
 
 		if(retcode == 1) dprint(77, 56, C_BLACK,C_NONE, "Done!");

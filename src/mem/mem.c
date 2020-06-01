@@ -118,7 +118,7 @@ void gintctl_mem(void)
 		}
 
 		#ifdef FX9860G
-		extern image_t img_opt_mem;
+		extern bopti_image_t img_opt_mem;
 		dsubimage(0, 56, &img_opt_mem, 0, 0, 128, 8, DIMAGE_NONE);
 
 		if(view_ascii) dsubimage(23, 56, &img_opt_mem, 23, 9, 21, 8,

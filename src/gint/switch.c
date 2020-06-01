@@ -154,8 +154,8 @@ static void system_contexts(void)
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		extern image_t img_opt_switch_ctx_sh3;
-		extern image_t img_opt_switch_ctx;
+		extern bopti_image_t img_opt_switch_ctx_sh3;
+		extern bopti_image_t img_opt_switch_ctx;
 
 		if(isSH3())
 			dimage(0, 56, &img_opt_switch_ctx_sh3);
@@ -208,7 +208,7 @@ void render(void)
 	dclear(C_WHITE);
 
 	#ifdef FX9860G
-	extern image_t img_opt_switch;
+	extern bopti_image_t img_opt_switch;
 	row_print(1, 1, "Switch to OS");
 	row_print(3, 1, "Switches done: %d", switches);
 	row_print(4, 1, "Fast done: %d", fast);

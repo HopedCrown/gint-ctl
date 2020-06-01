@@ -39,7 +39,7 @@ static void run_test(struct elapsed *time)
 	);
 
 	#ifdef FXCG50
-	extern image_t img_swift;
+	extern bopti_image_t img_swift;
 	test(time->fs_r5g6b5,
 		dimage(0, 0, &img_swift)
 	);
@@ -78,7 +78,7 @@ void gintctl_perf_render(void)
 			row_print(6, 1, "rect3:   %s", printtime(time.rect3));
 		}
 
-		extern image_t img_opt_perf_render;
+		extern bopti_image_t img_opt_perf_render;
 		dimage(0, 56, &img_opt_perf_render);
 		#endif
 

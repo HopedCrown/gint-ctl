@@ -91,7 +91,7 @@ void gintctl_gint_ram(void)
 		row_print(5, 2, "YRAM:  %d bytes", Y);
 		row_print(6, 2, "MERAM: %d bytes", ME);
 
-		extern image_t img_opt_gint_ram;
+		extern bopti_image_t img_opt_gint_ram;
 		dimage(0, 56, &img_opt_gint_ram);
 		#endif
 

@@ -9,10 +9,10 @@
 void gintctl_gint_bopti(void)
 {
 #ifdef FXCG50
-	extern image_t img_swift;
-	extern image_t img_swords;
-	extern image_t img_potion_17x22, img_potion_18x22, img_potion_21x22;
-	extern image_t img_applejack_31x27, img_applejack_36x25;
+	extern bopti_image_t img_swift;
+	extern bopti_image_t img_swords;
+	extern bopti_image_t img_potion_17x22, img_potion_18x22, img_potion_21x22;
+	extern bopti_image_t img_applejack_31x27, img_applejack_36x25;
 	int key = 0, x, y;
 
 	while(key != KEY_EXIT)

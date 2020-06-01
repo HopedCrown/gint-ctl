@@ -136,7 +136,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		else gintctl_main();
 
 		#ifdef FX9860G
-		extern image_t img_opt_main;
+		extern bopti_image_t img_opt_main;
 		dimage(0, 56, &img_opt_main);
 		#endif
 

@@ -112,7 +112,7 @@ void gintctl_gint_timer(void)
 		if(tab == 2) show_etmu_1();
 		if(tab == 3) show_etmu_2();
 
-		extern image_t img_opt_gint_timers;
+		extern bopti_image_t img_opt_gint_timers;
 		dimage(0, 56, &img_opt_gint_timers);
 
 		if(tid < 3) dprint(23, 56, C_BLACK, C_NONE, "TMU%d", tid);

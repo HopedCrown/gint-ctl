@@ -70,7 +70,7 @@ void gintctl_gint_dma(void)
 		dprint(1, 48, "Source      %s", source ? "IL" : "RAM");
 		dprint(103, 40, "%d", successes);
 
-		extern image_t img_opt_gint_dma;
+		extern bopti_image_t img_opt_gint_dma;
 		dimage(0, 56, &img_opt_gint_dma);
 		#endif
 
