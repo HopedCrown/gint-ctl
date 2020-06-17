@@ -39,8 +39,10 @@ struct menu menu_gint = {
 	{ "RAM discovery",    gintctl_gint_ram },
 	{ "Memory dump",      gintctl_gint_dump },
 	{ "Switching to OS",  gintctl_gint_switch },
+	{ "TLB management",   gintctl_gint_tlb },
 	{ "Keyboard",         gintctl_gint_keyboard },
 	{ "Timers",           gintctl_gint_timer },
+	{ "Timer callbacks",  gintctl_gint_timer_callbacks },
 	#ifdef FXCG50
 	{ "DMA Control",      gintctl_gint_dma },
 	#endif

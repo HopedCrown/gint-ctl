@@ -9,7 +9,7 @@
 /* Code of exception that occurs during a memory access */
 static uint32_t exception = 0;
 /* Exception-catching function */
-static int catch_exc(uint32_t code)
+GMAPPED static int catch_exc(uint32_t code)
 {
 	if(code == 0x040 || code == 0x0e0)
 	{
@@ -25,7 +25,7 @@ int line(uint8_t *mem, char *header, char *bytes, char *ascii, int n)
 	/* First do a naive access to the first byte, and record possible
 	   exceptions - TLB miss read and CPU read error.
 	   I use a volatile asm statement so that the read can't be optimized
-	   away by the compiler. */
+	   away or moved by the compiler. */
 	exception = 0;
 	gint_exc_catch(catch_exc);
 	uint8_t z;

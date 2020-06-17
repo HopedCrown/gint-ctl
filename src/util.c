@@ -62,6 +62,18 @@ void row_print(int row, int x, char const *format, ...)
 		str, C_BLACK, C_NONE);
 }
 
+/* row_print_color(): Formatted printing... with custom colors! */
+void row_print_color(int row, int x, int fg, int bg, char const *format, ...)
+{
+	if(row < _(0,1) || row > ROW_COUNT) return;
+
+	char str[80];
+	shortprint(str, format);
+
+	dtext(ROW_X + ROW_W * (x - 1), ROW_Y + ROW_H * (row - 1) + ROW_YPAD,
+		str, fg, bg);
+}
+
 /* row_highlight(): Invert a row's pixels to highlight it */
 void row_highlight(int row)
 {

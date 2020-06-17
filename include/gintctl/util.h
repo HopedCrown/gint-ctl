@@ -29,6 +29,9 @@ void row_title(char const *format, ...);
 /* row_print(): Formatted printing in a predefined row */
 void row_print(int row, int x, char const *format, ...);
 
+/* row_print_color(): Formatted printing... with custom colors! */
+void row_print_color(int row, int x, int fg, int bg, char const *format, ...);
+
 /* row_highlight(): Invert a row's pixels to highlight it */
 void row_highlight(int row);
 

@@ -17,11 +17,17 @@ void gintctl_gint_dump(void);
 /* gintctl_gint_switch(): Test the gint switch-in-out procedures */
 void gintctl_gint_switch(void);
 
+/* gintctl_gint_tlb(): TLB miss handler and TLB management */
+void gintctl_gint_tlb(void);
+
 /* gintct_gint_keybaord: Real-time keyboard visualization */
 void gintctl_gint_keyboard(void);
 
 /* gintctl_gint_timer(): Show the timer status in real-time */
 void gintctl_gint_timer(void);
+
+/* gintctl_gint_timer_callbacks(): Stunts in the environment of callbacks */
+void gintctl_gint_timer_callbacks(void);
 
 /* gintctl_gint_bopti(): Test image rendering */
 void gintctl_gint_bopti(void);
