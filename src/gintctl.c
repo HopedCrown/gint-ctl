@@ -53,7 +53,6 @@ struct menu menu_gint = {
 	{ "Gray engine",      gintctl_gint_gray },
 	{ "Gray rendering",   gintctl_gint_grayrender },
 	#endif
-	{ "printf family",    gintctl_gint_printf },
 	{ NULL, NULL },
 }};
 
@@ -72,7 +71,9 @@ struct menu menu_libs = {
 
 	{ "libc: " _("TinyMT32", "TinyMT random number generation"),
 		gintctl_libs_tinymt },
-	{ "libimg" _(""," image transforms"),
+	{ "libc: " _("printf family", "Formatted printing functions"),
+		gintctl_libs_printf },
+	{ "libimg" _("",": Image transforms"),
 		gintctl_libs_libimg },
 	{ NULL, NULL },
 }};

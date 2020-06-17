@@ -49,7 +49,4 @@ void gintctl_gint_grayrender(void);
 
 #endif /* FX9860G */
 
-/* gintctl_gint_printf(): printf() function */
-void gintctl_gint_printf(void);
-
 #endif /* GINTCTL_GINT */
