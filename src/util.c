@@ -40,11 +40,11 @@ void row_title(char const *format, ...)
 	shortprint(str, format);
 
 	#ifdef FX9860G
-	dtext(1, 0, str, C_BLACK, C_NONE);
+	dtext(1, 0, C_BLACK, str);
 	#endif
 
 	#ifdef FXCG50
-	dtext(ROW_X, 3, str, C_BLACK, C_NONE);
+	dtext(ROW_X, 3, C_BLACK, str);
 	uint32_t *long_vram = (void *)gint_vram;
 	for(int i = 0; i < 198 * 16; i++) long_vram[i] = ~long_vram[i];
 	#endif
@@ -59,7 +59,7 @@ void row_print(int row, int x, char const *format, ...)
 	shortprint(str, format);
 
 	dtext(ROW_X + ROW_W * (x - 1), ROW_Y + ROW_H * (row - 1) + ROW_YPAD,
-		str, C_BLACK, C_NONE);
+		C_BLACK, str);
 }
 
 /* row_print_color(): Formatted printing... with custom colors! */
@@ -70,8 +70,8 @@ void row_print_color(int row, int x, int fg, int bg, char const *format, ...)
 	char str[80];
 	shortprint(str, format);
 
-	dtext(ROW_X + ROW_W * (x - 1), ROW_Y + ROW_H * (row - 1) + ROW_YPAD,
-		str, fg, bg);
+	dtext_opt(ROW_X + ROW_W * (x-1), ROW_Y + ROW_H * (row-1) + ROW_YPAD,
+		fg, bg, DTEXT_LEFT, DTEXT_TOP, str);
 }
 
 /* row_highlight(): Invert a row's pixels to highlight it */
@@ -98,8 +98,7 @@ void row_right(int row, char const *character)
 	#endif
 
 	#ifdef FXCG50
-	dtext(370, ROW_Y + ROW_H * (row - 1) + ROW_YPAD, character,
-		C_BLACK, C_NONE);
+	dtext(370, ROW_Y + ROW_H * (row - 1) + ROW_YPAD, C_BLACK, character);
 	#endif
 }
 
@@ -125,32 +124,10 @@ int row_count(void)
 }
 
 //---
-//	General (x,y) printing
+//	Other drawing utilities
 //---
 
-/* print(): Formatted printing shorthand */
-void print(int x, int y, char const *format, ...)
-{
-	char str[80];
-	shortprint(str, format);
-	dtext(x, y, str, C_BLACK, C_NONE);
-}
-
-
 #ifdef FXCG50
-
-/* printw(): Print in white */
-void printw(int x, int y, char const *format, ...)
-{
-	char str[80];
-	va_list args;
-	va_start(args, format);
-	vsprintf(str, format, args);
-
-	dtext(x, y, str, C_WHITE, C_NONE);
-
-	va_end(args);
-}
 
 /* fkey_action(): A black-on-white F-key */
 void fkey_action(int position, char const *text)
@@ -167,7 +144,7 @@ void fkey_action(int position, char const *text)
 	drect(x, y + 1, x + 1, y + 13, C_BLACK);
 	drect(x + w - 2, y + 1, x + w - 1, y + 13, C_BLACK);
 
-	dtext(x + ((w - width) >> 1), y + 3, text, C_BLACK, C_NONE);
+	dtext(x + ((w - width) >> 1), y + 3, C_BLACK, text);
 }
 
 /* fkey_button(): A rectangular F-key */
@@ -184,7 +161,7 @@ void fkey_button(int position, char const *text)
 	dline(x + 1, y + 14, x + w - 2, y + 14, C_BLACK);
 	drect(x, y + 1, x + w - 1, y + 13, C_BLACK);
 
-	dtext(x + ((w - width) >> 1), y + 3, text, C_WHITE, C_NONE);
+	dtext(x + ((w - width) >> 1), y + 3, C_WHITE, text);
 }
 
 /* fkey_menu(): A rectangular F-key with the bottom right corner removed */

@@ -106,14 +106,6 @@ void gintctl_main(void)
 	row_print(7,1, "This add-in is running a unikernel called gint by");
 	row_print(8,1, "Lephe'. Information about the project is available");
 	row_print(9,1, "on planet-casio.com.");
-
-	#ifdef GINT_BOOTLOG
-	extern char gint_bootlog[22 * 8];
-	extern font_t *gint_default_font;
-
-	for(int i = 1; i < 8; i++) dtext(8, 85 + 13 * i, gint_bootlog + 22 * i,
-		C_BLACK, C_NONE);
-	#endif /* GINT_BOOTLOG */
 	#endif /* FXCG50 */
 }
 

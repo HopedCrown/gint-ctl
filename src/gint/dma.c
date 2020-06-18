@@ -10,7 +10,7 @@
 #ifdef FXCG50
 
 #define DMA SH7305_DMA
-#define dprint(x, y, ...) dprint(x, y, C_BLACK, C_NONE, __VA_ARGS__)
+#define dprint(x, y, ...) dprint(x, y, C_BLACK, __VA_ARGS__)
 
 void show_dma(int x, int y, int channel, sh7305_dma_channel_t *dma)
 {

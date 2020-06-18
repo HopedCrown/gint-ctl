@@ -139,9 +139,8 @@ static void ctx_dma()
 	show_dma(138, 104, 4, ch+4);
 	show_dma(270, 104, 5, ch+5);
 
-	dprint(6, 184, C_BLACK, C_WHITE, "DMAOR: %08X", *OR);
-	dprint(198, 184, C_BLACK, C_WHITE, "Clock enabled: %s",
-		(*clock ? "No" : "Yes"));
+	dprint(6, 184, C_BLACK, "DMAOR: %08X", *OR);
+	dprint(198, 184, C_BLACK, "Clock enabled: %s",(*clock ? "No" : "Yes"));
 }
 #endif /* FXCG50 */
 

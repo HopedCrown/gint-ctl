@@ -109,21 +109,21 @@ static void draw(struct printf_test const *tests, int offset)
 
 	#ifdef FX9860G
 	extern font_t font_hexa;
-	font_t *old_font = dfont(&font_hexa);
+	font_t const *old_font = dfont(&font_hexa);
 
-	dprint( 1, 0, C_BLACK, C_NONE, "ID");
-	dprint(13, 0, C_BLACK, C_NONE, "Format");
-	dprint(43, 0, C_BLACK, C_NONE, "Output");
-	dprint(91, 0, C_BLACK, C_NONE, "Valid");
+	dprint( 1, 0, C_BLACK, "ID");
+	dprint(13, 0, C_BLACK, "Format");
+	dprint(43, 0, C_BLACK, "Output");
+	dprint(91, 0, C_BLACK, "Valid");
 
 	for(int i = 0; i < SCROLL_HEIGHT; i++)
 	{
 		struct printf_test const *t = &tests[offset+i];
 		int y = (i+1) * 6;
-		dprint( 1, y, C_BLACK, C_NONE, "%d", offset+i+1);
-		dprint(13, y, C_BLACK, C_NONE, "%s", t->format);
-		dprint(43, y, C_BLACK, C_NONE, "%s", t->answer);
-		dprint(91, y, C_BLACK, C_NONE, "%s", t->passed?"Ok":"Err");
+		dprint( 1, y, C_BLACK, "%d", offset+i+1);
+		dprint(13, y, C_BLACK, "%s", t->format);
+		dprint(43, y, C_BLACK, "%s", t->answer);
+		dprint(91, y, C_BLACK, "%s", t->passed?"Ok":"Err");
 	}
 
 	dfont(old_font);

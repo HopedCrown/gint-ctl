@@ -95,21 +95,18 @@ void gintctl_mem(void)
 			GUNUSED int status = line(mem,header,bytes,ascii,size);
 
 			#ifdef FX9860G
-			dtext( 5, 6*i + 1, view_ascii ? ascii : header,
-				C_BLACK, C_NONE);
-			dtext(45, 6*i + 1, bytes,  C_BLACK, C_NONE);
+			dtext( 5, 6*i + 1, C_BLACK, view_ascii?ascii:header);
+			dtext(45, 6*i + 1, C_BLACK, bytes);
 			#endif
 
 			#ifdef FXCG50
-			dtext(25,  26 + 12*i, header, C_BLACK, C_NONE);
-			dtext(110, 26 + 12*i, bytes, status ? C_RED : C_BLACK,
-				C_NONE);
+			dtext(25,  26 + 12*i, C_BLACK, header);
+			dtext(110, 26 + 12*i, status ? C_RED : C_BLACK, bytes);
 
 			for(int k = size - 1; k >= 0; k--)
 			{
 				ascii[k+1] = 0;
-				dtext(275 + 9*k, 26 + 12*i, ascii + k, C_BLACK,
-					C_NONE);
+				dtext(275 + 9*k, 26 + 12*i, C_BLACK, ascii+k);
 			}
 			#endif
 

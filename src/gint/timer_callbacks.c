@@ -49,7 +49,7 @@ void gintctl_gint_timer_callbacks(void)
 
 		extern bopti_image_t img_opt_gint_timer_callbacks;
 		dimage(0, 56, &img_opt_gint_timer_callbacks);
-		dprint(69, 56, C_BLACK, C_NONE, "Done:%d", done);
+		dprint(69, 56, C_BLACK, "Done:%d", done);
 		#endif
 
 		#ifdef FXCG50

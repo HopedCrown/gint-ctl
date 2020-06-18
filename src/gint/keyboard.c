@@ -1,5 +1,6 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/gint.h>
 
 #include <gintctl/util.h>
 
@@ -103,9 +104,9 @@ static void render(key_event_t *last_events, int counter)
 		char const *name = key_names[6*row + col];
 
 		if(ev.type == KEYEV_UP)
-			dprint(x2, y, C_BLACK, C_NONE, "Up %s", name);
+			dprint(x2, y, C_BLACK, "Up %s", name);
 		if(ev.type == KEYEV_DOWN)
-			dprint(x1, y, C_BLACK,C_NONE,"Down %s", name);
+			dprint(x1, y, C_BLACK, "Down %s", name);
 	}
 
 	render_keyboard();

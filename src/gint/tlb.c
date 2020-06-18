@@ -8,7 +8,6 @@
 
 #define PAGE_USED    0x01
 #define PAGE_MAPPED  0x02
-#define C_ C_BLACK, C_NONE
 #define TLB_VIEW_MAX (64 - TLB_VIEW)
 
 #ifdef FXCG50
@@ -31,13 +30,8 @@ static void draw_rom_cell(int x, int y, int status)
 		status == -2 ? C_RGB(31,0,0) :
 		C_BLACK;
 
-	if(status >= 0 && status < 4)
-		drect(x, y, x+SQUARE_WIDTH, y+SQUARE_HEIGHT, colors[status]);
-
-	dline(x, y, x+SQUARE_WIDTH, y, border);
-	dline(x, y, x, y+SQUARE_HEIGHT, border);
-	dline(x+SQUARE_WIDTH, y, x+SQUARE_WIDTH, y+SQUARE_HEIGHT, border);
-	dline(x, y+SQUARE_HEIGHT, x+SQUARE_WIDTH, y+SQUARE_HEIGHT, border);
+	uint16_t fill = (status >= 0 && status < 4) ? colors[status] : C_NONE;
+	drect_border(x, y, x+SQUARE_WIDTH, y+SQUARE_HEIGHT, fill, 1, border);
 }
 #endif
 
@@ -193,11 +187,11 @@ void show_utlb(int row, int E)
 
 	if(E == -1)
 	{
-		dprint( 1, y, C_, "ID");
-		dprint(12, y, C_, "Virtual");
-		dprint(47, y, C_, "Physical");
-		dprint(82, y, C_, "Len");
-		dprint(98, y, C_, "Mode");
+		dprint( 1, y, C_BLACK, "ID");
+		dprint(12, y, C_BLACK, "Virtual");
+		dprint(47, y, C_BLACK, "Physical");
+		dprint(82, y, C_BLACK, "Len");
+		dprint(98, y, C_BLACK, "Mode");
 
 		dfont(old_font);
 		return;
@@ -214,14 +208,14 @@ void show_utlb(int row, int E)
 	char const *size_str[] = { "1k", "4k", "64k", "1M" };
 	char const *access_str[] = { "K:r", "K:rw", "U:r", "U:rw" };
 
-	dprint( 1, y, C_, "%d", E);
+	dprint( 1, y, C_BLACK, "%d", E);
 
 	if(valid)
 	{
-		dprint(12, y, C_, "%08X", src);
-		dprint(47, y, C_, "%08X", dst);
-		dprint(82, y, C_, "%s", size_str[size]);
-		dprint(98, y, C_, "%s", access_str[data.PR]);
+		dprint(12, y, C_BLACK, "%08X", src);
+		dprint(47, y, C_BLACK, "%08X", dst);
+		dprint(82, y, C_BLACK, "%s", size_str[size]);
+		dprint(98, y, C_BLACK, "%s", access_str[data.PR]);
 	}
 
 	dfont(old_font);
@@ -247,7 +241,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 
 		for(uint p=0, y=_(19,36); p < PAGE_COUNT; p += 2*LINE_SIZE)
 		{
-			dprint(_(4,18), y, C_, _("%06x","%08X"),
+			dprint(_(4,18), y, C_BLACK, _("%06x","%08X"),
 				0x00300000 + (p << 12));
 			y += 2*SQUARE_HEIGHT;
 		}
@@ -281,18 +275,18 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		draw_rom_cell(_(8,18),   _(25,50), 2);
 		draw_rom_cell(_(64,200), _(25,50), 3);
 
-		dprint(_(16,30),  _(16,36), C_,
+		dprint(_(16,30),  _(16,36), C_BLACK,
 			_("Unused", "Unused in add-in"));
-		dprint(_(72,212), _(16,36), C_,
+		dprint(_(72,212), _(16,36), C_BLACK,
 			_("Unmapped", "Currently unmapped"));
-		dprint(_(16,30),  _(24,50), C_,
+		dprint(_(16,30),  _(24,50), C_BLACK,
 			_("Mapped?", "Strangely mapped?!"));
-		dprint(_(72,212), _(24,50), C_,
+		dprint(_(72,212), _(24,50), C_BLACK,
 			_("Mapped", "Currently mapped"));
 
 		#ifdef FXCG50
 		draw_rom_cell(18, 64, -1);
-		dprint(30, 64, C_, "Next page to load");
+		dprint(30, 64, C_BLACK, "Next page to load");
 
 		row_print(6, 1,
 			"The MISS key will load an unmapped page to TLB by");

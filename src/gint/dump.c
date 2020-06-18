@@ -108,8 +108,8 @@ void gintctl_gint_dump(void)
 		extern bopti_image_t img_opt_dump;
 		dimage(0, 56, &img_opt_dump);
 
-		if(retcode == 1) dprint(77, 56, C_BLACK,C_NONE, "Done!");
-		if(retcode < 0)  dprint(77, 56, C_BLACK,C_NONE, "E%d",retcode);
+		if(retcode == 1) dprint(77, 56, C_BLACK, "Done!");
+		if(retcode < 0)  dprint(77, 56, C_BLACK, "E%d",retcode);
 		#endif
 
 		#ifdef FXCG50
@@ -123,6 +123,9 @@ void gintctl_gint_dump(void)
 		row_print(2, 10, "%d (total %d)", segment,
 			regs[region].segment_count);
 		row_print(3, 10, "%s", filename);
+
+		if(retcode == 1) row_print(5, 1, "Done!");
+		if(retcode < 0)  row_print(5, 1, "Error %d", retcode);
 
 		fkey_button(1, "ROM");
 		fkey_button(2, "RAM");

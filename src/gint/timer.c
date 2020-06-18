@@ -13,17 +13,17 @@ void timer_print(int x, int y, char const *name, uint32_t TCOR, uint32_t TCNT,
 	int UNIE, int UNF, int STR)
 {
 	int dy = _(8,14);
-	print(x, y, "%s:", name);
+	dprint(x, y, C_BLACK, "%s:", name);
 
 	#ifdef FXCG50
-	print(x, y+dy,   "TCOR");
-	print(x, y+2*dy, "TCNT");
+	dprint(x, y+dy,   C_BLACK, "TCOR");
+	dprint(x, y+2*dy, C_BLACK, "TCNT");
 	#endif
 
-	print(_(x+6, x+45), y+dy, "%08X", TCOR);
-	print(_(x+60, x+45), _(y+dy, y+2*dy), "%08X", TCNT);
+	dprint(_(x+6, x+45), y+dy, C_BLACK, "%08X", TCOR);
+	dprint(_(x+60, x+45), _(y+dy, y+2*dy), C_BLACK, "%08X", TCNT);
 
-	print(_(x+36, x), _(y, y+3*dy), "%s%s%s",
+	dprint(_(x+36, x), _(y, y+3*dy), C_BLACK, "%s%s%s",
 		UNIE ? "UNIE " : "",
 		UNF  ? "UNF "  : "",
 		STR  ? "STR "  : ""
@@ -96,8 +96,8 @@ void gintctl_gint_timer(void)
 	   hence ask getkey() to never wait. (The processor is still sleeping
 	   during the DMA transfer to the screen on fxcg50, limiting the
 	   program to ~90 FPS.) */
-	int key=0, timeout=1;
-	int tid=0;
+	int key=0, tid=0;
+	GUNUSED int timeout=1;
 
 	#ifdef FX9860G
 	int tab = 1;
@@ -115,8 +115,8 @@ void gintctl_gint_timer(void)
 		extern bopti_image_t img_opt_gint_timers;
 		dimage(0, 56, &img_opt_gint_timers);
 
-		if(tid < 3) dprint(23, 56, C_BLACK, C_NONE, "TMU%d", tid);
-		else        dprint(23, 56, C_BLACK, C_NONE, "ETMU%d", tid-3);
+		if(tid < 3) dprint(23, 56, C_BLACK, "TMU%d", tid);
+		else        dprint(23, 56, C_BLACK, "ETMU%d", tid-3);
 		#endif
 
 		#ifdef FXCG50
@@ -128,8 +128,8 @@ void gintctl_gint_timer(void)
 
 		fkey_action(1, "SLEEP");
 
-		if(tid < 3) dprint(72, 210, C_BLACK, C_NONE, "TMU%d", tid);
-		else        dprint(72, 210, C_BLACK, C_NONE, "ETMU%d", tid-3);
+		if(tid < 3) dprint(72, 210, C_BLACK, "TMU%d", tid);
+		else        dprint(72, 210, C_BLACK, "ETMU%d", tid-3);
 		#endif
 
 		dupdate();
