@@ -6,35 +6,39 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
+static int tests = 0;
+
 static int callback_simple(volatile void *arg)
 {
 	/* Perform a multiplication to check basic register saves */
 	int base = *(volatile int *)arg;
-	return base * 387 + 1;
+	tests++;
+	return base * 387 + TIMER_STOP;
 }
 
 static int callback_sleep(GUNUSED volatile void *arg)
 {
 	sleep();
-	return 1;
+	tests++;
+	return TIMER_STOP;
 }
 
 static int callback_timer(GUNUSED volatile void *arg)
 {
 	volatile int timeout = 0;
 
-	timer_setup(1, timer_delay(1, 10000), timer_default, timer_timeout,
+	timer_setup(1, timer_delay(1, 10000, TIMER_Pphi_4), timer_timeout,
 		&timeout);
 	timer_start(1);
 	timer_wait(1);
-	return 1;
+	tests++;
+	return TIMER_STOP;
 }
 
 /* gintctl_gint_timer_callbacks(): Stunts in the environment of callbacks */
 void gintctl_gint_timer_callbacks(void)
 {
-	int key = 0;
-	int base=0, done=0;
+	int key=0, base=0;
 
 	while(key != KEY_EXIT)
 	{
@@ -49,7 +53,7 @@ void gintctl_gint_timer_callbacks(void)
 
 		extern bopti_image_t img_opt_gint_timer_callbacks;
 		dimage(0, 56, &img_opt_gint_timer_callbacks);
-		dprint(69, 56, C_BLACK, "Done:%d", done);
+		dprint(69, 56, C_BLACK, "Done:%d", tests);
 		#endif
 
 		#ifdef FXCG50
@@ -68,7 +72,7 @@ void gintctl_gint_timer_callbacks(void)
 		row_print(8, 1,
 			"own callback) and waits for the interrupt.");
 
-		row_print(10, 1, "Tests run: %d", done);
+		row_print(10, 1, "Tests run: %d", tests);
 
 		fkey_action(1, "SIMPLE");
 		fkey_action(2, "SLEEP");
@@ -87,11 +91,10 @@ void gintctl_gint_timer_callbacks(void)
 
 		if(callback)
 		{
-			timer_setup(0, timer_delay(0, 10000), timer_default,
+			timer_setup(0, timer_delay(0, 10000, TIMER_Pphi_4),
 				callback, arg);
 			timer_start(0);
 			timer_wait(0);
-			done++;
 		}
 	}
 }

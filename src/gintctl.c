@@ -118,7 +118,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	menu_init(&menu_libs, top, bottom);
 
 	/* Start the profiling library */
-	prof_init(PROFCTX_COUNT, 2);
+	prof_init(PROFCTX_COUNT);
 
 	int key = 0;
 	struct menu *menu = NULL;

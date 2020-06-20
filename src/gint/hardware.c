@@ -41,19 +41,19 @@ static void hw_mpucpu(int *row)
 	if(!isSH4()) return;
 	put(_(" PVR:"," Processor Version Register: ") "%08x", gint[HWCPUVR]);
 	put(_(" PRR:"," Product Register: ") "%08x", gint[HWCPUPR]);
+
+	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
+	put(_(" CPUOPM:"," CPU Operation Mode: ") "%08x", *CPUOPM);
 }
 
 /* Memory */
 static void hw_memory(int *row)
 {
-	int mmu  = gint[HWMMU];
 	int rom  = gint[HWROM];
 	int ram  = gint[HWRAM];
 	int uram = gint[HWURAM];
 
 	put("Memory and MMU" _(,":"));
-	load_barrier(mmu);
-
 	put(" ROM:" _(," ") "%dM", rom >> 20);
 
 	#ifdef FX9860G
@@ -61,48 +61,6 @@ static void hw_memory(int *row)
 	#else
 	put(" RAM: %dM (%dk mapped in userspace)", ram >> 20, uram >> 10);
 	#endif
-
-	if(mmu & HWMMU_UTLB) put(" TLB is unified");
-	if(mmu & HWMMU_FITTLB) put(
-		_(" Add-in fits in TLB"," Add-in is fully mapped in the TLB"));
-}
-
-/* Clock Pulse generator */
-static void hw_cpg(int *row)
-{
-	int cpg = gint[HWCPG];
-
-	put(_("Clock Generator", "Clock Pulse Generator:"));
-	load_barrier(cpg);
-
-	if(cpg & HWCPG_COMP) put(
-		_(" Input freq known"," Input clock frequency is known"));
-	if(cpg & HWCPG_EXT) put(
-		_(" SH7724-style CPG"," SH7724-style extended module"));
-}
-
-/* Direct Memory Access Controller */
-static GUNUSED void hw_dma(GUNUSED int *row)
-{
-	#ifdef FXCG50
-	int dma = gint[HWDMA];
-
-	put("Direct Memory Access" _(," Controller:"));
-	load_barrier(dma);
-
-	put(" (loaded)");
-	#endif
-}
-
-/* Timer Unit */
-static void hw_tmu(int *row)
-{
-	int tmu = gint[HWTMU];
-
-	put("Timer Unit" _(,":"));
-	load_barrier(tmu);
-
-	put(" (loaded)");
 }
 
 /* Extra Timer Unit */
@@ -127,17 +85,6 @@ static void hw_etmu(int *row)
 		put(" Extra timers: 6");
 		put(" Operational: %s", operational);
 	}
-}
-
-/* Real-Time Clock */
-static void hw_rtc(int *row)
-{
-	int rtc = gint[HWRTC];
-
-	put("Real-Time Clock" _(,":"), rtc);
-	load_barrier(rtc);
-
-	if(rtc & HWRTC_TIMER) put(" timer enabled");
 }
 
 /* Keyboard */
@@ -196,19 +143,7 @@ static int display_data(int offset)
 	hw_memory(row);
 	put("");
 
-	hw_cpg(row);
-	put("");
-
-	#ifdef FXCG50
-	hw_dma(row);
-	put("");
-	#endif
-
-	hw_tmu(row);
 	hw_etmu(row);
-	put("");
-
-	hw_rtc(row);
 	put("");
 
 	hw_keyboard(row);

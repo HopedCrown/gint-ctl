@@ -340,7 +340,7 @@ static int generate_tlb_miss(volatile void *arg)
 {
 	uint8_t volatile *next_miss = arg;
 	GUNUSED uint8_t volatile x = *next_miss;
-	return 1;
+	return TIMER_STOP;
 }
 
 /* gintctl_gint_tlb(): TLB miss handler and TLB management */
@@ -386,10 +386,13 @@ void gintctl_gint_tlb(void)
 		}
 		if(key == KEY_F6 && next_miss != 0xffffffff)
 		{
-			timer_setup(1, timer_delay(1, 10000), timer_default,
-				generate_tlb_miss, (volatile void *)next_miss);
-			timer_start(1);
-			timer_wait(1);
+			int timer = timer_setup(TIMER_ANY, 10000,
+				generate_tlb_miss, next_miss);
+			if(timer >= 0)
+			{
+				timer_start(timer);
+				timer_wait(timer);
+			}
 		}
 	}
 }

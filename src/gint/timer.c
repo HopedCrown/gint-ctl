@@ -98,6 +98,7 @@ void gintctl_gint_timer(void)
 	   program to ~90 FPS.) */
 	int key=0, tid=0;
 	GUNUSED int timeout=1;
+	volatile int flag = 0;
 
 	#ifdef FX9860G
 	int tab = 1;
@@ -142,9 +143,8 @@ void gintctl_gint_timer(void)
 		/* On F1, pretend to sleep and just see what happens */
 		if(key == KEY_F1)
 		{
-			volatile int flag = 0;
-			int free = timer_setup(tid, timer_delay(tid, 1000000),
-				0, timer_timeout, &flag);
+			int free = timer_setup(tid, timer_delay(tid, 1000000,
+				TIMER_Pphi_4), NULL);
 			if(free == tid) timer_start(tid);
 		}
 

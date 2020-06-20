@@ -1,6 +1,6 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
-#include <gint/clock.h>
+#include <gint/timer.h>
 
 #include <gintctl/util.h>
 #include <gintctl/prof-contexts.h>
@@ -15,9 +15,16 @@ static uint32_t run_sleep(int us)
 	prof_clear(ctx);
 	prof_enter(ctx);
 
-	sleep_us(1, us);
-	prof_leave(ctx);
+	/* We can't use sleep_us() as we want a TMU */
+	volatile int flag = 0;
+	int timer = timer_setup(TIMER_TMU, us, timer_timeout, &flag);
+	if(timer >= 0)
+	{
+		timer_start(timer);
+		timer_wait(timer);
+	}
 
+	prof_leave(ctx);
 	return prof_time(ctx);
 }
 

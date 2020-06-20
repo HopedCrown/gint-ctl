@@ -2,6 +2,7 @@
 
 #include <gint/gray.h>
 #include <gint/keyboard.h>
+#include <gint/hardware.h>
 #include <gint/std/string.h>
 #include <gint/std/stdio.h>
 #include <gintctl/gint.h>
@@ -11,6 +12,8 @@ void gintctl_gint_gray(void)
 {
 	uint32_t delays[2];
 	gray_config(&delays[0], &delays[1]);
+
+	int g35pe2 = (gint[HWCALC] == HWCALC_G35PE2);
 
 	int key = 0, sel = 0;
 	char str[20];
@@ -22,6 +25,8 @@ void gintctl_gint_gray(void)
 		gclear(C_WHITE);
 
 		gtext(1, 0, "Gray engine tuning", C_BLACK, C_NONE);
+		gtext(1, 8, g35pe2 ? "Graph 35+E II" : "fx-9860G-like",
+			C_BLACK, C_NONE);
 
 		sprintf(str, "Light%5u", delays[0]);
 		gtext(13, 24, str, C_BLACK, C_NONE);
@@ -36,7 +41,8 @@ void gintctl_gint_gray(void)
 		grect(96, 32, 127, 47, C_DARK);
 
 		extern bopti_image_t img_opt_gint_gray;
-		gimage(0, 56, &img_opt_gint_gray);
+		gsubimage(0, 56, &img_opt_gint_gray, 0, 0, g35pe2?128:86, 8,
+			DIMAGE_NONE);
 
 		gupdate();
 		key = getkey().key;
@@ -48,16 +54,24 @@ void gintctl_gint_gray(void)
 			delays[sel]--;
 		else if(key == KEY_RIGHT)
 			delays[sel]++;
-		else if(key == KEY_F1)
-			delays[0] = 680, delays[1] = 1078;
-		else if(key == KEY_F2)
+		else if(g35pe2 && key == KEY_F1)
 			delays[0] = 762, delays[1] = 1311;
-		else if(key == KEY_F3)
+		else if(g35pe2 && key == KEY_F2)
+			delays[0] = 680, delays[1] = 1078;
+		else if(g35pe2 && key == KEY_F3)
 			delays[0] = 869, delays[1] = 1097;
-		else if(key == KEY_F4)
+		else if(g35pe2 && key == KEY_F4)
 			delays[0] = 869, delays[1] = 1311;
-		else if(key == KEY_F5)
+		else if(g35pe2 && key == KEY_F5)
 			delays[0] = 937, delays[1] = 1425;
+		else if(!g35pe2 && key == KEY_F1)
+			delays[0] = 1075, delays[1] = 1444;
+		else if(!g35pe2 && key == KEY_F2)
+			delays[0] = 898, delays[1] = 1350;
+		else if(!g35pe2 && key == KEY_F3)
+			delays[0] = 609, delays[1] = 884;
+		else if(!g35pe2 && key == KEY_F4)
+			delays[0] = 937, delays[1] = 1333;
 		else continue;
 
 		if(delays[sel] < 100) delays[sel] = 100;
