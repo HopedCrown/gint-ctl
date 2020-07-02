@@ -15,7 +15,7 @@
 }
 
 /* MPU type and processor version */
-static void hw_mpucpu(int *row)
+void show_mpucpu(void)
 {
 	char const *mpu_names[] = {
 		#ifdef FX9860G
@@ -32,34 +32,56 @@ static void hw_mpucpu(int *row)
 		"SH-4A-based SH7724",
 		#endif
 	};
-	int mpu = gint[HWMPU];
+	char const *calc_names[] = {
+		"Unknown",
+		"SH-3 fx-9860G-like",
+		"SH-4 fx-9860G-like",
+		"Graph 35+E II",
+		"Prizm fx-CG 20",
+		"fx-CG 50/Graph 90+E",
+		"fx-CG Manager",
+	};
 
-	put(_("MPU and CPU","MPU product and CPU features:"));
-	if(mpu < 0 || mpu > 4) put(" <MPUID %d>", mpu);
-	else put(" %s", mpu_names[mpu]);
+	int mpu  = gint[HWMPU];
+	int calc = gint[HWCALC];
+
+	if(calc < 0 || calc > 6)
+		row_print(1, 1, "Calculator model: <CALCID %d>", calc);
+	else
+		row_print(1, 1, "Calculator model: %s", calc_names[calc]);
+
+	if(mpu < 0 || mpu > 4)
+		row_print(3, 1, "MPU: <MPUID %d>", mpu);
+	else
+		row_print(3, 1, "MPU: %s", mpu_names[mpu]);
 
 	if(!isSH4()) return;
-	put(_(" PVR:"," Processor Version Register: ") "%08x", gint[HWCPUVR]);
-	put(_(" PRR:"," Product Register: ") "%08x", gint[HWCPUPR]);
+
+	row_print(4, 1, _(" PVR:"," Processor Version Register: ") "%08x",
+		gint[HWCPUVR]);
+	row_print(5, 1, _(" PRR:"," Product Register: ") "%08x",gint[HWCPUPR]);
 
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
-	put(_(" CPUOPM:"," CPU Operation Mode: ") "%08x", *CPUOPM);
+	row_print(6, 1, _(" CPUOPM:"," CPU Operation Mode: ") "%08x", *CPUOPM);
 }
 
 /* Memory */
-static void hw_memory(int *row)
+static void show_memory(void)
 {
 	int rom  = gint[HWROM];
 	int ram  = gint[HWRAM];
 	int uram = gint[HWURAM];
 
-	put("Memory and MMU" _(,":"));
-	put(" ROM:" _(," ") "%dM", rom >> 20);
-
 	#ifdef FX9860G
-	put(" RAM:%dk (%dk user)", ram >> 10, uram >> 10);
-	#else
-	put(" RAM: %dM (%dk mapped in userspace)", ram >> 20, uram >> 10);
+	row_print(1, 1, "ROM: %dM", rom >> 20);
+	row_print(2, 1, "RAM:%dk (%dk user)", ram >> 10, uram >> 10);
+	#endif
+
+	#ifdef FXCG50
+	row_print(1, 1, "ROM: %dM", rom >> 20);
+	row_print(2, 2, "%08X .. %08X", 0x80000000, 0x80000000+rom-1);
+	row_print(3, 1, "RAM: %dM (%dk mapped in userspace)",
+		ram >> 20, uram >> 10);
 	#endif
 }
 
@@ -137,12 +159,6 @@ static int display_data(int offset)
 	int row_value = -offset;
 	int *row = &row_value;
 
-	hw_mpucpu(row);
-	put("");
-
-	hw_memory(row);
-	put("");
-
 	hw_etmu(row);
 	put("");
 
@@ -157,25 +173,39 @@ static int display_data(int offset)
 /* gintctl_hardware(): Show the hardware screen */
 void gintctl_gint_hardware(void)
 {
-	int offset = 0;
+	int offset = 0, tab = 0;
 	int max, key = 0;
 
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
+		if(tab == 0) show_mpucpu();
+		if(tab == 1) show_memory();
+		if(tab == 2)
+		{
+			max = display_data(offset);
+			scrollbar(offset, max, 1, row_count() + 1);
+		}
+
 		#ifdef FXCG50
 		row_title("Hardware and loaded drivers");
+		fkey_menu(1, "MPU/CPU");
+		fkey_menu(2, "MEMORY");
+		fkey_menu(3, "Other");
 		#endif
-
-		max = display_data(offset);
-		scrollbar(offset, max, 1, row_count() + 1);
 
 		dupdate();
 
 		key = getkey().key;
 
-		if(key == KEY_UP && offset > 0) offset--;
-		if(key == KEY_DOWN && max - offset > row_count()) offset++;
+		if(key == KEY_F1) tab = 0;
+		if(key == KEY_F2) tab = 1;
+		if(key == KEY_F3) tab = 2;
+
+		if(tab == 2 && key == KEY_UP && offset > 0)
+			offset--;
+		if(tab == 2 && key == KEY_DOWN && max - offset > row_count())
+			offset++;
 	}
 }
