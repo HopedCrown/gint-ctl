@@ -73,6 +73,8 @@ struct menu menu_libs = {
 		gintctl_libs_tinymt },
 	{ "libc: " _("printf family", "Formatted printing functions"),
 		gintctl_libs_printf },
+	{ "libc: " _("mem functions", "Core memory functions"),
+		gintctl_libs_memory },
 	{ "libimg" _("",": Image transforms"),
 		gintctl_libs_libimg },
 	{ NULL, NULL },
