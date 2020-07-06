@@ -62,6 +62,10 @@ struct menu menu_perf = {
 
 	{ "libprof basics",      gintctl_perf_libprof },
 	{ "Rendering functions", gintctl_perf_render },
+
+	/* TODO: Comparison with MonochromeLib */
+	/* TODO: memcpy() and the like */
+
 	{ NULL, NULL },
 }};
 

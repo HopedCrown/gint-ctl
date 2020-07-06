@@ -218,29 +218,39 @@ void test(int (*func)(int off_dst, int off_src, size_t len), uint8_t *results)
 /* gintctl_libs_memory(): Core memory functions */
 void gintctl_libs_memory(void)
 {
-	int key = 0, tab = 0;
+	GUNUSED int key = 0, tab = 0;
 
 	uint8_t results[4][256];
-	char const *fkeys[4] = { "MEMCPY", "MEMSET", "MEMMOVE", "MEMCMP" };
 	char const *names[4] = { "memcpy", "memset", "memmove", "memcmp" };
+	int scores[4] = { 0 };
 
 	test(test_memcpy,  results[0]);
 	test(test_memset,  results[1]);
 	test(test_memmove, results[2]);
 	test(test_memcmp,  results[3]);
 
+	for(int i = 0; i < 4; i++)
+	for(int t = 0; t < 256; t++)
+	{
+		scores[i] += !results[i][t];
+	}
+
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
+		#ifdef FX9860G
+		row_title("Core memory functions");
+
+		for(int i = 0; i < 4; i++)
+			row_print(i+3, 1, "%-7s: %d/256", names[i], scores[i]);
+		#endif
+
 		#ifdef FXCG50
 		row_title("libc: Core memory functions");
 
-		int score = 0;
-		for(int i = 0; i < 256; i++) score += !results[tab][i];
-
 		dprint(10, 19, C_BLACK, "%s", names[tab]);
-		dprint(10, 31, C_BLACK, "%d/256", score);
+		dprint(10, 31, C_BLACK, "%d/256", scores[tab]);
 
 		dcenter(234, 19, "Source align and destination align");
 		for(int i = 0; i < 16; i++)
@@ -265,7 +275,10 @@ void gintctl_libs_memory(void)
 			drect_border(x1,y1,x1+19,y1+10, fg, 1, C_BLACK);
 		}
 
-		for(int i = 0; i < 4; i++) fkey_menu(i+1, fkeys[i]);
+		fkey_menu(1, "MEMCPY");
+		fkey_menu(2, "MEMSET");
+		fkey_menu(3, "MEMMOVE");
+		fkey_menu(4, "MEMCMP");
 		#endif
 
 		dupdate();
