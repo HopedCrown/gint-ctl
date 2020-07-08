@@ -108,7 +108,21 @@ static void explore_pages(uint8_t *pages, uint32_t *next_miss)
 		pages[p] = ((p << 12) < (uint32_t)&srom) ? PAGE_USED : 0;
 	}
 
-	for(uint E = 0; E < 64; E++)
+	if(isSH3())
+	{
+		for(int way = 0; way < 4; way++)
+		for(int E = 0; E < 32; E++)
+		{
+			tlb_addr_t addr = *tlb_addr(way, E);
+			tlb_data_t data = *tlb_data(way, E);
+			if(!addr.V || !data.V || !data.SZ) continue;
+
+			uint32_t src = (((addr.VPN >> 2) | E) << 12);
+			int p = (src - 0x00300000) >> 12;
+			pages[p] |= PAGE_MAPPED;
+		}
+	}
+	else for(uint E = 0; E < 64; E++)
 	{
 		utlb_addr_t addr = *utlb_addr(E);
 		utlb_data_t data = *utlb_data(E);
@@ -197,16 +211,40 @@ void show_utlb(int row, int E)
 		return;
 	}
 
-	utlb_addr_t addr = *utlb_addr(E);
-	utlb_data_t data = *utlb_data(E);
-
-	uint32_t src = addr.VPN << 10;
-	uint32_t dst = data.PPN << 10;
-
-	int valid = (addr.V != 0) && (data.V != 0);
-	int size = (data.SZ1 << 1) | data.SZ2;
 	char const *size_str[] = { "1k", "4k", "64k", "1M" };
 	char const *access_str[] = { "K:r", "K:rw", "U:r", "U:rw" };
+	uint32_t src, dst;
+	int valid, size, pr;
+
+	if(isSH3())
+	{
+		int way = (E >> 5);
+		E &= 31;
+
+		tlb_addr_t addr = *tlb_addr(way, E);
+		tlb_data_t data = *tlb_data(way, E);
+
+		valid = (addr.V != 0 && data.V != 0);
+		size = data.SZ;
+
+		if(data.SZ) src = (((addr.VPN >> 2) | E) << 12);
+		else src = (addr.VPN | (E << 2)) << 10;
+
+		dst = data.PPN << 10;
+		pr = data.PR;
+	}
+	else
+	{
+		utlb_addr_t addr = *utlb_addr(E);
+		utlb_data_t data = *utlb_data(E);
+
+		src = addr.VPN << 10;
+		dst = data.PPN << 10;
+
+		valid = (addr.V != 0) && (data.V != 0);
+		size = (data.SZ1 << 1) | data.SZ2;
+		pr = data.PR;
+	}
 
 	dprint( 1, y, C_BLACK, "%d", E);
 
@@ -215,7 +253,7 @@ void show_utlb(int row, int E)
 		dprint(12, y, C_BLACK, "%08X", src);
 		dprint(47, y, C_BLACK, "%08X", dst);
 		dprint(82, y, C_BLACK, "%s", size_str[size]);
-		dprint(98, y, C_BLACK, "%s", access_str[data.PR]);
+		dprint(98, y, C_BLACK, "%s", access_str[pr]);
 	}
 
 	dfont(old_font);
