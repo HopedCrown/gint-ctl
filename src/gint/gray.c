@@ -41,8 +41,7 @@ void gintctl_gint_gray(void)
 		grect(96, 32, 127, 47, C_DARK);
 
 		extern bopti_image_t img_opt_gint_gray;
-		gsubimage(0, 56, &img_opt_gint_gray, 0, 0, g35pe2?128:86, 8,
-			DIMAGE_NONE);
+		gimage(0, 56, &img_opt_gint_gray);
 
 		gupdate();
 		key = getkey().key;
@@ -72,6 +71,8 @@ void gintctl_gint_gray(void)
 			delays[0] = 609, delays[1] = 884;
 		else if(!g35pe2 && key == KEY_F4)
 			delays[0] = 937, delays[1] = 1333;
+		else if(!g35pe2 && key == KEY_F5)
+			delays[0] = 923, delays[1] = 1742;
 		else continue;
 
 		if(delays[sel] < 100) delays[sel] = 100;
