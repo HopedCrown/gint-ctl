@@ -24,19 +24,16 @@ struct printf_test {
 		uint64_t u64;
 	};
 	char const *argument_as_string;
-
-	char answer[32];
-	int passed;
 	char const *solution;
 };
 
-#define I32(i) TYPE_I32, { .i32 = i }, #i, "", 0
-#define U32(u) TYPE_U32, { .u32 = u }, #u, "", 0
-#define STR(s) TYPE_STR, { .str = s }, #s, "", 0
-#define PTR(p) TYPE_PTR, { .ptr = (void *)p }, #p, "", 0
-#define U64(u) TYPE_U64, { .u64 = u }, #u, "", 0
+#define I32(i) TYPE_I32, { .i32 = i }, #i
+#define U32(u) TYPE_U32, { .u32 = u }, #u
+#define STR(s) TYPE_STR, { .str = s }, #s
+#define PTR(p) TYPE_PTR, { .ptr = (void *)p }, #p
+#define U64(u) TYPE_U64, { .u64 = u }, #u
 
-static struct printf_test tests[] = {
+static struct printf_test const tests[] = {
 	/* Base cases with length and precision */
 	{ "%d",       I32(-849),              "-849"           },
 	{ "%7i",      I32(78372),             "  78372"        },
@@ -73,14 +70,15 @@ static struct printf_test tests[] = {
 	{ NULL }
 };
 
-static void run_tests(struct printf_test *tests)
+static void run_tests(struct printf_test const *tests, char answers[][16],
+	int *passed)
 {
 	for(int i = 0; tests[i].format; i++)
 	{
-		struct printf_test *t = &tests[i];
+		struct printf_test const *t = &tests[i];
 
 		#define run(TYPE, field) case TYPE:			\
-			snprintf(t->answer, 32, t->format, t->field);	\
+			snprintf(answers[i], 32, t->format, t->field);	\
 			break;
 
 		switch(t->type)
@@ -92,16 +90,17 @@ static void run_tests(struct printf_test *tests)
 		run(TYPE_U64, u64)
 		}
 
-		t->passed = !strcmp(t->answer, t->solution);
+		passed[i] = !strcmp(answers[i], t->solution);
 	}
 }
 
-static void draw(struct printf_test const *tests, int offset)
+static void draw(struct printf_test const *tests, char answers[][16],
+	int *passed, int offset)
 {
-	int passed=0, total=0;
+	int total_passed=0, total=0;
 	for(int i = 0; tests[i].format; i++)
 	{
-		passed += (tests[i].passed);
+		total_passed += passed[i];
 		total++;
 	}
 
@@ -122,12 +121,12 @@ static void draw(struct printf_test const *tests, int offset)
 		int y = (i+1) * 6;
 		dprint( 1, y, C_BLACK, "%d", offset+i+1);
 		dprint(13, y, C_BLACK, "%s", t->format);
-		dprint(43, y, C_BLACK, "%s", t->answer);
-		dprint(91, y, C_BLACK, "%s", t->passed?"Ok":"Err");
+		dprint(43, y, C_BLACK, "%s", answers[offset+i]);
+		dprint(91, y, C_BLACK, "%s", passed[offset+i]?"Ok":"Err");
 	}
 
 	dfont(old_font);
-	row_print(8, 1, "Passed %d of %d.", passed, total);
+	row_print(8, 1, "Passed %d of %d.", total_passed, total);
 	#endif
 
 	#ifdef FXCG50
@@ -145,11 +144,11 @@ static void draw(struct printf_test const *tests, int offset)
 		row_print(i+2,  5, "%s", t->format);
 		row_print(i+2, 13, "%s", t->argument_as_string);
 
-		int fg = t->passed ? C_RGB(0,31,0) : C_RGB(31,0,0);
-		row_print_color(i+2, 29, fg, C_NONE, "%s", t->solution);
+		int fg = passed[offset+i] ? C_RGB(0,31,0) : C_RGB(31,0,0);
+		row_print_color(i+2, 29, fg, C_NONE, "%s", answers[offset+i]);
 	}
 
-	row_print(14, 1, "Passed: %d/%d", passed, total);
+	row_print(14, 1, "Passed: %d/%d", total_passed, total);
 	#endif
 
 	if(offset > 0) triangle_up(_(7,38));
@@ -165,11 +164,14 @@ void gintctl_libs_printf(void)
 	int key=0, total=0, offset=0;
 	for(int i = 0; tests[i].format; i++) total++;
 
-	run_tests(tests);
+	int test_count = sizeof tests / sizeof tests[0];
+	char answers[test_count][16];
+	int passed[test_count];
+	run_tests(tests, answers, passed);
 
 	while(key != KEY_EXIT)
 	{
-		draw(tests, offset);
+		draw(tests, answers, passed, offset);
 		key = (ev = getkey()).key;
 
 		if(key == KEY_UP && offset > 0) offset--;

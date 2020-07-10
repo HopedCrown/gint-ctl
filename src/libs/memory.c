@@ -22,13 +22,13 @@
 #include <gintctl/util.h>
 
 /* Source buffer, used as a data source when copying */
-GALIGNED(4) static uint8_t src[256];
+GALIGNED(4) static uint8_t *src;
 /* Destination buffer, used as destination when copying or clearing */
-GALIGNED(4) static uint8_t dst[256];
+GALIGNED(4) static uint8_t *dst;
 /* System buffer, used to reproduce the behavior on the system and compare */
-GALIGNED(4) static uint8_t sys[256];
+GALIGNED(4) static uint8_t *sys;
 /* Temporary buffer, used by the naive memmove() */
-GALIGNED(4) static uint8_t tmp[256];
+GALIGNED(4) static uint8_t *tmp;
 
 /* Fill buffer with non-zero and position-sensitive data */
 static void fill(uint8_t *buf, int start)
@@ -218,6 +218,16 @@ void test(int (*func)(int off_dst, int off_src, size_t len), uint8_t *results)
 /* gintctl_libs_memory(): Core memory functions */
 void gintctl_libs_memory(void)
 {
+	uint8_t buf_src[256];
+	uint8_t buf_dst[256];
+	uint8_t buf_sys[256];
+	uint8_t buf_tmp[256];
+
+	src = buf_src;
+	dst = buf_dst;
+	sys = buf_sys;
+	tmp = buf_tmp;
+
 	GUNUSED int key = 0, tab = 0;
 
 	uint8_t results[4][256];
