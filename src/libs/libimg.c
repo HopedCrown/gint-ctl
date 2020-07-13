@@ -15,18 +15,18 @@ static void render(void)
 void gintctl_libs_libimg(void)
 {
 	int key = 0;
-	gray_start();
+	dgray(DGRAY_ON);
 
 	while(key != KEY_EXIT)
 	{
-		gclear(C_WHITE);
+		dclear(C_WHITE);
 		render();
-		gupdate();
+		dupdate();
 
 		key = getkey().key;
 	}
 
-	gray_stop();
+	dgray(DGRAY_OFF);
 }
 #endif
 

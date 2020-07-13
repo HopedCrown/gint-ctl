@@ -101,7 +101,7 @@ static int naive_memcmp(void const *_s1, void const *_s2, size_t len)
 //	Testing functions
 //---
 
-int test_memcpy(int off_dst, int off_src, size_t len)
+static int test_memcpy(int off_dst, int off_src, size_t len)
 {
 	clear(dst);
 	clear(sys);
@@ -112,7 +112,7 @@ int test_memcpy(int off_dst, int off_src, size_t len)
 	return cmp(dst, sys);
 }
 
-int test_memset(int off_dst, GUNUSED int off_src, size_t len)
+static int test_memset(int off_dst, GUNUSED int off_src, size_t len)
 {
 	fill(dst, 0);
 	fill(sys, 0);
@@ -123,7 +123,7 @@ int test_memset(int off_dst, GUNUSED int off_src, size_t len)
 	return cmp(dst, sys);
 }
 
-int test_memmove(int off_dst, int off_src, size_t len)
+static int test_memmove(int off_dst, int off_src, size_t len)
 {
 	fill(dst, 0);
 	fill(sys, 0);
@@ -134,7 +134,7 @@ int test_memmove(int off_dst, int off_src, size_t len)
 	return cmp(dst, sys);
 }
 
-int test_memcmp(int off_dst, int off_src, size_t len)
+static int test_memcmp(int off_dst, int off_src, size_t len)
 {
 	/* Create data that matches at the provided offsets */
 	fill(dst, -off_dst);
@@ -161,7 +161,7 @@ int test_memcmp(int off_dst, int off_src, size_t len)
 //---
 
 /* exc(): Wrapper that accounts for exceptions */
-int exc(int (*func)(int of_dst, int off_src, size_t len), int off_dst,
+static int exc(int (*func)(int of_dst, int off_src, size_t len), int off_dst,
 	int off_src, size_t len)
 {
 	exception = 0;
@@ -183,7 +183,8 @@ int exc(int (*func)(int of_dst, int off_src, size_t len), int off_dst,
    @func   Function to test, will be called with various sizes and alignments
    @count  If non-null, set to number of tests performed
    Returns the number of failed tests; thus, non-zero indicates failure. */
-void test(int (*func)(int off_dst, int off_src, size_t len), uint8_t *results)
+static void test(int (*func)(int off_dst, int off_src, size_t len),
+	uint8_t *results)
 {
 	int current_test = 0;
 
