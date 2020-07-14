@@ -32,6 +32,9 @@ void gintctl_gint_timer_callbacks(void);
 /* gintctl_gint_bopti(): Test image rendering */
 void gintctl_gint_bopti(void);
 
+/* gintctl_gint_topti(): Test text rendering */
+void gintctl_gint_topti(void);
+
 #ifdef FXCG50
 
 /* gintctl_gint_dma(): Test the Direct Access Memory Controller */

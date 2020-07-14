@@ -6,6 +6,7 @@
 #define GINTCTL_UTIL
 
 #include <stdarg.h>
+#include <stdint.h>
 
 //---
 //	Platform disambiguation functions
@@ -67,5 +68,13 @@ void fkey_button(int position, char const *text);
 void fkey_menu(int position, char const *text);
 
 #endif /* FXCG50 */
+
+//---
+//	Screenshot saving
+//---
+
+/* screen_mono(): Take a screenshot of the mono VRAM
+   @path  File path (will be overwritten) */
+void screen_mono(uint16_t const *filepath);
 
 #endif /* GINTCTL_UTIL */

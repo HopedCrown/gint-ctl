@@ -48,7 +48,7 @@ struct menu menu_gint = {
 	#endif
 	{ "Real-time clock",  NULL },
 	{ "Image rendering",  gintctl_gint_bopti },
-	{ "Text rendering",   NULL },
+	{ "Text rendering",   gintctl_gint_topti },
 	#ifdef FX9860G
 	{ "Gray engine",      gintctl_gint_gray },
 	{ "Gray rendering",   gintctl_gint_grayrender },
@@ -125,6 +125,12 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 
 	/* Start the profiling library */
 	prof_init(PROFCTX_COUNT);
+
+	#ifdef FX9860G
+	/* Use the Unicode font uf5x7 on fx-9860G */
+	extern font_t font_uf5x7;
+	dfont(&font_uf5x7);
+	#endif
 
 	int key = 0;
 	struct menu *menu = NULL;
