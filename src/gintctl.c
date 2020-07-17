@@ -46,7 +46,7 @@ struct menu menu_gint = {
 	#ifdef FXCG50
 	{ "DMA Control",      gintctl_gint_dma },
 	#endif
-	{ "Real-time clock",  NULL },
+	{ "Real-time clock",  gintctl_gint_rtc },
 	{ "Image rendering",  gintctl_gint_bopti },
 	{ "Text rendering",   gintctl_gint_topti },
 	#ifdef FX9860G

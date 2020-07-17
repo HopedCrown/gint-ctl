@@ -29,6 +29,9 @@ void gintctl_gint_timer(void);
 /* gintctl_gint_timer_callbacks(): Stunts in the environment of callbacks */
 void gintctl_gint_timer_callbacks(void);
 
+/* gintctl_gint_rtc(): Configure RTC and check timer speed */
+void gintctl_gint_rtc(void);
+
 /* gintctl_gint_bopti(): Test image rendering */
 void gintctl_gint_bopti(void);
 
