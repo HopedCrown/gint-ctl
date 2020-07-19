@@ -61,6 +61,7 @@ struct menu menu_perf = {
 	_("Performance", "Performance benchmarks"), .entries = {
 
 	{ "libprof basics",      gintctl_perf_libprof },
+	{ "Interrupt stress",    gintctl_perf_interrupts },
 	{ "Rendering functions", gintctl_perf_render },
 
 	/* TODO: Comparison with MonochromeLib */

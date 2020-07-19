@@ -12,6 +12,7 @@ enum {
 	PROFCTX_BASICS = 0,
 	PROFCTX_EMPTY,
 	PROFCTX_RENDER,
+	PROFCTX_INTSTRESS,
 
 	/* Last element and bound checker */
 	PROFCTX_COUNT,
