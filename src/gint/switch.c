@@ -84,6 +84,24 @@ static void ctx_etmu(int start)
 		show_etmu(2*i+1, i+start, t);
 	}
 }
+static void ctx_intc()
+{
+	uint16_t *IPR = driver_ctx("INTC");
+
+	if(isSH3())
+	{
+		row_print(1,1, "A:%04x B:%04x C:%04x", IPR[0], IPR[1], IPR[2]);
+		row_print(2,1, "D:%04x E:%04x F:%04x", IPR[3], IPR[4], IPR[5]);
+		row_print(3,1, "G:%04x H:%04x",        IPR[6], IPR[7]);
+	}
+	else
+	{
+		row_print(1,1, "A:%04x B:%04x C:%04x", IPR[0], IPR[1], IPR[2]);
+		row_print(2,1, "D:%04x E:%04x F:%04x", IPR[3], IPR[4], IPR[5]);
+		row_print(3,1, "G:%04x H:%04x I:%04x", IPR[6], IPR[7], IPR[8]);
+		row_print(4,1, "J:%04x K:%04x L:%04x", IPR[9],IPR[10],IPR[11]);
+	}
+}
 #endif /* FX9860G */
 
 #ifdef FXCG50
@@ -177,6 +195,7 @@ static void system_contexts(void)
 		#ifdef FX9860G
 		if(tab == 3) ctx_etmu(0);
 		if(tab == 4) ctx_etmu(3);
+		if(tab == 5) ctx_intc();
 		#endif
 
 		#ifdef FXCG50
@@ -190,6 +209,7 @@ static void system_contexts(void)
 		if(key == KEY_F2) tab = 1;
 		if(key == KEY_F3) tab = 2;
 		if(key == KEY_F4) tab = 3;
+		if(key == KEY_F6) tab = 5;
 
 		#ifdef FX9860G
 		if(key == KEY_F5 && isSH3()) tab = 4;

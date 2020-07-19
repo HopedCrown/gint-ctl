@@ -1,4 +1,5 @@
 #include <gint/mpu/intc.h>
+#include <gint/mpu/rtc.h>
 #include <gint/hardware.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
@@ -7,25 +8,38 @@
 
 void gintctl_regs(void)
 {
-	if(isSH3()) return;
-
-	#ifdef FX9860G
-	#warning gintctl_regs not implemented on SH3
-	#endif
-
-	#define IPR(X) SH7305_INTC._->IPR##X.word
-	#define IMR(X) SH7305_INTC.MSK->IMR##X
-
 	dclear(C_WHITE);
 	row_title("Register browser");
 
-	row_print(2, 1, "A:%04x B:%04x C:%04x", IPR(A), IPR(B), IPR(C));
-	row_print(3, 1, "D:%04x E:%04x F:%04x", IPR(D), IPR(E), IPR(F));
-	row_print(4, 1, "G:%04x H:%04x I:%04x", IPR(G), IPR(H), IPR(I));
-	row_print(5, 1, "J:%04x K:%04x L:%04x", IPR(J), IPR(K), IPR(L));
+	if(isSH3())
+	{
+		#define IPR(X) (*SH7705_INTC._.IPR##X).word
+		row_print(2,1, "A:%04x B:%04x C:%04x", IPR(A), IPR(B), IPR(C));
+		row_print(3,1, "D:%04x E:%04x F:%04x", IPR(D), IPR(E), IPR(F));
+		row_print(4,1, "G:%04x H:%04x",        IPR(G), IPR(H));
+
+		row_print(6, 1, "RCR1:%02x RCR2:%02x",
+			SH7705_RTC.RCR1.byte,
+			SH7705_RTC.RCR2.byte
+		);
+		#undef IPR
+	}
+	else
+	{
+		#define IPR(X) SH7305_INTC._->IPR##X.word
+		row_print(2,1, "A:%04x B:%04x C:%04x", IPR(A), IPR(B), IPR(C));
+		row_print(3,1, "D:%04x E:%04x F:%04x", IPR(D), IPR(E), IPR(F));
+		row_print(4,1, "G:%04x H:%04x I:%04x", IPR(G), IPR(H), IPR(I));
+		row_print(5,1, "J:%04x K:%04x L:%04x", IPR(J), IPR(K), IPR(L));
+		#undef IPR
+	}
 
 	dupdate();
 	getkey();
+
+	if(isSH3()) return;
+
+	#define IMR(X) SH7305_INTC.MSK->IMR##X
 
 	dclear(C_WHITE);
 	row_title("Register browser");
