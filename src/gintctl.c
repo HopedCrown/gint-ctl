@@ -116,6 +116,28 @@ void gintctl_main(void)
 	#endif /* FXCG50 */
 }
 
+static void draw(struct menu *menu)
+{
+	dclear(C_WHITE);
+
+	if(menu) menu_show(menu);
+	else gintctl_main();
+
+	#ifdef FX9860G
+	extern bopti_image_t img_opt_main;
+	dimage(0, 56, &img_opt_main);
+	#endif
+
+	#ifdef FXCG50
+	fkey_action(1, "INFO");
+	fkey_menu(2, "GINT");
+	fkey_menu(3, "PERF");
+	fkey_menu(4, "LIBS");
+	fkey_button(5, "REGS");
+	fkey_button(6, "MEMORY");
+	#endif
+}
+
 int main(GUNUSED int isappli, GUNUSED int optnum)
 {
 	/* Initialize menu metadata */
@@ -123,6 +145,10 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	menu_init(&menu_gint, top, bottom);
 	menu_init(&menu_perf, top, bottom);
 	menu_init(&menu_libs, top, bottom);
+
+	#ifdef FX9860G
+	gint_setrestart(1);
+	#endif
 
 	/* Start the profiling library */
 	prof_init(PROFCTX_COUNT);
@@ -138,25 +164,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 
 	while(key != KEY_EXIT)
 	{
-		dclear(C_WHITE);
-
-		if(menu) menu_show(menu);
-		else gintctl_main();
-
-		#ifdef FX9860G
-		extern bopti_image_t img_opt_main;
-		dimage(0, 56, &img_opt_main);
-		#endif
-
-		#ifdef FXCG50
-		fkey_action(1, "INFO");
-		fkey_menu(2, "GINT");
-		fkey_menu(3, "PERF");
-		fkey_menu(4, "LIBS");
-		fkey_button(5, "REGS");
-		fkey_button(6, "MEMORY");
-		#endif
-
+		draw(menu);
 		dupdate();
 		key = getkey().key;
 
@@ -180,6 +188,10 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		if(key == KEY_EXE)
 			menu_exec(menu);
 	}
+
+	/* Prepare a main menu frame to maintain the illusion when coming
+	   back after a restart */
+	draw(NULL);
 
 	prof_quit();
 	return 0;
