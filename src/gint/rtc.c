@@ -8,6 +8,9 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+#include <gintctl/prof-contexts.h>
+
+#include <libprof.h>
 
 //---
 //	Date and time display
@@ -184,7 +187,7 @@ static void draw_rtc(rtc_time_t *time)
 //	Speed comparison of RTC and timers
 //---
 
-static void draw_speed(rtc_time_t *time)
+static void draw_speed(rtc_time_t *time, uint32_t elapsed)
 {
 	dclear(C_WHITE);
 
@@ -192,18 +195,51 @@ static void draw_speed(rtc_time_t *time)
 	extern bopti_image_t img_opt_gint_rtc;
 	row_print(1, 1, "Speed of RTC vs TMU");
 	dsubimage(0, 56, &img_opt_gint_rtc, 0, 9, 128, 8, DIMAGE_NONE);
+
+	row_print(3, 1, "RTC time: 1/16 s");
+	row_print(4, 1, "TMU time: %d us", elapsed);
 	#endif
 
 	#ifdef FXCG50
 	row_title("Speed comparison of RTC and timers");
 	fkey_menu(1, "RTC");
 	fkey_menu(2, "TIMER");
+
+	row_print(1, 1, "Run the RTC for 1/16 second.");
+	row_print(2, 1, "Time elapsed seen by libprof: %d us", elapsed);
 	#endif
 
 	dprint_opt(DWIDTH-2, DHEIGHT-1, C_BLACK, C_NONE, DTEXT_RIGHT,
 		DTEXT_BOTTOM, "%s %d, %02d:%02d", months[time->month],
 		time->month_day, time->hours, time->minutes);
 	dupdate();
+}
+
+static int speed_callback(int volatile *flag)
+{
+	if(*flag == 0)
+	{
+		prof_enter(PROFCTX_RTCTMU);
+		*flag = 1;
+		return TIMER_CONTINUE;
+	}
+	else
+	{
+		prof_leave(PROFCTX_RTCTMU);
+		*flag = 2;
+		return TIMER_STOP;
+	}
+}
+
+static uint32_t test_speed(void)
+{
+	int volatile flag = 0;
+	prof_clear(PROFCTX_RTCTMU);
+
+	rtc_start_timer(RTC_16Hz, speed_callback, &flag);
+
+	while(flag != 2) sleep();
+	return prof_time(PROFCTX_RTCTMU);
 }
 
 //---
@@ -528,6 +564,8 @@ void gintctl_gint_rtc(void)
 	int run_loop = 1;
 	int tab = 1;
 
+	uint32_t elapsed = test_speed();
+
 	rtc_start_timer(RTC_1Hz, rtc_timer_callback);
 
 	while(run_loop)
@@ -542,7 +580,7 @@ void gintctl_gint_rtc(void)
 		}
 		else if(!frame_done && tab == 2)
 		{
-			draw_speed(&time);
+			draw_speed(&time, elapsed);
 			frame_done = 1;
 		}
 

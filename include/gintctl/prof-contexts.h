@@ -13,6 +13,7 @@ enum {
 	PROFCTX_EMPTY,
 	PROFCTX_RENDER,
 	PROFCTX_INTSTRESS,
+	PROFCTX_RTCTMU,
 
 	/* Last element and bound checker */
 	PROFCTX_COUNT,
