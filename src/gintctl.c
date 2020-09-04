@@ -2,7 +2,6 @@
 
 #include <gint/display.h>
 #include <gint/keyboard.h>
-#include <gint/syscalls.h>
 #include <gint/gint.h>
 #include <gint/hardware.h>
 
