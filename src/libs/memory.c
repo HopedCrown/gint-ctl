@@ -50,7 +50,7 @@ static int cmp(uint8_t *lft, uint8_t *rgt)
 /* Code of exception that occurs during a memory access */
 static uint32_t exception = 0;
 /* Exception-catching function */
-GMAPPED static int catch_exc(uint32_t code)
+static int catch_exc(uint32_t code)
 {
 	if(code == 0x100 || code == 0x0e0)
 	{
