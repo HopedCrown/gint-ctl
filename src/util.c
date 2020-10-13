@@ -125,6 +125,15 @@ int row_count(void)
 	return ROW_COUNT;
 }
 
+int row_x(int x)
+{
+	return ROW_X + ROW_W * (x - 1);
+}
+int row_y(int y)
+{
+	return ROW_Y + ROW_H * (y - 1) + ROW_YPAD;
+}
+
 //---
 //	Other drawing utilities
 //---

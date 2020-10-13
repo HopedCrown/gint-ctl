@@ -45,6 +45,10 @@ void scrollbar(int offset, int length, int top, int bottom);
 /* row_count(): Number of rows available to row_print() */
 int row_count(void);
 
+/* row_x() row_y(): Coordinates for row_print() */
+int row_x(int x);
+int row_y(int y);
+
 //---
 //	General (x,y) printing
 //---
