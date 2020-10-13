@@ -219,6 +219,11 @@ static void test(int (*func)(int off_dst, int off_src, size_t len),
 /* gintctl_libs_memory(): Core memory functions */
 void gintctl_libs_memory(void)
 {
+	dclear(C_WHITE);
+	dtext_opt(DWIDTH / 2, DHEIGHT / 2, C_BLACK, C_NONE, DTEXT_CENTER,
+		DTEXT_MIDDLE, "Testing...");
+	dupdate();
+
 	uint8_t buf_src[256];
 	uint8_t buf_dst[256];
 	uint8_t buf_sys[256];
