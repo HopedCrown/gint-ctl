@@ -50,9 +50,23 @@ int line(uint8_t *mem, char *header, char *bytes, char *ascii, int n)
 		return 1;
 	}
 
+	/* Read single bytes when possible, but longwords when in SPU memory */
 	for(int k = 0; k < n; k++)
 	{
-		int c = mem[k];
+		uint32_t addr = mem;
+		int c = 0x11;
+
+		/* XRAM, YRAM, PRAM */
+		if((addr & 0xffc00000) == 0xfe000000)
+		{
+			uint32_t l = *(uint32_t *)(addr & ~3);
+			c = (l << (addr & 3) * 8) >> 24;
+		}
+		else
+		{
+			c = mem[k];
+		}
+
 		ascii[k] = (c >= 0x20 && c < 0x7f) ? c : '.';
 	}
 	ascii[n] = 0;
