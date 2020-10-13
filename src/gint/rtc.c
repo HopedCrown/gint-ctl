@@ -8,7 +8,6 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
-#include <gintctl/prof-contexts.h>
 
 #include <libprof.h>
 
@@ -215,17 +214,19 @@ static void draw_speed(rtc_time_t *time, uint32_t elapsed)
 	dupdate();
 }
 
+static prof_t prof;
+
 static int speed_callback(int volatile *flag)
 {
 	if(*flag == 0)
 	{
-		prof_enter(PROFCTX_RTCTMU);
+		prof_enter(prof);
 		*flag = 1;
 		return TIMER_CONTINUE;
 	}
 	else
 	{
-		prof_leave(PROFCTX_RTCTMU);
+		prof_leave(prof);
 		*flag = 2;
 		return TIMER_STOP;
 	}
@@ -234,12 +235,12 @@ static int speed_callback(int volatile *flag)
 static uint32_t test_speed(void)
 {
 	int volatile flag = 0;
-	prof_clear(PROFCTX_RTCTMU);
+	prof = prof_make();
 
 	rtc_start_timer(RTC_16Hz, speed_callback, &flag);
 
 	while(flag != 2) sleep();
-	return prof_time(PROFCTX_RTCTMU);
+	return prof_time(prof);
 }
 
 //---

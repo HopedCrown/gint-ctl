@@ -3,7 +3,6 @@
 #include <gint/std/stdio.h>
 
 #include <gintctl/util.h>
-#include <gintctl/prof-contexts.h>
 #include <gintctl/perf.h>
 
 #include <libprof.h>
@@ -15,34 +14,26 @@ struct elapsed {
 	uint32_t fs_r5g6b5;
 };
 
-#define test(out, command) {			\
-	prof_clear(PROFCTX_RENDER);		\
-	prof_enter(PROFCTX_RENDER);		\
-	command;				\
-	prof_leave(PROFCTX_RENDER);		\
-	out = prof_time(PROFCTX_RENDER);	\
-}
-
 static void run_test(struct elapsed *time)
 {
-	test(time->clear,
-		dclear(C_WHITE)
-	);
-	test(time->rect1,
-		drect(0, 0, 31, 31, C_WHITE)
-	);
-	test(time->rect2,
-		drect(1, 1, 32, 32, C_WHITE)
-	);
-	test(time->rect3,
-		drect(0, 0, _(127,395), _(63,223), C_WHITE)
-	);
+	time->clear = prof_exec({
+		dclear(C_WHITE);
+	});
+	time->rect1 = prof_exec({
+		drect(0, 0, 31, 31, C_WHITE);
+	});
+	time->rect2 = prof_exec({
+		drect(1, 1, 32, 32, C_WHITE);
+	});
+	time->rect3 = prof_exec({
+		drect(0, 0, _(127,395), _(63,223), C_WHITE);
+	});
 
 	#ifdef FXCG50
 	extern bopti_image_t img_swift;
-	test(time->fs_r5g6b5,
-		dimage(0, 0, &img_swift)
-	);
+	time->fs_r5g6b5 = prof_exec({
+		dimage(0, 0, &img_swift);
+	});
 	#endif
 }
 
@@ -112,9 +103,9 @@ void gintctl_perf_render(void)
 		/* Make the test here as we don't want to re-update the screen.
 		   Because of triple buffering this would display an old
 		   frame such as the application's main menu. */
-		test(time.update,
-			dupdate()
-		);
+		time.update = prof_exec({
+			dupdate();
+		});
 		key = getkey().key;
 
 		if(key == KEY_F1) run_test(&time), test = 1;

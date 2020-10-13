@@ -7,7 +7,6 @@
 
 #include <gintctl/util.h>
 #include <gintctl/menu.h>
-#include <gintctl/prof-contexts.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
@@ -150,7 +149,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	#endif
 
 	/* Start the profiling library */
-	prof_init(PROFCTX_COUNT);
+	prof_init();
 
 	#ifdef FX9860G
 	/* Use the Unicode font uf5x7 on fx-9860G */

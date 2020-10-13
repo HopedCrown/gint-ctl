@@ -4,7 +4,6 @@
 
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
-#include <gintctl/prof-contexts.h>
 
 #include <libprof.h>
 
@@ -21,20 +20,12 @@ uint32_t stress_interrupts(void)
 {
 	int counter = 0;
 	int timer = timer_setup(TIMER_ANY, 1, stress_callback, &counter);
+	if(timer < 0) return 0;
 
-	if(timer >= 0)
-	{
-		prof_clear(PROFCTX_INTSTRESS);
-		prof_enter(PROFCTX_INTSTRESS);
-
+	return prof_exec({
 		timer_start(timer);
 		timer_wait(timer);
-
-		prof_leave(PROFCTX_INTSTRESS);
-		return prof_time(PROFCTX_INTSTRESS);
-	}
-
-	return 0;
+	});
 }
 
 /* gintctl_perf_interrupts(): Interrupt handling */

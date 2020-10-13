@@ -3,7 +3,6 @@
 #include <gint/timer.h>
 
 #include <gintctl/util.h>
-#include <gintctl/prof-contexts.h>
 #include <gintctl/perf.h>
 
 #include <libprof.h>
@@ -11,32 +10,21 @@
 /* Waits some time and returns the libprof output in microseconds */
 static uint32_t run_sleep(int us)
 {
-	int ctx = PROFCTX_BASICS;
-	prof_clear(ctx);
-	prof_enter(ctx);
-
 	/* We can't use sleep_us() as we want a TMU */
 	volatile int flag = 0;
 	int timer = timer_setup(TIMER_TMU, us, timer_timeout, &flag);
-	if(timer >= 0)
-	{
+	if(timer < 0) return 0;
+
+	return prof_exec({
 		timer_start(timer);
 		timer_wait(timer);
-	}
-
-	prof_leave(ctx);
-	return prof_time(ctx);
+	});
 }
 
 /* Measure overhead of an empty context */
 static uint32_t run_empty(void)
 {
-	int ctx = PROFCTX_EMPTY;
-	prof_clear(ctx);
-	prof_enter(ctx);
-
-	prof_leave(ctx);
-	return prof_time(ctx);
+	return prof_exec();
 }
 
 /* gintctl_perf_libprof(): Test the libprof implementation */
