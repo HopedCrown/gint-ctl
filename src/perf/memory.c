@@ -1,0 +1,233 @@
+#include <gint/display.h>
+#include <gint/keyboard.h>
+#include <gint/hardware.h>
+#include <gint/dma.h>
+#include <gint/std/string.h>
+
+#include <gintctl/perf.h>
+#include <gintctl/util.h>
+
+#include <libprof.h>
+
+extern void memory_read(volatile uint8_t *area, uint32_t size);
+extern void memory_write(volatile uint8_t *area, uint32_t size);
+extern void memory_dsp_xram_memset(volatile uint8_t *area, uint32_t size);
+extern void memory_dsp_yram_memset(volatile uint8_t *area, uint32_t size);
+extern void memory_dsp_xyram_memcpy(volatile uint8_t *dst,
+	volatile uint8_t *src, uint32_t size);
+
+GILRAM GALIGNED(32) static char ilram_buffer[0x800];
+GXRAM  GALIGNED(32) static char xram_buffer[0x2000];
+GYRAM  GALIGNED(32) static char yram_buffer[0x2000];
+
+struct results
+{
+	void *address;
+	uint32_t size;
+
+	/* In microseconds for the whole area */
+	uint32_t read_C_u8_time;
+	uint32_t write_C_u8_time;
+	uint32_t read_u8_time;
+	uint32_t write_u8_time;
+	uint32_t memcpy_time;
+	uint32_t memset_time;
+	uint32_t dma_memcpy_time;
+	uint32_t dma_memset_time;
+	uint32_t dsp_xram_memset_time;
+	uint32_t dsp_yram_memset_time;
+	uint32_t dsp_xyram_memcpy_time;
+
+	/* In kbytes/second */
+	uint32_t read_C_u8_speed;
+	uint32_t write_C_u8_speed;
+	uint32_t read_u8_speed;
+	uint32_t write_u8_speed;
+	uint32_t memcpy_speed;
+	uint32_t memset_speed;
+	uint32_t dma_memcpy_speed;
+	uint32_t dma_memset_speed;
+	uint32_t dsp_xram_memset_speed;
+	uint32_t dsp_yram_memset_speed;
+	uint32_t dsp_xyram_memcpy_speed;
+};
+
+static void test(struct results *r, void *address, uint32_t size)
+{
+	volatile uint8_t *area = address;
+	volatile uint8_t x;
+
+	r->address = address;
+	r->size = size;
+
+	/* Defaults for conditional tests */
+	r->dsp_xram_memset_time = 1;
+	r->dsp_yram_memset_time = 1;
+	r->dsp_xyram_memcpy_time = 1;
+
+	r->read_C_u8_time = prof_exec({
+		for(uint index = 0; index < size; index++) x = area[index];
+	});
+
+	r->write_C_u8_time = prof_exec({
+		for(uint index = 0; index < size; index++) area[index] = x;
+	});
+
+	r->read_u8_time = prof_exec({
+		memory_read(area, size);
+	});
+
+	r->write_u8_time = prof_exec({
+		memory_write(area, size);
+	});
+
+	r->memset_time = prof_exec({
+		memset(address, 0, size);
+	});
+
+	r->memcpy_time = 2 * prof_exec({
+		memcpy(address + size / 2, address, size / 2);
+	});
+
+	r->dma_memset_time = prof_exec({
+		#ifdef FXCG50
+		dma_memset(address, 0, size);
+		#endif
+	});
+
+	r->dma_memcpy_time = 2 * prof_exec({
+		#ifdef FXCG50
+		dma_memcpy(address + size / 2, address, size / 2);
+		#endif
+	});
+
+	if(address == &xram_buffer)
+	{
+		r->dsp_xram_memset_time = prof_exec({
+			memory_dsp_xram_memset(address, size);
+		});
+	}
+	if(address == &yram_buffer)
+	{
+		r->dsp_yram_memset_time = prof_exec({
+			memory_dsp_yram_memset(address, size);
+		});
+	}
+	if(address == &xram_buffer)
+	{
+		r->dsp_xyram_memcpy_time = prof_exec({
+			memory_dsp_xyram_memcpy((void *)yram_buffer,
+				(void *)xram_buffer, size);
+		});
+	}
+	if(address == &yram_buffer)
+	{
+		r->dsp_xyram_memcpy_time = prof_exec({
+			memory_dsp_xyram_memcpy((void *)xram_buffer,
+				(void *)yram_buffer, size);
+		});
+	}
+
+	/* Convert from us/(size bytes) to kb/(1 second) */
+	uint32_t factor = size * 1000;
+	r->read_C_u8_speed        = factor / r->read_C_u8_time;
+	r->write_C_u8_speed       = factor / r->write_C_u8_time;
+	r->read_u8_speed          = factor / r->read_u8_time;
+	r->write_u8_speed         = factor / r->write_u8_time;
+	r->memcpy_speed           = factor / r->memcpy_time;
+	r->memset_speed           = factor / r->memset_time;
+	r->dma_memcpy_speed       = factor / r->dma_memcpy_time;
+	r->dma_memset_speed       = factor / r->dma_memset_time;
+	r->dsp_xram_memset_speed  = factor / r->dsp_xram_memset_time;
+	r->dsp_yram_memset_speed  = factor / r->dsp_yram_memset_time;
+	r->dsp_xyram_memcpy_speed = factor / r->dsp_xyram_memcpy_time;
+}
+
+static void results_line(int row, uint32_t time, uint32_t speed)
+{
+	dprint_opt(260, row_y(row), C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
+		"%d us", time);
+	dprint_opt(370, row_y(row), C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
+		"%3.3j MB/s", speed);
+}
+
+/* gintctl_perf_memory(): Memory primitives and reading/writing speed */
+void gintctl_perf_memory(void)
+{
+	/* TODO: Memory performance on SH3 */
+	if(isSH3()) return;
+
+	int key = 0;
+	struct results r = { 0 };
+
+	while(key != KEY_EXIT)
+	{
+		dclear(C_WHITE);
+		row_title("Memory access speed");
+
+		#ifdef FXCG50
+		row_print( 3, 1, "Naive C-loop u8 read:");
+		row_print( 4, 1, "Naive C-loop u8 write:");
+		row_print( 5, 1, "Rolled asm u8 read:");
+		row_print( 6, 1, "Rolled asm u8 write:");
+		row_print( 7, 1, "gint's memcpy():");
+		row_print( 8, 1, "gint's memset():");
+		row_print( 9, 1, "gint's dma_memcpy():");
+		row_print(10, 1, "gint's dma_memset():");
+
+		if(r.address == &xram_buffer)
+			row_print(11, 1, "DSP XRAM memset():");
+		if(r.address == &yram_buffer)
+			row_print(11, 1, "DSP YRAM memset():");
+		if(r.address == &xram_buffer || r.address == &yram_buffer)
+			row_print(12, 1, "DSP XRAM->YRAM memcpy():");
+
+		if(!r.address)
+		{
+			row_print(1, 1, "No test yet");
+		}
+		else
+		{
+			row_print(1, 1, "Results for area %08x (%d bytes)",
+				(uint32_t)r.address, r.size);
+			results_line(3, r.read_C_u8_time,  r.read_C_u8_speed);
+			results_line(4, r.write_C_u8_time, r.write_C_u8_speed);
+			results_line(5, r.read_u8_time,    r.read_u8_speed);
+			results_line(6, r.write_u8_time,   r.write_u8_speed);
+			results_line(7, r.memcpy_time,     r.memcpy_speed);
+			results_line(8, r.memset_time,     r.memset_speed);
+			results_line(9, r.dma_memcpy_time, r.dma_memcpy_speed);
+			results_line(10,r.dma_memset_time, r.dma_memset_speed);
+
+			if(r.address == &xram_buffer)
+			{
+				results_line(11, r.dsp_xram_memset_time,
+					r.dsp_xram_memset_speed);
+			}
+			if(r.address == &yram_buffer)
+			{
+				results_line(11, r.dsp_yram_memset_time,
+					r.dsp_yram_memset_speed);
+			}
+			if(r.address==&xram_buffer || r.address==&yram_buffer)
+			{
+				results_line(12, r.dsp_xyram_memcpy_time,
+					r.dsp_xyram_memcpy_speed);
+			}
+		}
+
+		fkey_button(1, "RAM");
+		fkey_button(2, "ILRAM");
+		fkey_button(3, "XRAM");
+		fkey_button(4, "YRAM");
+		#endif
+
+		dupdate();
+		key = getkey().key;
+
+		if(key == KEY_F1) test(&r, gint_vram, _(0x400,0x8000));
+		if(key == KEY_F2) test(&r, &ilram_buffer, 0x800);
+		if(key == KEY_F3) test(&r, &xram_buffer, 0x2000);
+		if(key == KEY_F4) test(&r, &yram_buffer, 0x2000);
+	}
+}

@@ -14,6 +14,9 @@ void gintctl_perf_cpucache(void);
 /* gintctl_perf_interrupts(): Interrupt handling */
 void gintctl_perf_interrupts(void);
 
+/* gintctl_perf_memory(): Memory primitives and reading/writing speed */
+void gintctl_perf_memory(void);
+
 /* gintctl_perf_render(): Profile the display primitives */
 void gintctl_perf_render(void);
 

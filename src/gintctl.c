@@ -45,7 +45,7 @@ struct menu menu_gint = {
 	{ "Timers",           gintctl_gint_timer },
 	{ "Timer callbacks",  gintctl_gint_timer_callbacks },
 	#ifdef FXCG50
-	{ "DMA Control",      gintctl_gint_dma },
+	{ "DMA control",      gintctl_gint_dma },
 	#endif
 	{ "Real-time clock",  gintctl_gint_rtc },
 	{ "Image rendering",  gintctl_gint_bopti },
@@ -64,10 +64,12 @@ struct menu menu_perf = {
 	{ "libprof basics",      gintctl_perf_libprof },
 	{ "CPU and cache",       gintctl_perf_cpucache },
 	{ "Interrupt stress",    gintctl_perf_interrupts },
+	#ifdef FXCG50
+	{ "Memory access speed", gintctl_perf_memory },
+	#endif
 	{ "Rendering functions", gintctl_perf_render },
 
 	/* TODO: Comparison with MonochromeLib */
-	/* TODO: memcpy() and the like */
 
 	{ NULL, NULL },
 }};
