@@ -35,6 +35,9 @@ struct menu menu_gint = {
 
 	{ "Hardware",         gintctl_gint_hardware },
 	{ "RAM discovery",    gintctl_gint_ram },
+	#ifdef FXCG50
+	{ "DSP processors",   gintctl_gint_dsp },
+	#endif
 	{ "Memory dump",      gintctl_gint_dump },
 	{ "Switching to OS",  gintctl_gint_switch },
 	{ "TLB management",   gintctl_gint_tlb },

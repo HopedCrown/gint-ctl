@@ -63,6 +63,10 @@ void show_mpucpu(void)
 
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
 	row_print(6, 1, _(" CPUOPM:"," CPU Operation Mode: ") "%08x", *CPUOPM);
+
+	uint32_t SR;
+	__asm__("stc sr, %0" : "=r"(SR));
+	row_print(7, 1, _(" SR:", " Status Register: ") "%08x", SR);
 }
 
 /* Memory */

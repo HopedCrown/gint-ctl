@@ -120,18 +120,18 @@ build-cg/%.c.o: %.c
 # Assembler sources
 build-fx/%.s.o: %.s
 	@ mkdir -p $(dir $@)
-	$(TOOLCHAIN_FX)-gcc -c $< -o $@
+	$(TOOLCHAIN_FX)-gcc -c $< -o $@ -Wa,--dsp
 build-cg/%.s.o: %.s
 	@ mkdir -p $(dir $@)
-	$(TOOLCHAIN_CG)-gcc -c $< -o $@
+	$(TOOLCHAIN_CG)-gcc -c $< -o $@ -Wa,--dsp
 
 # Preprocessed assembler sources
 build-fx/%.S.o: %.S
 	@ mkdir -p $(dir $@)
-	$(TOOLCHAIN_FX)-gcc -c $< -o $@ $(INCLUDE)
+	$(TOOLCHAIN_FX)-gcc -c $< -o $@ $(INCLUDE) -Wa,--dsp
 build-cg/%.S.o: %.S
 	@ mkdir -p $(dir $@)
-	$(TOOLCHAIN_CG)-gcc -c $< -o $@ $(INCLUDE)
+	$(TOOLCHAIN_CG)-gcc -c $< -o $@ $(INCLUDE) -Wa,--dsp
 
 # Images
 build-fx/assets/img/%.o: assets-fx/img/%

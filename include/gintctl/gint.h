@@ -11,6 +11,9 @@ void gintctl_gint_hardware(void);
 /* gintctl_gint_ram(): Determine the size of some memory areas */
 void gintctl_gint_ram(void);
 
+/* gintctl_gint_dsp(): DSP initialization and configuration */
+void gintctl_gint_dsp(void);
+
 /* gintctl_gint_dump(): Dump memory to filesystem */
 void gintctl_gint_dump(void);
 
