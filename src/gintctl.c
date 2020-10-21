@@ -143,7 +143,7 @@ static void draw(struct menu *menu)
 int main(GUNUSED int isappli, GUNUSED int optnum)
 {
 	/* Initialize menu metadata */
-	int top = _(1, 0), bottom = _(1, 0);
+	int top = _(1, 0), bottom = 1;
 	menu_init(&menu_gint, top, bottom);
 	menu_init(&menu_perf, top, bottom);
 	menu_init(&menu_libs, top, bottom);
