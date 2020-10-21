@@ -8,6 +8,9 @@
 /* gintctl_perf_libprof(): Basic libprof tests using timers */
 void gintctl_perf_libprof(void);
 
+/* gintctl_perf_cpucache(): CPU speed and cache size */
+void gintctl_perf_cpucache(void);
+
 /* gintctl_perf_interrupts(): Interrupt handling */
 void gintctl_perf_interrupts(void);
 
