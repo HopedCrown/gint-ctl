@@ -98,7 +98,8 @@ static uint32_t region_size(uint8_t volatile *mem, int *reason, int use_lword)
 			if(y) return size;
 		}
 
-		size += use_lword ? 4 : 1;
+		/* In PXYRAM, skip some longwords to go faster */
+		size += use_lword ? 32 : 1;
 	}
 
 	*reason = 3;
