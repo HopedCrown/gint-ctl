@@ -14,6 +14,9 @@ void gintctl_gint_ram(void);
 /* gintctl_gint_dsp(): DSP initialization and configuration */
 void gintctl_gint_dsp(void);
 
+/* gintctl_gint_spuram(): SPU memory access, banking, and DMA */
+void gintctl_gint_spuram(void);
+
 /* gintctl_gint_dump(): Dump memory to filesystem */
 void gintctl_gint_dump(void);
 
@@ -23,7 +26,7 @@ void gintctl_gint_switch(void);
 /* gintctl_gint_tlb(): TLB miss handler and TLB management */
 void gintctl_gint_tlb(void);
 
-/* gintct_gint_keybaord: Real-time keyboard visualization */
+/* gintct_gint_keyboard: Real-time keyboard visualization */
 void gintctl_gint_keyboard(void);
 
 /* gintctl_gint_timer(): Show the timer status in real-time */
