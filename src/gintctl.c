@@ -85,6 +85,8 @@ struct menu menu_libs = {
 		gintctl_libs_printf },
 	{ "libc: " _("mem functions", "Core memory functions"),
 		gintctl_libs_memory },
+	{ "libm: " _("OpenLibm", "OpenLibm floating-point functions"),
+		gintctl_libs_openlibm },
 	{ "libimg" _("",": Image transforms"),
 		gintctl_libs_libimg },
 	{ NULL, NULL },
