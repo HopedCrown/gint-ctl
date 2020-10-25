@@ -17,13 +17,14 @@ extern void memory_dsp_xyram_memcpy(volatile uint8_t *dst,
 	volatile uint8_t *src, uint32_t size);
 
 GILRAM GALIGNED(32) static char ilram_buffer[0x800];
-GXRAM  GALIGNED(32) static char xram_buffer[0x2000];
-GYRAM  GALIGNED(32) static char yram_buffer[0x2000];
+GXRAM  GALIGNED(32) static char xram_buffer[0x800];
+GYRAM  GALIGNED(32) static char yram_buffer[0x800];
 
 struct results
 {
 	void *address;
 	uint32_t size;
+	int rounds;
 
 	/* In microseconds for the whole area */
 	uint32_t read_C_u8_time;
@@ -52,13 +53,14 @@ struct results
 	uint32_t dsp_xyram_memcpy_speed;
 };
 
-static void test(struct results *r, void *address, uint32_t size)
+static void test(struct results *r, void *address, uint32_t size, int rounds)
 {
 	volatile uint8_t *area = address;
 	volatile uint8_t x;
 
 	r->address = address;
 	r->size = size;
+	r->rounds = rounds;
 
 	/* Defaults for conditional tests */
 	r->dsp_xram_memset_time = 1;
@@ -66,70 +68,94 @@ static void test(struct results *r, void *address, uint32_t size)
 	r->dsp_xyram_memcpy_time = 1;
 
 	r->read_C_u8_time = prof_exec({
-		for(uint index = 0; index < size; index++) x = area[index];
+		for(int i = 0; i < rounds; i++)
+		{
+			for(uint index = 0; index < size; index++)
+				x = area[index];
+		}
 	});
 
 	r->write_C_u8_time = prof_exec({
-		for(uint index = 0; index < size; index++) area[index] = x;
+		for(int i = 0; i < rounds; i++)
+		{
+			for(uint index = 0; index < size; index++)
+				area[index] = x;
+		}
 	});
 
 	r->read_u8_time = prof_exec({
-		memory_read(area, size);
+		for(int i = 0; i < rounds; i++)
+			memory_read(area, size);
 	});
 
 	r->write_u8_time = prof_exec({
-		memory_write(area, size);
+		for(int i = 0; i < rounds; i++)
+			memory_write(area, size);
 	});
 
 	r->memset_time = prof_exec({
-		memset(address, 0, size);
+		for(int i = 0; i < rounds; i++)
+			memset(address, 0, size);
 	});
 
 	r->memcpy_time = 2 * prof_exec({
-		memcpy(address + size / 2, address, size / 2);
+		for(int i = 0; i < rounds; i++)
+			memcpy(address + size / 2, address, size / 2);
 	});
 
 	r->dma_memset_time = prof_exec({
 		#ifdef FXCG50
-		dma_memset(address, 0, size);
+		for(int i = 0; i < rounds; i++)
+			dma_memset(address, 0, size);
 		#endif
 	});
 
 	r->dma_memcpy_time = 2 * prof_exec({
 		#ifdef FXCG50
-		dma_memcpy(address + size / 2, address, size / 2);
+		for(int i = 0; i < rounds; i++)
+			dma_memcpy(address + size / 2, address, size / 2);
 		#endif
 	});
 
 	if(address == &xram_buffer)
 	{
+		/* Since the buffers are small, repeat 16 times */
 		r->dsp_xram_memset_time = prof_exec({
-			memory_dsp_xram_memset(address, size);
+			for(int i = 0; i < rounds; i++)
+				memory_dsp_xram_memset(address, size);
 		});
 	}
 	if(address == &yram_buffer)
 	{
 		r->dsp_yram_memset_time = prof_exec({
-			memory_dsp_yram_memset(address, size);
+			for(int i = 0; i < rounds; i++)
+				memory_dsp_yram_memset(address, size);
 		});
 	}
 	if(address == &xram_buffer)
 	{
+		void *x = xram_buffer;
+		void *y = yram_buffer;
+
+		/* Since the buffers are small, repeat 16 times */
 		r->dsp_xyram_memcpy_time = prof_exec({
-			memory_dsp_xyram_memcpy((void *)yram_buffer,
-				(void *)xram_buffer, size);
+			for(int i = 0; i < rounds; i++)
+				memory_dsp_xyram_memcpy(y, x, size);
 		});
 	}
 	if(address == &yram_buffer)
 	{
+		void *x = xram_buffer;
+		void *y = yram_buffer;
+
 		r->dsp_xyram_memcpy_time = prof_exec({
-			memory_dsp_xyram_memcpy((void *)xram_buffer,
-				(void *)yram_buffer, size);
+			for(int i = 0; i < rounds; i++)
+				memory_dsp_xyram_memcpy(x, y, size);
 		});
 	}
 
 	/* Convert from us/(size bytes) to kb/(1 second) */
-	uint32_t factor = size * 1000;
+	uint64_t factor = size * 1000 * rounds;
 	r->read_C_u8_speed        = factor / r->read_C_u8_time;
 	r->write_C_u8_speed       = factor / r->write_C_u8_time;
 	r->read_u8_speed          = factor / r->read_u8_time;
@@ -188,8 +214,9 @@ void gintctl_perf_memory(void)
 		}
 		else
 		{
-			row_print(1, 1, "Results for area %08x (%d bytes)",
-				(uint32_t)r.address, r.size);
+			row_print(1, 1, "Results for area %08x (%d bytes, %d "
+				"round%s)", (uint32_t)r.address, r.size,
+				r.rounds, (r.rounds > 1) ? "s" : "");
 			results_line(3, r.read_C_u8_time,  r.read_C_u8_speed);
 			results_line(4, r.write_C_u8_time, r.write_C_u8_speed);
 			results_line(5, r.read_u8_time,    r.read_u8_speed);
@@ -225,9 +252,9 @@ void gintctl_perf_memory(void)
 		dupdate();
 		key = getkey().key;
 
-		if(key == KEY_F1) test(&r, gint_vram, _(0x400,0x8000));
-		if(key == KEY_F2) test(&r, &ilram_buffer, 0x800);
-		if(key == KEY_F3) test(&r, &xram_buffer, 0x2000);
-		if(key == KEY_F4) test(&r, &yram_buffer, 0x2000);
+		if(key == KEY_F1) test(&r, gint_vram, _(0x400,0x8000), 1);
+		if(key == KEY_F2) test(&r, &ilram_buffer, 0x800, 64);
+		if(key == KEY_F3) test(&r, &xram_buffer, 0x800, 64);
+		if(key == KEY_F4) test(&r, &yram_buffer, 0x800, 64);
 	}
 }
