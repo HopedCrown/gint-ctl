@@ -23,7 +23,7 @@ static int bank_number(volatile uint32_t *area)
 	return save >> 24;
 }
 
-static int save_and_setup(volatile uint32_t *area, uint32_t *save, int pages)
+static void save_and_setup(volatile uint32_t *area, uint32_t *save, int pages)
 {
 	for(int i = 0; i < pages; i++)
 	{
@@ -32,7 +32,7 @@ static int save_and_setup(volatile uint32_t *area, uint32_t *save, int pages)
 	}
 }
 
-static int restore(volatile uint32_t *area, uint32_t *save, int pages)
+static void restore(volatile uint32_t *area, uint32_t *save, int pages)
 {
 	for(int i = 0; i < pages; i++)
 	{
