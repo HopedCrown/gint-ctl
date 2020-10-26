@@ -106,6 +106,42 @@ static uint32_t region_size(uint8_t volatile *mem, int *reason, int use_lword)
 	return size;
 }
 
+#ifdef FX9860G
+static void show_region(int row, char const *name, void *area, uint32_t size,
+	int reason)
+{
+	/* Out-of-bounds rows */
+	if(row < 1 || row > 9 || (row == 1 && name)) return;
+
+	extern font_t font_hexa;
+	font_t const *old_font = dfont(&font_hexa);
+	int y = (row - 1) * 6;
+
+	if(!name)
+	{
+		dprint( 1, y, C_BLACK, "Area");
+		dprint(24, y, C_BLACK, "Address");
+		dprint(60, y, C_BLACK, "Size");
+		dprint(80, y, C_BLACK, "Reason");
+		dfont(old_font);
+		return;
+	}
+
+	char const *reasons[] = { "", "Read-only", "Loops", "" };
+
+	dprint( 1, y, C_BLACK, "%s", name);
+	dprint(24, y, C_BLACK, "%08X", (uint32_t)area);
+
+	if(reason != 0)
+	{
+		dprint(60, y, C_BLACK, "%dk", size >> 10);
+		dprint(80, y, C_BLACK, "%s", reasons[reason]);
+	}
+
+	dfont(old_font);
+}
+#endif
+
 /* gintctl_gint_ram(): Determine the size of some memory areas */
 void gintctl_gint_ram(void)
 {
@@ -120,9 +156,14 @@ void gintctl_gint_ram(void)
 	uint8_t *YRAM1 = (void *)0xfe380000;
 
 	/* Size of these sections */
-	GUNUSED uint32_t IL=0, X=0, Y=0, P0=0, X0=0, Y0=0, P1=0, X1=0, Y1=0;
+	uint32_t IL=0, X=0, Y=0, P0=0, X0=0, Y0=0, P1=0, X1=0, Y1=0;
 	/* Reason why the region stops (1=not writable, 2=wraps around) */
-	GUNUSED int ILr=0, Xr=0, Yr=0, P0r=0, X0r=0, Y0r=0, P1r=0, X1r=0,Y1r=0;
+	int ILr=0, Xr=0, Yr=0, P0r=0, X0r=0, Y0r=0, P1r=0, X1r=0,Y1r=0;
+
+	/* Region count (for the scrolling list on fx-9860G */
+	GUNUSED int region_count = 9;
+	/* List scroll no fx-9860G */
+	GUNUSED int scroll = 0;
 
 	GUNUSED char const *reasons[] = {
 		"Not tested yet",
@@ -137,11 +178,19 @@ void gintctl_gint_ram(void)
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		row_print(1, 1, "On-chip memory");
+		show_region( 1, NULL, NULL, 0, 0);
+		show_region( 2-scroll, "ILRAM", ILRAM, IL, ILr);
+		show_region( 3-scroll, "XRAM",  XRAM,  X,  Xr);
+		show_region( 4-scroll, "YRAM",  YRAM,  Y,  Yr);
+		show_region( 5-scroll, "PRAM0", PRAM0, P0, P0r);
+		show_region( 6-scroll, "XRAM0", XRAM0, X0, X0r);
+		show_region( 7-scroll, "YRAM0", YRAM0, Y0, Y0r);
+		show_region( 8-scroll, "PRAM1", PRAM1, P1, P1r);
+		show_region( 9-scroll, "XRAM1", XRAM1, X1, X1r);
+		show_region(10-scroll, "YRAM1", YRAM1, Y1, Y1r);
 
-		row_print(3, 2, "ILRAM: %d bytes", IL);
-		row_print(4, 2, "XRAM:  %d bytes", X);
-		row_print(5, 2, "YRAM:  %d bytes", Y);
+		if(scroll > 0) triangle_up(7);
+		if(scroll < region_count - 8) triangle_down(49);
 
 		extern bopti_image_t img_opt_gint_ram;
 		dimage(0, 56, &img_opt_gint_ram);
@@ -202,7 +251,6 @@ void gintctl_gint_ram(void)
 			X = region_size(XRAM, &Xr, 0);
 			Y = region_size(YRAM, &Yr, 0);
 		}
-		#ifdef FXCG50
 		if(key == KEY_F3)
 		{
 			P0 = region_size(PRAM0, &P0r, 1);
@@ -215,6 +263,10 @@ void gintctl_gint_ram(void)
 			X1 = region_size(XRAM1, &X1r, 1);
 			Y1 = region_size(YRAM1, &Y1r, 1);
 		}
+
+		#ifdef FX9860G
+		if(key == KEY_UP && scroll > 0) scroll--;
+		if(key == KEY_DOWN && scroll < region_count - 8) scroll++;
 		#endif
 	}
 }
