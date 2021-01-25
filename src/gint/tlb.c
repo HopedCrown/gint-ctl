@@ -22,7 +22,7 @@ static void draw_rom_cell(int x, int y, int status)
 	uint16_t colors[4] = {
 		C_RGB(24,24,24),	/* Unused and unmapped */
 		C_WHITE,		/* Used, but currently unmapped */
-		C_RGB(31,24,0),		/* Unused but still mapped?! */
+		C_RGB(31,24,0),		/* Unused (data) but still mapped  */
 		C_RGB(0,31,0),		/* Used and currently mapped */
 	};
 	uint16_t border =
@@ -318,7 +318,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		dprint(_(72,212), _(16,36), C_BLACK,
 			_("Unmapped", "Currently unmapped"));
 		dprint(_(16,30),  _(24,50), C_BLACK,
-			_("Mapped?", "Strangely mapped?!"));
+			_("Data", "Data still mapped"));
 		dprint(_(72,212), _(24,50), C_BLACK,
 			_("Mapped", "Currently mapped"));
 
