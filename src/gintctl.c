@@ -100,7 +100,7 @@ struct menu menu_libs = {
 void gintctl_main(void)
 {
 	#ifdef FX9860G
-	row_title("gint @%07x", GINT_VERSION);
+	row_title("gint @%07x", GINT_HASH);
 
 	row_print(3, 1, "F2:gint tests");
 	row_print(4, 1, "F3:Performance");
@@ -110,7 +110,7 @@ void gintctl_main(void)
 	#endif /* FX9860G */
 
 	#ifdef FXCG50
-	row_title("gint @%07x for fx-CG 50", GINT_VERSION);
+	row_title("gint %s (@%07x) for fx-CG 50", GINT_VERSION, GINT_HASH);
 	row_print(1,1, "F2: gint features and driver tests");
 	row_print(2,1, "F3: Performance benchmarks");
 	row_print(3,1, "F4: External libraries");
