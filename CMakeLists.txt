@@ -1,0 +1,123 @@
+# gintctl: gint's control application
+
+cmake_minimum_required(VERSION 3.18)
+project(gintctl VERSION 2.2.1 LANGUAGES C ASM)
+
+include(GenerateG1A)
+include(GenerateG3A)
+include(Fxconv)
+
+find_package(Gint 2.1 REQUIRED)
+find_package(LibProf 2.1 REQUIRED)
+find_package(LibImg 2.1 REQUIRED)
+
+set(SOURCES
+  src/gintctl.c
+  src/menu.c
+  src/plot.c
+  src/util.c
+  src/gint/bopti.c
+  src/gint/dma.c
+  src/gint/dsp.c
+  src/gint/dsp.s
+  src/gint/dump.c
+  src/gint/gray.c
+  src/gint/hardware.c
+  src/gint/keyboard.c
+  src/gint/ram.c
+  src/gint/rtc.c
+  src/gint/spuram.c
+  src/gint/switch.c
+  src/gint/timer.c
+  src/gint/timer_callbacks.c
+  src/gint/tlb.c
+  src/gint/topti.c
+  src/libs/libimg.c
+  src/libs/memory.c
+  src/libs/openlibm.c
+  src/libs/printf.c
+  src/libs/tinymt.c
+  src/mem/mem.c
+  src/perf/cpucache.c
+  src/perf/cpucache.S
+  src/perf/interrupt.c
+  src/perf/libprof.c
+  src/perf/memory.c
+  src/perf/memory.s
+  src/perf/render.c
+  src/regs/regs.c
+)
+set(ASSETS_fx
+  assets-fx/fonts/hexa.png
+  assets-fx/fonts/uf5x7
+  assets-fx/img/bopti_1col.png
+  assets-fx/img/bopti_2col.png
+  assets-fx/img/bopti_3col.png
+  assets-fx/img/keypress.png
+  assets-fx/img/keyrelease.png
+  assets-fx/img/libimg_swords.png
+  assets-fx/img/opt_dump.png
+  assets-fx/img/opt_gint_bopti.png
+  assets-fx/img/opt_gint_gray.png
+  assets-fx/img/opt_gint_ram.png
+  assets-fx/img/opt_gint_rtc.png
+  assets-fx/img/opt_gint_spuram.png
+  assets-fx/img/opt_gint_timer_callbacks.png
+  assets-fx/img/opt_gint_timers.png
+  assets-fx/img/opt_gint_tlb.png
+  assets-fx/img/opt_main.png
+  assets-fx/img/opt_mem.png
+  assets-fx/img/opt_perf_libprof.png
+  assets-fx/img/opt_perf_render.png
+  assets-fx/img/opt_switch_ctx.png
+  assets-fx/img/opt_switch_ctx_sh3.png
+  assets-fx/img/opt_switch.png
+  assets-fx/img/profile_gray_alpha.png
+  assets-fx/img/profile_gray.png
+  assets-fx/img/profile_mono_alpha.png
+  assets-fx/img/profile_mono.png
+  assets-fx/img/rtc_arrows.png
+  assets-fx/img/rtc_segments.png
+  assets-fx/img/tlb_cells.png
+)
+set(ASSETS_cg
+  assets-cg/fonts/font8x9_bold.png
+  assets-cg/img/applejack_31x27.png
+  assets-cg/img/applejack_36x25.png
+  assets-cg/img/kbd_pressed.png
+  assets-cg/img/kbd_released.png
+  assets-cg/img/libimg_even_odd.png
+  assets-cg/img/libimg_odd_even.png
+  assets-cg/img/libimg_sq_even.png
+  assets-cg/img/libimg_sq_odd.png
+  assets-cg/img/libimg_train.png
+  assets-cg/img/potion_17x22.png
+  assets-cg/img/potion_18x22.png
+  assets-cg/img/potion_21x22.png
+  assets-cg/img/rtc_arrows.png
+  assets-cg/img/rtc_segments.png
+  assets-cg/img/swift.png
+  assets-cg/img/swords.png
+)
+
+fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
+
+add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})
+
+target_compile_options(gintctl PRIVATE
+  -Wall -Wextra -Os)
+target_link_options(gintctl PRIVATE
+  -Wl,-Map=map -Wl,--print-memory-usage)
+target_include_directories(gintctl PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${FXSDK_COMPILER_INSTALL}/include/openlibm")
+target_link_libraries(gintctl
+  Gint::Gint LibProf::LibProf LibImg::LibImg -lopenlibm)
+
+if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
+  generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"
+    NAME "gintctl" INTERNAL "@GINTCTL" ICON assets-fx/icon.png)
+elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCG50)
+  generate_g3a(TARGET gintctl OUTPUT "gintctl.g3a"
+    NAME "" ICONS assets-cg/icon-uns.png assets-cg/icon-sel.png)
+endif()

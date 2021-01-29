@@ -1,0 +1,15 @@
+*:
+  type: bopti-image
+  name_regex: (.*).png img_\1
+
+libimg_*.png:
+  type: libimg-image
+
+swift.png:
+  profile: p4
+swords.png:
+  profile: p8
+kbd_pressed.png:
+  profile: p4
+kbd_released.png:
+  profile: p4

@@ -1,0 +1,13 @@
+hexa.png:
+  type: font
+  name: font_hexa
+  charset: print
+  grid.size: 3x5
+  grid.padding: 1
+
+uf5x7:
+  type: font
+  name: font_uf5x7
+  charset: unicode
+  grid.size: 5x7
+  grid.padding: 1
