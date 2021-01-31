@@ -33,46 +33,46 @@
 struct menu menu_gint = {
 	_("gint tests", "gint features and driver tests"), .entries = {
 
-	{ "Hardware",         gintctl_gint_hardware },
-	{ "RAM discovery",    gintctl_gint_ram },
+	{ "Hardware",         gintctl_gint_hardware, 0 },
+	{ "RAM discovery",    gintctl_gint_ram, MENU_SH4_ONLY },
 	#ifdef FXCG50
-	{ "DSP processors",   gintctl_gint_dsp },
-	{ "SPU memory",       gintctl_gint_spuram },
+	{ "DSP processors",   gintctl_gint_dsp, 0 },
+	{ "SPU memory",       gintctl_gint_spuram, MENU_SH4_ONLY },
 	#endif
-	{ "Memory dump",      gintctl_gint_dump },
-	{ "Switching to OS",  gintctl_gint_switch },
-	{ "TLB management",   gintctl_gint_tlb },
-	{ "Keyboard",         gintctl_gint_keyboard },
-	{ "Timers",           gintctl_gint_timer },
-	{ "Timer callbacks",  gintctl_gint_timer_callbacks },
+	{ "Memory dump",      gintctl_gint_dump, 0 },
+	{ "Switching to OS",  gintctl_gint_switch, 0 },
+	{ "TLB management",   gintctl_gint_tlb, 0 },
+	{ "Keyboard",         gintctl_gint_keyboard, 0 },
+	{ "Timers",           gintctl_gint_timer, 0 },
+	{ "Timer callbacks",  gintctl_gint_timer_callbacks, 0 },
 	#ifdef FXCG50
-	{ "DMA control",      gintctl_gint_dma },
+	{ "DMA control",      gintctl_gint_dma, 0 },
 	#endif
-	{ "Real-time clock",  gintctl_gint_rtc },
-	{ "Image rendering",  gintctl_gint_bopti },
-	{ "Text rendering",   gintctl_gint_topti },
+	{ "Real-time clock",  gintctl_gint_rtc, 0 },
+	{ "Image rendering",  gintctl_gint_bopti, 0 },
+	{ "Text rendering",   gintctl_gint_topti, 0 },
 	#ifdef FX9860G
-	{ "Gray engine",      gintctl_gint_gray },
-	{ "Gray rendering",   gintctl_gint_grayrender },
+	{ "Gray engine",      gintctl_gint_gray, 0 },
+	{ "Gray rendering",   gintctl_gint_grayrender, 0 },
 	#endif
-	{ NULL, NULL },
+	{ NULL, NULL, 0 },
 }};
 
 /* Performance menu */
 struct menu menu_perf = {
 	_("Performance", "Performance benchmarks"), .entries = {
 
-	{ "libprof basics",      gintctl_perf_libprof },
-	{ "CPU and cache",       gintctl_perf_cpucache },
-	{ "Interrupt stress",    gintctl_perf_interrupts },
+	{ "libprof basics",      gintctl_perf_libprof, 0 },
+	{ "CPU and cache",       gintctl_perf_cpucache, 0 },
+	{ "Interrupt stress",    gintctl_perf_interrupts, 0 },
 	#ifdef FXCG50
-	{ "Memory access speed", gintctl_perf_memory },
+	{ "Memory access speed", gintctl_perf_memory, 0 },
 	#endif
-	{ "Rendering functions", gintctl_perf_render },
+	{ "Rendering functions", gintctl_perf_render, 0 },
 
 	/* TODO: Comparison with MonochromeLib */
 
-	{ NULL, NULL },
+	{ NULL, NULL, 0 },
 }};
 
 /* External libraries */
@@ -80,16 +80,16 @@ struct menu menu_libs = {
 	_("Libraries", "External and standard libraries"), .entries = {
 
 	{ "libc: " _("TinyMT32", "TinyMT random number generation"),
-		gintctl_libs_tinymt },
+		gintctl_libs_tinymt, 0 },
 	{ "libc: " _("printf family", "Formatted printing functions"),
-		gintctl_libs_printf },
+		gintctl_libs_printf, 0 },
 	{ "libc: " _("mem functions", "Core memory functions"),
-		gintctl_libs_memory },
+		gintctl_libs_memory, 0 },
 	{ "libm: " _("OpenLibm", "OpenLibm floating-point functions"),
-		gintctl_libs_openlibm },
+		gintctl_libs_openlibm, 0 },
 	{ "libimg" _("",": Image transforms"),
-		gintctl_libs_libimg },
-	{ NULL, NULL },
+		gintctl_libs_libimg, 0 },
+	{ NULL, NULL, 0 },
 }};
 
 //---

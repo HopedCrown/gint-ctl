@@ -1,4 +1,5 @@
 #include <gint/defs/util.h>
+#include <gint/hardware.h>
 
 #include <gintctl/menu.h>
 #include <gintctl/util.h>
@@ -7,7 +8,15 @@
 void menu_init(struct menu *menu, int top, int bottom)
 {
 	menu->len = 0;
-	while(menu->entries[menu->len].name) menu->len++;
+
+	for(int i = 0; menu->entries[i].name; i++)
+	{
+		int f = menu->entries[i].flags;
+		if(isSH3() && (f & MENU_SH4_ONLY)) continue;
+		if(isSH4() && (f & MENU_SH3_ONLY)) continue;
+
+		menu->entries[menu->len++] = menu->entries[i];
+	}
 
 	menu->offset = 0;
 	menu->pos = 0;

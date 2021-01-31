@@ -1,6 +1,7 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/clock.h>
+#include <gint/std/stdio.h>
 
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
