@@ -202,7 +202,7 @@ void gintctl_gint_ram(void)
 		{ NULL },
 	};
 
-	/* Region count (for the scrolling list on fx-9860G */
+	/* Region count (for the scrolling list on fx-9860G) */
 	GUNUSED int region_count = 9;
 	/* List scroll no fx-9860G */
 	GUNUSED int scroll = spu_zero();
@@ -214,7 +214,7 @@ void gintctl_gint_ram(void)
 
 		#ifdef FX9860G
 		show_region(1, NULL);
-		for(int i = 0; i < 9; i++)
+		for(int i = 0; i < region_count; i++)
 		{
 			show_region(i+2-scroll, &r[i]);
 		}

@@ -12,6 +12,14 @@
 struct menuentry {
 	char const *name;
 	void (*function)(void);
+	int flags;
+};
+
+enum {
+	/* SH3-only */
+	MENU_SH3_ONLY,
+	/* SH4-only */
+	MENU_SH4_ONLY,
 };
 
 struct menu {
@@ -27,6 +35,9 @@ struct menu {
 };
 
 /* menu_init(): Initialize a menu list
+   This function will initialize the menu data and remove entries that are not
+   available on the current platform?
+
    @menu    Any list menu, even uninitialized
    @top     Number of lines reserved on top (including title on fx9860g)
    @bottom  Number of lines reserved at bottom */
