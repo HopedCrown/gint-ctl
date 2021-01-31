@@ -5,6 +5,8 @@
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
 
+#include <stdbool.h>
+
 /* Byte-based memory detection functions */
 
 static int writable(uint8_t volatile *mem)
@@ -76,48 +78,60 @@ static int same_location_lword(uint8_t volatile *m1_8, uint8_t volatile *m2_8)
 
 /* Region size detection */
 
-static uint32_t region_size(uint8_t volatile *mem, int *reason, int use_lword)
+struct region {
+	/* Region name (for display) [input] */
+	char const *name;
+	/* Region address [input] */
+	uint32_t mem;
+	/* Whether region supports only 32-bit access [input] */
+	bool use_lword;
+	/* Size of region [output] */
+	uint32_t size;
+	/* Reason why region is not larger [output] */
+	int reason;
+};
+
+static void explore_region(struct region *r)
 {
-	uint32_t size = 0;
+	uint8_t volatile *mem = (void *)r->mem;
+	r->size = 0;
 
-	while(size < (1 << 20))
+	while(r->size < (1 << 20))
 	{
-		int x = use_lword
-			? writable_lword(mem + size)
-			: writable(mem + size);
+		int x = r->use_lword
+			? writable_lword(mem + r->size)
+			: writable(mem + r->size);
 
-		*reason = 1;
-		if(!x) return size;
+		r->reason = 1;
+		if(!x) return;
 
-		if(size > 0)
+		if(r->size > 0)
 		{
-			int y = use_lword
-				? same_location_lword(mem, mem+size)
-				: same_location(mem, mem+size);
-			*reason = 2;
-			if(y) return size;
+			int y = r->use_lword
+				? same_location_lword(mem, mem+r->size)
+				: same_location(mem, mem+r->size);
+			r->reason = 2;
+			if(y) return;
 		}
 
 		/* In PXYRAM, skip some longwords to go faster */
-		size += use_lword ? 32 : 1;
+		r->size += r->use_lword ? 32 : 4;
 	}
 
-	*reason = 3;
-	return size;
+	r->reason = 3;
 }
 
 #ifdef FX9860G
-static void show_region(int row, char const *name, void *area, uint32_t size,
-	int reason)
+static void show_region(int row, struct region *r)
 {
 	/* Out-of-bounds rows */
-	if(row < 1 || row > 9 || (row == 1 && name)) return;
+	if(row < 1 || row > 9 || (row == 1 && r)) return;
 
 	extern font_t font_hexa;
 	font_t const *old_font = dfont(&font_hexa);
 	int y = (row - 1) * 6;
 
-	if(!name)
+	if(!r)
 	{
 		dprint( 1, y, C_BLACK, "Area");
 		dprint(24, y, C_BLACK, "Address");
@@ -129,48 +143,69 @@ static void show_region(int row, char const *name, void *area, uint32_t size,
 
 	char const *reasons[] = { "", "Read-only", "Loops", "" };
 
-	dprint( 1, y, C_BLACK, "%s", name);
-	dprint(24, y, C_BLACK, "%08X", (uint32_t)area);
+	dprint( 1, y, C_BLACK, "%s", r->name);
+	dprint(24, y, C_BLACK, "%08X", r->mem);
 
-	if(reason != 0)
+	if(r->reason != 0)
 	{
-		dprint(60, y, C_BLACK, "%dk", size >> 10);
-		dprint(80, y, C_BLACK, "%s", reasons[reason]);
+		dprint(60, y, C_BLACK, "%dk", r->size >> 10);
+		dprint(80, y, C_BLACK, "%s", reasons[r->reason]);
 	}
 
 	dfont(old_font);
 }
 #endif
 
+#ifdef FXCG50
+static void show_region(int y, struct region *r)
+{
+	char const *reasons[] = {
+		"Not tested",
+		"Not writable",
+		"Wraps around",
+		"Maybe larger!",
+	};
+
+	if(!r)
+	{
+		row_print(y,  2, "Area");
+		row_print(y,  9, "Address");
+		row_print(y, 18, "AS");
+		row_print(y, 22, "Size");
+		row_print(y, 35, "Reason");
+		return;
+	}
+
+	row_print(y,  2, "%s", r->name);
+	row_print(y,  9, "%08X", r->mem);
+	row_print(y, 18, "%d", r->use_lword ? 32 : 8);
+	row_print(y, 22, "%d bytes", r->size);
+	row_print(y, 35, reasons[r->reason]);
+}
+#endif
+
 /* gintctl_gint_ram(): Determine the size of some memory areas */
 void gintctl_gint_ram(void)
 {
-	uint8_t *ILRAM = (void *)0xe5200000;
-	uint8_t *XRAM  = (void *)0xe5007000;
-	uint8_t *YRAM  = (void *)0xe5017000;
-	uint8_t *PRAM0 = (void *)0xfe200000;
-	uint8_t *XRAM0 = (void *)0xfe240000;
-	uint8_t *YRAM0 = (void *)0xfe280000;
-	uint8_t *PRAM1 = (void *)0xfe300000;
-	uint8_t *XRAM1 = (void *)0xfe340000;
-	uint8_t *YRAM1 = (void *)0xfe380000;
-
-	/* Size of these sections */
-	uint32_t IL=0, X=0, Y=0, P0=0, X0=0, Y0=0, P1=0, X1=0, Y1=0;
-	/* Reason why the region stops (1=not writable, 2=wraps around) */
-	int ILr=0, Xr=0, Yr=0, P0r=0, X0r=0, Y0r=0, P1r=0, X1r=0,Y1r=0;
+	struct region r[] = {
+		{ "ILRAM", 0xe5200000, false, 0, 0 },
+		{ "XRAM",  0xe5007000, false, 0, 0 },
+		{ "YRAM",  0xe5017000, false, 0, 0 },
+		{ "PRAM0", 0xfe200000, true,  0, 0 },
+		{ "XRAM0", 0xfe240000, true,  0, 0 },
+		{ "YRAM0", 0xfe280000, true,  0, 0 },
+		{ "PRAM1", 0xfe300000, true,  0, 0 },
+		{ "XRAM1", 0xfe340000, true,  0, 0 },
+		{ "YRAM1", 0xfe380000, true,  0, 0 },
+		{ "X_P2",  0xa5007000, false, 0, 0 },
+		{ "URAM",  0xa55f0000, false, 0, 0 },
+		{ NULL },
+	};
 
 	/* Region count (for the scrolling list on fx-9860G */
 	GUNUSED int region_count = 9;
 	/* List scroll no fx-9860G */
-	GUNUSED int scroll = 0;
-
-	GUNUSED char const *reasons[] = {
-		"Not tested yet",
-		"%d bytes (not writable)",
-		"%d bytes (wraps around)",
-		"%d bytes",
-	};
+	GUNUSED int scroll = spu_zero();
 
 	int key = 0;
 	while(key != KEY_EXIT)
@@ -178,16 +213,11 @@ void gintctl_gint_ram(void)
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		show_region( 1, NULL, NULL, 0, 0);
-		show_region( 2-scroll, "ILRAM", ILRAM, IL, ILr);
-		show_region( 3-scroll, "XRAM",  XRAM,  X,  Xr);
-		show_region( 4-scroll, "YRAM",  YRAM,  Y,  Yr);
-		show_region( 5-scroll, "PRAM0", PRAM0, P0, P0r);
-		show_region( 6-scroll, "XRAM0", XRAM0, X0, X0r);
-		show_region( 7-scroll, "YRAM0", YRAM0, Y0, Y0r);
-		show_region( 8-scroll, "PRAM1", PRAM1, P1, P1r);
-		show_region( 9-scroll, "XRAM1", XRAM1, X1, X1r);
-		show_region(10-scroll, "YRAM1", YRAM1, Y1, Y1r);
+		show_region(1, NULL);
+		for(int i = 0; i < 9; i++)
+		{
+			show_region(i+2-scroll, &r[i]);
+		}
 
 		if(scroll > 0) triangle_up(7);
 		if(scroll < region_count - 8) triangle_down(49);
@@ -198,40 +228,11 @@ void gintctl_gint_ram(void)
 
 		#ifdef FXCG50
 		row_title("On-chip memory discovery");
-
-		row_print(1, 1, "This program measures the size of on-chip");
-		row_print(2, 1, "memory sections by checking how far it can "
-			"write.");
-
-		row_print(4, 2, "ILRAM:");
-		row_print(5, 2, "XRAM:");
-		row_print(6, 2, "YRAM:");
-		row_print(7, 2, "PRAM0:");
-		row_print(8, 2, "XRAM0:");
-		row_print(9, 2, "YRAM0:");
-		row_print(10,2, "PRAM1:");
-		row_print(11,2, "XRAM1:");
-		row_print(12,2, "YRAM1:");
-
-		row_print(4, 10, "E5200000");
-		row_print(5, 10, "E5007000");
-		row_print(6, 10, "E5017000");
-		row_print(7, 10, "FE200000");
-		row_print(8, 10, "FE240000");
-		row_print(9, 10, "FE280000");
-		row_print(10,10, "FE300000");
-		row_print(11,10, "FE340000");
-		row_print(12,10, "FE380000");
-
-		row_print(4, 21, reasons[ILr], IL);
-		row_print(5, 21, reasons[Xr], X);
-		row_print(6, 21, reasons[Yr], Y);
-		row_print(7, 21, reasons[P0r], P0);
-		row_print(8, 21, reasons[X0r], X0);
-		row_print(9, 21, reasons[Y0r], Y0);
-		row_print(10,21, reasons[P1r], P1);
-		row_print(11,21, reasons[X1r], X1);
-		row_print(12,21, reasons[Y1r], Y1);
+		show_region(1, NULL);
+		for(int i = 0; r[i].name; i++)
+		{
+			show_region(i+2, &r[i]);
+		}
 
 		fkey_button(1, "ILRAM");
 		fkey_button(2, "XYRAM");
@@ -244,24 +245,29 @@ void gintctl_gint_ram(void)
 		key = getkey().key;
 		if(key == KEY_F1)
 		{
-			IL = region_size(ILRAM, &ILr, 0);
+			explore_region(&r[0]);
 		}
 		if(key == KEY_F2)
 		{
-			X = region_size(XRAM, &Xr, 0);
-			Y = region_size(YRAM, &Yr, 0);
+			explore_region(&r[1]);
+			explore_region(&r[2]);
 		}
 		if(key == KEY_F3)
 		{
-			P0 = region_size(PRAM0, &P0r, 1);
-			X0 = region_size(XRAM0, &X0r, 1);
-			Y0 = region_size(YRAM0, &Y0r, 1);
+			explore_region(&r[3]);
+			explore_region(&r[4]);
+			explore_region(&r[5]);
 		}
 		if(key == KEY_F4)
 		{
-			P1 = region_size(PRAM1, &P1r, 1);
-			X1 = region_size(XRAM1, &X1r, 1);
-			Y1 = region_size(YRAM1, &Y1r, 1);
+			explore_region(&r[6]);
+			explore_region(&r[7]);
+			explore_region(&r[8]);
+		}
+		if(key == KEY_F5)
+		{
+			explore_region(&r[9]);
+			explore_region(&r[10]);
 		}
 
 		#ifdef FX9860G
