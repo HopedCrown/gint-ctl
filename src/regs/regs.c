@@ -1,5 +1,7 @@
 #include <gint/mpu/intc.h>
 #include <gint/mpu/rtc.h>
+#include <gint/mpu/power.h>
+#include <gint/mpu/cpg.h>
 #include <gint/hardware.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
@@ -58,9 +60,14 @@ void gintctl_regs(void)
 	dclear(C_WHITE);
 	row_title("Register browser");
 
-	row_print(2, 1, "RAMCR: %08x", *(uint32_t *)0xff000074);
-	row_print(3, 1, "SAR0:  %08x", *(uint32_t *)0xfe008020);
-	row_print(4, 1, "CHCR0: %08x", *(uint32_t *)0xfe00802c);
+	row_print(2, 1, "%08X %08X",
+		SH7305_POWER.MSTPCR0.lword,
+		SH7305_POWER.MSTPCR2.lword);
+	row_print(3, 1, "%08X %08x",
+		SH7305_CPG.FSICLKCR.lword,
+		SH7305_CPG.SPUCLKCR.lword);
+	row_print(4, 1, "%08X",
+		*(volatile uint32_t *)0xff000074);
 
 	dupdate();
 	getkey();

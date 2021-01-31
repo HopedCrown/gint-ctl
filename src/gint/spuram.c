@@ -40,6 +40,54 @@ static void restore(volatile uint32_t *area, uint32_t *save, int pages)
 	}
 }
 
+#ifdef FX9860G
+static void render_header(int y, int bank_count)
+{
+	y = 9 + 6*y;
+	dtext( 1, 9, C_BLACK, "Area");
+	dtext(24, 9, C_BLACK, "Address");
+	dtext(60, 9, C_BLACK, "Visible pages");
+}
+
+static void render_area(int y, char const *name, uint32_t *area)
+{
+	y = 9 + 6*y;
+	dprint( 1, y, C_BLACK, "%s", name);
+	dprint(24, y, C_BLACK, "%08X", (uint32_t)area);
+
+	int b = 0, bank = 0;
+	while(1)
+	{
+		bank = bank_number(area);
+		if(b == 7) break;
+
+		dprint(60+8*b, y, C_BLACK, bank >= 0 ? "%d" : "-", bank);
+		area += 0x2000;
+		b++;
+	}
+}
+
+static void render_bank(int y, char const *name, volatile uint32_t *bank,
+	int banks, int dsp, int focus)
+{
+	y = 9 + 6*y;
+	dprint( 1, y, C_BLACK, "%s", name);
+	dprint(29, y, C_BLACK, "=%02X", *bank);
+
+	for(int b = 0; b < banks; b++)
+	{
+		int active = *bank & (1 << b);
+
+		int x  = 50 + 8*b - 1;
+		int ry = y + (dsp==0) - 1;
+
+		int fill = active ? C_BLACK : C_WHITE;
+		int border = (focus == b) ? C_BLACK : C_WHITE;
+		drect_border(x, ry, x+7, ry+5, fill, 1, border);
+	}
+}
+#endif
+
 #ifdef FXCG50
 static void render_header(int y, int bank_count)
 {
@@ -118,9 +166,46 @@ void gintctl_gint_spuram(void)
 	int cur_bank = 0;
 	int cur_page = 0;
 
+	#ifdef FX9860G
+	int tab = 0;
+	#endif
+
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
+
+		#ifdef FX9860G
+		row_title("SPU memory banking");
+
+		extern font_t font_hexa;
+		font_t *old_font = dfont(&font_hexa);
+
+		if(tab == 0)
+		{
+			render_header(0, 7);
+			render_area(1, "PRAM0", PRAM0);
+			render_area(2, "XRAM0", XRAM0);
+			render_area(3, "YRAM0", YRAM0);
+			render_area(4, "PRAM1", PRAM1);
+			render_area(5, "XRAM1", XRAM1);
+			render_area(6, "YRAM1", YRAM1);
+		}
+		else if(tab == 1)
+		{
+			render_bank(1, "PBANKC0", &SPU.PBANKC0, 5, 0,
+				(cur_bank == 0) ? cur_page : -1);
+			render_bank(2, "PBANKC1", &SPU.PBANKC1, 5, 1,
+				(cur_bank == 0) ? cur_page : -1);
+			render_bank(4, "XBANKC0", &SPU.XBANKC0, 7, 0,
+				(cur_bank == 1) ? cur_page : -1);
+			render_bank(5, "XBANKC1", &SPU.XBANKC1, 7, 1,
+				(cur_bank == 1) ? cur_page : -1);
+		}
+
+		dfont(old_font);
+		extern bopti_image_t img_opt_gint_spuram;
+		dimage(0, 56, &img_opt_gint_spuram);
+		#endif
 
 		#ifdef FXCG50
 		row_title("SPU memory: PRAM0, XRAM0, YRAM0, YRAM");
@@ -159,16 +244,21 @@ void gintctl_gint_spuram(void)
 		if(key == KEY_DOWN && cur_bank == 0)
 			cur_bank++;
 
-		if(key == KEY_F1 && cur_bank == 0)
+		if(key == KEY_F1 && cur_bank == 0 && _(tab == 1, 1))
 		{
 			SPU.PBANKC0 ^= (1 << cur_page);
 			SPU.PBANKC1 ^= (1 << cur_page);
 		}
-		if(key == KEY_F1 && cur_bank == 1)
+		if(key == KEY_F1 && cur_bank == 1 && _(tab == 1, 1))
 		{
 			SPU.XBANKC0 ^= (1 << cur_page);
 			SPU.XBANKC1 ^= (1 << cur_page);
 		}
+
+		#ifdef FX9860G
+		if(key == KEY_F2) tab = 0;
+		if(key == KEY_F3) tab = 1;
+		#endif
 	}
 
 	/* Restore the values we saved before altering page data */
