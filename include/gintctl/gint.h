@@ -5,8 +5,8 @@
 #ifndef GINTCTL_GINT
 #define GINTCTL_GINT
 
-/* gintctl_gint_hardware(): Detected hardware configuration */
-void gintctl_gint_hardware(void);
+/* gintctl_gint_cpumem(): Detected CPU and memory configuration */
+void gintctl_gint_cpumem(void);
 
 /* gintctl_gint_ram(): Determine the size of some memory areas */
 void gintctl_gint_ram(void);

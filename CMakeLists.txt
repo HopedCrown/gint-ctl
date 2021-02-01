@@ -17,12 +17,12 @@ set(SOURCES
   src/plot.c
   src/util.c
   src/gint/bopti.c
+  src/gint/cpumem.c
   src/gint/dma.c
   src/gint/dsp.c
   src/gint/dsp.s
   src/gint/dump.c
   src/gint/gray.c
-  src/gint/hardware.c
   src/gint/keyboard.c
   src/gint/ram.c
   src/gint/rtc.c
@@ -58,6 +58,7 @@ set(ASSETS_fx
   assets-fx/img/libimg_swords.png
   assets-fx/img/opt_dump.png
   assets-fx/img/opt_gint_bopti.png
+  assets-fx/img/opt_gint_cpumem.png
   assets-fx/img/opt_gint_gray.png
   assets-fx/img/opt_gint_ram.png
   assets-fx/img/opt_gint_rtc.png
