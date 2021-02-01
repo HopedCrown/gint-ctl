@@ -33,7 +33,7 @@
 struct menu menu_gint = {
 	_("gint tests", "gint features and driver tests"), .entries = {
 
-	{ "Hardware",         gintctl_gint_hardware, 0 },
+	{ "CPU and memory",   gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",    gintctl_gint_ram, MENU_SH4_ONLY },
 	#ifdef FXCG50
 	{ "DSP processors",   gintctl_gint_dsp, 0 },
@@ -100,7 +100,7 @@ struct menu menu_libs = {
 void gintctl_main(void)
 {
 	#ifdef FX9860G
-	row_title("gint @%07x", GINT_HASH);
+	row_title("gint %s %07x", GINT_VERSION, GINT_HASH);
 
 	row_print(3, 1, "F2:gint tests");
 	row_print(4, 1, "F3:Performance");

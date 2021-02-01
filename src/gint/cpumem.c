@@ -1,6 +1,7 @@
 #include <gint/hardware.h>
 #include <gint/keyboard.h>
 #include <gint/display.h>
+#include <gint/mmu.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
@@ -34,8 +35,8 @@ void show_mpucpu(void)
 	};
 	char const *calc_names[] = {
 		"Unknown",
-		"SH-3 fx-9860G-like",
-		"SH-4 fx-9860G-like",
+		"SH3 fx-9860G*",
+		"SH4 fx-9860G*",
 		"Graph 35+E II",
 		"Prizm fx-CG 20",
 		"fx-CG 50/Graph 90+E",
@@ -45,81 +46,74 @@ void show_mpucpu(void)
 	int mpu  = gint[HWMPU];
 	int calc = gint[HWCALC];
 
+	char const *str_calc = _("Model", "Calculator model");
 	if(calc < 0 || calc > 6)
-		row_print(1, 1, "Calculator model: <CALCID %d>", calc);
+		row_print(1, 1, "%s: <CALCID %d>", str_calc, calc);
 	else
-		row_print(1, 1, "Calculator model: %s", calc_names[calc]);
+		row_print(1, 1, "%s: %s", str_calc, calc_names[calc]);
 
 	if(mpu < 0 || mpu > 4)
-		row_print(3, 1, "MPU: <MPUID %d>", mpu);
+		row_print(_(2,3), 1, "MPU: <MPUID %d>", mpu);
 	else
-		row_print(3, 1, "MPU: %s", mpu_names[mpu]);
-
-	if(!isSH4()) return;
-
-	row_print(4, 1, _(" PVR:"," Processor Version Register: ") "%08x",
-		gint[HWCPUVR]);
-	row_print(5, 1, _(" PRR:"," Product Register: ") "%08x",gint[HWCPUPR]);
+		row_print(_(2,3), 1, "MPU: %s", mpu_names[mpu]);
 
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
-	row_print(6, 1, _(" CPUOPM:"," CPU Operation Mode: ") "%08x", *CPUOPM);
-
 	uint32_t SR;
 	__asm__("stc sr, %0" : "=r"(SR));
-	row_print(7, 1, _(" SR:", " Status Register: ") "%08x", SR);
+
+	#ifdef FX9860G
+	if(isSH3())
+	{
+		row_print(4, 1, " SR %08x", SR);
+		return;
+	}
+	row_print(4, 1, "     SR %08x", SR);
+	row_print(5, 1, "    PVR %08x", gint[HWCPUVR]);
+	row_print(6, 1, "    PRR %08x", gint[HWCPUPR]);
+	row_print(7, 1, " CPUOPM %08x", *CPUOPM);
+	#endif
+
+	#ifdef FXCG50
+	row_print(4, 1, " Status Register: %08x", SR);
+	row_print(5, 1, " Processor Version Register: %08x", gint[HWCPUVR]);
+	row_print(6, 1, " Product Register: %08x", gint[HWCPUPR]);
+	row_print(7, 1, " CPU Operation Mode: %08x", *CPUOPM);
+	#endif
 }
 
 /* Memory */
 static void show_memory(void)
 {
+	uint32_t base_rom  = 0x80000000;
+	uint32_t base_ram  = 0x88000000;
+	uint32_t base_uram = (uint32_t)mmu_uram();
+
 	int rom  = gint[HWROM];
 	int ram  = gint[HWRAM];
 	int uram = gint[HWURAM];
 
 	#ifdef FX9860G
-	row_print(1, 1, "ROM: %dM", rom >> 20);
-	row_print(2, 1, "RAM:%dk (%dk user)", ram >> 10, uram >> 10);
+	row_title("Basic memory layout");
+	row_print(3, 2, "%08x %4dk ROM",  base_rom,   rom >> 10);
+	row_print(4, 2, "%08x %4dk RAM",  base_ram,   ram >> 10);
+	row_print(5, 2, "%08x %4dk URAM", base_uram, uram >> 10);
 	#endif
 
 	#ifdef FXCG50
+	if(gint[HWCALC] == HWCALC_FXCG50) base_ram = 0x8c000000;
 	row_print(1, 1, "ROM: %dM", rom >> 20);
-	row_print(2, 2, "%08X .. %08X", 0x80000000, 0x80000000+rom-1);
-	row_print(3, 1, "RAM: %dM (%dk mapped in userspace)",
-		ram >> 20, uram >> 10);
+	row_print(2, 2, "%08X ... %08X", 0x80000000, 0x80000000+rom-1);
+	row_print(3, 1, "RAM: %dM", ram >> 20);
+	row_print(4, 2, "%08X ... %08X", base_ram, base_ram+ram-1);
+	row_print(5, 1, "Userspace RAM: %dk mapped", uram >> 10);
+	row_print(6, 2, "%08X ... %08X", base_uram, base_uram+uram-1);
 	#endif
 }
 
-/* Extra Timer Unit */
-static void hw_etmu(int *row)
-{
-	int etmu = gint[HWETMU];
-
-	put("Extra Timer Unit" _(,":"));
-	load_barrier(etmu);
-
-	if(etmu & HWETMU_1)
-	{
-		put(" Extra timers: 1");
-		put(" Operational: %c", (etmu & HWETMU_OK0 ? 'y' : 'n'));
-	}
-	else if(etmu & HWETMU_6)
-	{
-		char operational[7] = { 0 };
-		for(int i = 0; i < 6; i++)
-			operational[i] = etmu & (1 << (i + 2)) ? 'y' : 'n';
-
-		put(" Extra timers: 6");
-		put(" Operational: %s", operational);
-	}
-}
-
-/* Keyboard */
+#if 0
 static void hw_keyboard(int *row)
 {
 	int kbd = gint[HWKBD];
-
-	put("Keyboard" _(,":"), kbd);
-	load_barrier(kbd);
 
 	if(kbd & HWKBD_IO)
 	{
@@ -134,16 +128,12 @@ static void hw_keyboard(int *row)
 			" Driven by SH7305-style key scan interface"));
 	}
 
-	put(_(" Scans at %dHz"," Scans keys at %dHz"), gint[HWKBDSF]);
+	// + scan frequency
 }
 
-/* Display driver */
 static void hw_display(int *row)
 {
 	int dd = gint[HWDD];
-
-	put("Display" _(,":"));
-	load_barrier(dd);
 
 	#ifdef FXCG50
 	if(dd & HWDD_KNOWN) put(" Known R61524-type model");
@@ -157,28 +147,12 @@ static void hw_display(int *row)
 	if(dd & HWDD_LIGHT) put(_(" Backlight supported",
 		" Backlight configuration is enabled"));
 }
+#endif
 
-static int display_data(int offset)
+/* gintctl_gint_cpumem(): Detected CPU and memory configuration */
+void gintctl_gint_cpumem(void)
 {
-	int row_value = -offset;
-	int *row = &row_value;
-
-	hw_etmu(row);
-	put("");
-
-	hw_keyboard(row);
-	put("");
-
-	hw_display(row);
-
-	return row_value + offset;
-}
-
-/* gintctl_hardware(): Show the hardware screen */
-void gintctl_gint_hardware(void)
-{
-	int offset = 0, tab = 0;
-	int max, key = 0;
+	int tab=0, key=0;
 
 	while(key != KEY_EXIT)
 	{
@@ -186,30 +160,21 @@ void gintctl_gint_hardware(void)
 
 		if(tab == 0) show_mpucpu();
 		if(tab == 1) show_memory();
-		if(tab == 2)
-		{
-			max = display_data(offset);
-			scrollbar(offset, max, 1, row_count() + 1);
-		}
+
+		#ifdef FX9860G
+		extern bopti_image_t img_opt_gint_cpumem;
+		dimage(0, 56, &img_opt_gint_cpumem);
+		#endif
 
 		#ifdef FXCG50
-		row_title("Hardware and loaded drivers");
+		row_title("Processor and memory");
 		fkey_menu(1, "MPU/CPU");
 		fkey_menu(2, "MEMORY");
-		fkey_menu(3, "Other");
 		#endif
 
 		dupdate();
-
 		key = getkey().key;
-
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
-		if(key == KEY_F3) tab = 2;
-
-		if(tab == 2 && key == KEY_UP && offset > 0)
-			offset--;
-		if(tab == 2 && key == KEY_DOWN && max - offset > row_count())
-			offset++;
 	}
 }
