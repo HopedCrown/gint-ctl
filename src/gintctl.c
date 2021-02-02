@@ -4,6 +4,7 @@
 #include <gint/keyboard.h>
 #include <gint/gint.h>
 #include <gint/hardware.h>
+#include <gint/kprint.h>
 
 #include <gintctl/util.h>
 #include <gintctl/menu.h>
@@ -81,7 +82,7 @@ struct menu menu_libs = {
 
 	{ "libc: " _("TinyMT32", "TinyMT random number generation"),
 		gintctl_libs_tinymt, 0 },
-	{ "libc: " _("printf family", "Formatted printing functions"),
+	{ "libc: " _("printf family", "Formatted printing (with Grisu2b)"),
 		gintctl_libs_printf, 0 },
 	{ "libc: " _("mem functions", "Core memory functions"),
 		gintctl_libs_memory, 0 },
@@ -159,6 +160,9 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 
 	/* Start the profiling library */
 	prof_init();
+
+	/* Enable floating-point formatters */
+	kprint_enable_fp();
 
 	#ifdef FX9860G
 	/* Use the Unicode font uf5x7 on fx-9860G */
