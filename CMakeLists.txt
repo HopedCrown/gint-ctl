@@ -45,8 +45,6 @@ set(SOURCES
   src/perf/memory.c
   src/perf/memory.s
   src/perf/render.c
-  src/perf/shaders.c
-  src/perf/shaders.s
   src/regs/regs.c
 )
 set(ASSETS_fx
