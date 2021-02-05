@@ -90,13 +90,14 @@ static void show_memory(void)
 
 	int rom  = gint[HWROM];
 	int ram  = gint[HWRAM];
-	int uram = gint[HWURAM];
+	int uram = mmu_uram_size();
 
 	#ifdef FX9860G
 	row_title("Basic memory layout");
 	row_print(3, 2, "%08x %4dk ROM",  base_rom,   rom >> 10);
 	row_print(4, 2, "%08x %4dk RAM",  base_ram,   ram >> 10);
 	row_print(5, 2, "%08x %4dk URAM", base_uram, uram >> 10);
+	row_print(6, 2, "Mapped   %4dk", gint[HWURAM] >> 10);
 	#endif
 
 	#ifdef FXCG50
@@ -105,8 +106,9 @@ static void show_memory(void)
 	row_print(2, 2, "%08X ... %08X", 0x80000000, 0x80000000+rom-1);
 	row_print(3, 1, "RAM: %dM", ram >> 20);
 	row_print(4, 2, "%08X ... %08X", base_ram, base_ram+ram-1);
-	row_print(5, 1, "Userspace RAM: %dk mapped", uram >> 10);
+	row_print(5, 1, "Userspace RAM: %dk blocked", uram >> 10);
 	row_print(6, 2, "%08X ... %08X", base_uram, base_uram+uram-1);
+	row_print(7, 1, "Total mapped RAM: %dk", gint[HWURAM] >> 10);
 	#endif
 }
 
