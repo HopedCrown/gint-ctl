@@ -170,6 +170,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	dfont(&font_uf5x7);
 	#endif
 
+	key_event_t ev;
 	int key = 0;
 	struct menu *menu = NULL;
 
@@ -177,7 +178,9 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	{
 		draw(menu);
 		dupdate();
-		key = getkey().key;
+
+		ev = getkey();
+		key = ev.key;
 
 		if(key == KEY_F1)
 			menu = NULL;
@@ -195,7 +198,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		if(!menu) continue;
 
 		if(key == KEY_UP || key == KEY_DOWN)
-			menu_move(menu, key, 0);
+			menu_move(menu, key, ev.shift || keydown(KEY_SHIFT),0);
 		if(key == KEY_EXE)
 			menu_exec(menu);
 	}

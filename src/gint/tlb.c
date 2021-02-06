@@ -37,8 +37,8 @@ static void draw_rom_cell(int x, int y, int status)
 
 #ifdef FX9860G
 #define PAGE_COUNT 0x80
-#define SQUARE_WIDTH 4
-#define SQUARE_HEIGHT 4
+#define SQUARE_WIDTH 5
+#define SQUARE_HEIGHT 5
 #define LINE_SIZE 16
 #define TLB_VIEW 8
 
@@ -60,44 +60,6 @@ static int rom_cell_y(int page_number)
 {
 	return (page_number / LINE_SIZE) * SQUARE_HEIGHT;
 }
-
-#ifdef FX9860G
-void triangle_up(int y)
-{
-	int x=118;
-	dpixel(x+2, y, C_BLACK);
-	dline(x+1, y+1, x+3, y+1, C_BLACK);
-	dline(x,   y+2, x+4, y+2, C_BLACK);
-}
-void triangle_down(int y)
-{
-	int x=118;
-	dline(x,   y,   x+4, y,   C_BLACK);
-	dline(x+1, y+1, x+3, y+1, C_BLACK);
-	dpixel(x+2, y+2, C_BLACK);
-}
-#endif
-
-#ifdef FXCG50
-void triangle_up(int y)
-{
-	int x=370;
-	dpixel(x+3, y, C_BLACK);
-	dline(x+2, y+1, x+4, y+1, C_BLACK);
-	dline(x+1, y+2, x+5, y+2, C_BLACK);
-	dline(x,   y+3, x+6, y+3, C_BLACK);
-	dline(x,   y+4, x+6, y+4, C_BLACK);
-}
-void triangle_down(int y)
-{
-	int x=370;
-	dline(x,   y,   x+6, y,   C_BLACK);
-	dline(x,   y+1, x+6, y+1, C_BLACK);
-	dline(x+1, y+2, x+5, y+2, C_BLACK);
-	dline(x+2, y+3, x+4, y+3, C_BLACK);
-	dpixel(x+3, y+4, C_BLACK);
-}
-#endif
 
 static void explore_pages(uint8_t *pages, uint32_t *next_miss)
 {
@@ -177,44 +139,48 @@ void show_utlb(int row, int E)
 	char const *access_str[] = { "K:r", "K:rw", "U:r", "U:rw" };
 
 	uint16_t fg = valid ? C_BLACK : C_RGB(24,24,24);
-	#define fg_ fg, C_NONE
+	#define fg_ fg, C_NONE, DTEXT_LEFT, DTEXT_TOP
 
-	row_print_color(row, 2,  fg_, "%d", E);
-	row_print_color(row, 5,  fg_, "%08X", src);
-	row_print_color(row, 14, fg_, "%08X", dst);
-	row_print_color(row, 23, fg_, "%s", size_str[size]);
-	row_print_color(row, 28, fg_, "%s", access_str[data.PR]);
-	row_print_color(row, 34, fg_, "%s", (data.SH ? "SH" : "-"));
-	row_print_color(row, 37, fg_, "%s", (data.WT ? "WT" : "CB"));
-	row_print_color(row, 40, fg_, "%s", (data.C ? "C" : "-"));
-	row_print_color(row, 42, fg_, "%s", (addr.D || data.D ? "D" : "-"));
-	row_print_color(row, 44, fg_, "%s", (addr.V && data.V ? "V" : "-"));
+	int y = row_y(row) + 2 * (row > 1);
+
+	dprint_opt( 14, y, fg_, "%d", E);
+	dprint_opt( 38, y, fg_, "%08X", src);
+	dprint_opt(110, y, fg_, "%08X", dst);
+	dprint_opt(182, y, fg_, "%s", size_str[size]);
+	dprint_opt(222, y, fg_, "%s", access_str[data.PR]);
+	dprint_opt(270, y, fg_, "%s", (data.SH ? "SH" : "-"));
+	dprint_opt(294, y, fg_, "%s", (data.WT ? "WT" : "CB"));
+	dprint_opt(318, y, fg_, "%s", (data.C ? "C" : "-"));
+	dprint_opt(334, y, fg_, "%s", (addr.D || data.D ? "D" : "-"));
+	dprint_opt(350, y, fg_, "%s", (addr.V && data.V ? "V" : "-"));
 }
 #endif
 
 #ifdef FX9860G
 void show_utlb(int row, int E)
 {
-	extern font_t font_hexa;
-	font_t const *old_font = dfont(&font_hexa);
-	int y = (row - 1) * 6;
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+	int y = (row - 1) * 6 + 2 * (row > 1);
 
 	if(E == -1)
 	{
-		dprint( 1, y, C_BLACK, "ID");
-		dprint(12, y, C_BLACK, "Virtual");
-		dprint(47, y, C_BLACK, "Physical");
-		dprint(82, y, C_BLACK, "Len");
-		dprint(98, y, C_BLACK, "Mode");
+		dprint(  1, y, C_BLACK, "ID");
+		dprint( 12, y, C_BLACK, "Virtual");
+		dprint( 47, y, C_BLACK, "Physical");
+		dprint( 82, y, C_BLACK, "Len");
+		dprint( 97, y, C_BLACK, "Pr");
+		dprint(115, y, C_BLACK, "CD");
 
 		dfont(old_font);
 		return;
 	}
 
 	char const *size_str[] = { "1k", "4k", "64k", "1M" };
-	char const *access_str[] = { "K:r", "K:rw", "U:r", "U:rw" };
+	char const *access_str[] = { "Kr", "Krw", "Ur", "Urw" };
+	char const *cd_str[] = { "--", "-D", "C-", "CD" };
 	uint32_t src, dst;
-	int valid, size, pr;
+	int valid, size, pr, cd;
 
 	if(isSH3())
 	{
@@ -232,6 +198,7 @@ void show_utlb(int row, int E)
 
 		dst = data.PPN << 10;
 		pr = data.PR;
+		cd = (data.C << 1) | data.D;
 	}
 	else
 	{
@@ -244,16 +211,18 @@ void show_utlb(int row, int E)
 		valid = (addr.V != 0) && (data.V != 0);
 		size = (data.SZ1 << 1) | data.SZ2;
 		pr = data.PR;
+		cd = (data.C << 1) | data.D;
 	}
 
 	dprint( 1, y, C_BLACK, "%d", E);
 
 	if(valid)
 	{
-		dprint(12, y, C_BLACK, "%08X", src);
-		dprint(47, y, C_BLACK, "%08X", dst);
-		dprint(82, y, C_BLACK, "%s", size_str[size]);
-		dprint(98, y, C_BLACK, "%s", access_str[pr]);
+		dprint( 12, y, C_BLACK, "%08X", src);
+		dprint( 47, y, C_BLACK, "%08X", dst);
+		dprint( 82, y, C_BLACK, "%s", size_str[size]);
+		dprint( 97, y, C_BLACK, "%s", access_str[pr]);
+		dprint(115, y, C_BLACK, "%s", cd_str[cd]);
 	}
 
 	dfont(old_font);
@@ -271,23 +240,29 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	#endif
 	row_title(_("TLB management", "TLB miss handler and TLB management"));
 
+	#ifdef FX9860G
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+	#endif
+
 	if(tab == 0)
 	{
-		row_print(_(2,1), 1, _("srom=%x (%d pages)",
-			"Size of ROM sections: %08X (%d pages of 4k)"),
+		#ifdef FXCG50
+		row_print(1, 1, "Size of ROM sections: %08X (%d pages of 4k)",
 			rom_size, rom_pages);
+		#endif
 
-		for(uint p=0, y=_(19,36); p < PAGE_COUNT; p += 2*LINE_SIZE)
+		for(uint p=0, y=_(12,36); p < PAGE_COUNT; p += 2*LINE_SIZE)
 		{
-			dprint(_(4,18), y, C_BLACK, _("%06x","%08X"),
+			dprint(_(5,18), y, C_BLACK, "%08X",
 				0x00300000 + (p << 12));
 			y += 2*SQUARE_HEIGHT;
 		}
 
 		for(uint p = 0; p < PAGE_COUNT; p++)
 		{
-			draw_rom_cell(_(44,88) + rom_cell_x(p),
-				_(20,36) + rom_cell_y(p), pages[p]);
+			draw_rom_cell(_(39,88) + rom_cell_x(p),
+				_(11,36) + rom_cell_y(p), pages[p]);
 		}
 
 		#ifdef FXCG50
@@ -308,18 +283,18 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	else if(tab == 1)
 	{
 		row_print(_(2,1), 1, "Legend:");
-		draw_rom_cell(_(8,18),   _(17,36), 0);
-		draw_rom_cell(_(64,200), _(17,36), 1);
-		draw_rom_cell(_(8,18),   _(25,50), 2);
-		draw_rom_cell(_(64,200), _(25,50), 3);
+		draw_rom_cell(_(8,18),   _(15,36), 0);
+		draw_rom_cell(_(64,200), _(15,36), 1);
+		draw_rom_cell(_(8,18),   _(22,50), 2);
+		draw_rom_cell(_(64,200), _(22,50), 3);
 
-		dprint(_(16,30),  _(16,36), C_BLACK,
+		dprint(_(16,30),  _(15,36), C_BLACK,
 			_("Unused", "Unused in add-in"));
-		dprint(_(72,212), _(16,36), C_BLACK,
+		dprint(_(72,212), _(15,36), C_BLACK,
 			_("Unmapped", "Currently unmapped"));
-		dprint(_(16,30),  _(24,50), C_BLACK,
+		dprint(_(16,30),  _(22,50), C_BLACK,
 			_("Data", "Data still mapped"));
-		dprint(_(72,212), _(24,50), C_BLACK,
+		dprint(_(72,212), _(22,50), C_BLACK,
 			_("Mapped", "Currently mapped"));
 
 		#ifdef FXCG50
@@ -327,7 +302,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		dprint(30, 64, C_BLACK, "Next page to load");
 
 		row_print(6, 1,
-			"The MISS key will load an unmapped page to TLB by");
+			"The LOAD key will load an unmapped page to TLB by");
 		row_print(7, 1,
 			"performing a TLB miss, which calls %%003 on fx9860g");
 		row_print(8, 1,
@@ -341,12 +316,16 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		#endif
 
 		#ifdef FX9860G
+		dprint(1, 30, C_BLACK, "Size of ROM text: %X (%d pages)",
+			rom_size, rom_pages);
+
 		if(next_miss != 0xffffffff)
-			row_print(5, 1, "Next load: %x", next_miss);
+			dprint(1, 36, C_BLACK, "Next load: %08x", next_miss);
 		else
-			row_print(5, 1, "No page left to load!");
-		row_print(6, 1, "MISS:  TLB miss");
-		row_print(7, 1, "TIMER: From timer");
+			dprint(1, 36, C_BLACK, "No page left to load!");
+
+		dprint(1, 43, C_BLACK, "F5: Load a page by TLB miss");
+		dprint(1, 49, C_BLACK, "F6: Do it from a timer callback");
 		#endif
 	}
 
@@ -356,11 +335,23 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		for(int i = 0; i < TLB_VIEW; i++)
 			show_utlb(i+2, tlb_scroll+i);
 
-		if(tlb_scroll > 0) triangle_up(_(7,38));
-		if(tlb_scroll < TLB_VIEW_MAX) triangle_down(_(49,192));
+		#ifdef FX9860G
+		dhline(6, C_BLACK);
+		#endif
+
+		#ifdef FXCG50
+		dline(12, 34, 363, 34, C_BLACK);
+		#endif
+
+		scrollbar_px(
+			/*    view */ _(8,37), _(54,201),
+			/*   range */ 0, TLB_VIEW_MAX + TLB_VIEW,
+			/* visible */ tlb_scroll, TLB_VIEW);
 	}
 
 	#ifdef FX9860G
+	dfont(old_font);
+
 	extern bopti_image_t img_opt_gint_tlb;
 	dimage(0, 56, &img_opt_gint_tlb);
 	#endif
@@ -369,7 +360,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	fkey_menu(1, "ROM");
 	fkey_menu(2, "INFO");
 	fkey_menu(3, "TLB");
-	fkey_action(5, "MISS");
+	fkey_action(5, "LOAD");
 	fkey_action(6, "TIMER");
 	#endif
 }
@@ -408,13 +399,17 @@ void gintctl_gint_tlb(void)
 
 		if(tab == 2 && key == KEY_UP)
 		{
-			if(ev.shift) tlb_scroll = 0;
-			else if(tlb_scroll > 0) tlb_scroll--;
+			if(ev.shift || keydown(KEY_SHIFT))
+				tlb_scroll = 0;
+			else if(tlb_scroll > 0)
+				tlb_scroll--;
 		}
 		if(tab == 2 && key == KEY_DOWN)
 		{
-			if(ev.shift) tlb_scroll = TLB_VIEW_MAX;
-			else if (tlb_scroll < TLB_VIEW_MAX) tlb_scroll++;
+			if(ev.shift || keydown(KEY_SHIFT))
+				tlb_scroll = TLB_VIEW_MAX;
+			else if (tlb_scroll < TLB_VIEW_MAX)
+				tlb_scroll++;
 		}
 
 		if(key == KEY_F5 && next_miss != 0xffffffff)

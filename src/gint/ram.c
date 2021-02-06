@@ -127,31 +127,31 @@ static void show_region(int row, struct region *r)
 	/* Out-of-bounds rows */
 	if(row < 1 || row > 9 || (row == 1 && r)) return;
 
-	extern font_t font_hexa;
-	font_t const *old_font = dfont(&font_hexa);
-	int y = (row - 1) * 6;
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+	int y = (row - 1) * 6 + 2 * (row > 1);
 
 	if(!r)
 	{
 		dprint( 1, y, C_BLACK, "Area");
-		dprint(24, y, C_BLACK, "Address");
-		dprint(60, y, C_BLACK, "Size");
-		dprint(80, y, C_BLACK, "Reason");
+		dprint(26, y, C_BLACK, "Address");
+		dprint(62, y, C_BLACK, "Size");
+		dprint(82, y, C_BLACK, "At end");
 		dfont(old_font);
 		return;
 	}
 
-	char const *reasons[] = { "", "Read-only", "Loops", "" };
+	char const *reasons[] = { "Not tested", "Read-only", "Loops", "" };
 
 	dprint( 1, y, C_BLACK, "%s", r->name);
-	dprint(24, y, C_BLACK, "%08X", r->mem);
+	dprint(26, y, C_BLACK, "%08X", r->mem);
 
 	if(r->reason != 0)
-	{
-		dprint(60, y, C_BLACK, "%dk", r->size >> 10);
-		dprint(80, y, C_BLACK, "%s", reasons[r->reason]);
-	}
+		dprint(62, y, C_BLACK, "%dk", r->size >> 10);
+	else
+		dprint(62, y, C_BLACK, "-");
 
+	dprint(82, y, C_BLACK, "%s", reasons[r->reason]);
 	dfont(old_font);
 }
 #endif
@@ -172,7 +172,7 @@ static void show_region(int y, struct region *r)
 		row_print(y,  9, "Address");
 		row_print(y, 18, "AS");
 		row_print(y, 22, "Size");
-		row_print(y, 35, "Reason");
+		row_print(y, 35, "At end");
 		return;
 	}
 
@@ -207,6 +207,7 @@ void gintctl_gint_ram(void)
 	/* List scroll no fx-9860G */
 	GUNUSED int scroll = spu_zero();
 
+	key_event_t ev;
 	int key = 0;
 	while(key != KEY_EXIT)
 	{
@@ -214,13 +215,13 @@ void gintctl_gint_ram(void)
 
 		#ifdef FX9860G
 		show_region(1, NULL);
+		dhline(6, C_BLACK);
 		for(int i = 0; i < region_count; i++)
 		{
 			show_region(i+2-scroll, &r[i]);
 		}
-
-		if(scroll > 0) triangle_up(7);
-		if(scroll < region_count - 8) triangle_down(49);
+		scrollbar_px(/* view */ 8, 54, /* range */ 0, region_count,
+			/* visible */ scroll, 8);
 
 		extern bopti_image_t img_opt_gint_ram;
 		dimage(0, 56, &img_opt_gint_ram);
@@ -242,7 +243,8 @@ void gintctl_gint_ram(void)
 
 		dupdate();
 
-		key = getkey().key;
+		ev = getkey();
+		key = ev.key;
 		if(key == KEY_F1)
 		{
 			explore_region(&r[0]);
@@ -271,8 +273,17 @@ void gintctl_gint_ram(void)
 		}
 
 		#ifdef FX9860G
-		if(key == KEY_UP && scroll > 0) scroll--;
-		if(key == KEY_DOWN && scroll < region_count - 8) scroll++;
+		int scroll_max = region_count - 8;
+		if(key == KEY_UP)
+		{
+			if(ev.shift || keydown(KEY_SHIFT)) scroll=0;
+			else if(scroll > 0) scroll--;
+		}
+		if(key == KEY_DOWN)
+		{
+			if(ev.shift || keydown(KEY_SHIFT)) scroll=scroll_max;
+			else if(scroll < scroll_max) scroll++;
+		}
 		#endif
 	}
 }

@@ -98,7 +98,6 @@ void gintctl_gint_timer(void)
 	   program to ~90 FPS.) */
 	int key=0, tid=0;
 	GUNUSED int timeout=1;
-	volatile int flag = 0;
 
 	#ifdef FX9860G
 	int tab = 1;
@@ -116,8 +115,11 @@ void gintctl_gint_timer(void)
 		extern bopti_image_t img_opt_gint_timers;
 		dimage(0, 56, &img_opt_gint_timers);
 
-		if(tid < 3) dprint(23, 56, C_BLACK, "TMU%d", tid);
-		else        dprint(23, 56, C_BLACK, "ETMU%d", tid-3);
+		extern font_t font_mini;
+		font_t const *old_font = dfont(&font_mini);
+		if(tid < 3) dprint(24, 57, C_BLACK, "\x01 TMU%d \x02", tid);
+		else        dprint(24, 57, C_BLACK, "\x01 ETMU%d \x02", tid-3);
+		dfont(old_font);
 		#endif
 
 		#ifdef FXCG50
@@ -155,7 +157,9 @@ void gintctl_gint_timer(void)
 		if(key == KEY_F6) tab = 3;
 		#endif
 
-		if(key == KEY_UP) tid = (tid+timer_count()-1) % timer_count();
-		if(key == KEY_DOWN) tid = (tid + 1) % timer_count();
+		if(key == KEY_LEFT)
+			tid = (tid + timer_count() - 1) % timer_count();
+		if(key == KEY_RIGHT)
+			tid = (tid + 1) % timer_count();
 	}
 }

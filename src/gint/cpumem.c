@@ -2,18 +2,23 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
 #include <gint/mmu.h>
+#include <gint/std/stdio.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
-#define put(...) row_print(++(*row), 1, __VA_ARGS__)
+/* TODO: Include <gint/cpu.h> */
+extern uint32_t cpu_getVBR(void);
 
-#define load_barrier(x)	{		\
-	if(!((x) & HW_LOADED)) {	\
-		put(" (not loaded)");	\
-		return;			\
-	}				\
-}
+/* Some symbols from the linker script */
+extern uint32_t
+	brom, srom,			/* Limits of ROM mappings */
+	sdata,  rdata,			/* User's data section */
+	sbss, rbss;			/* User's BSS section */
+#ifdef FX9860G
+extern uint32_t sgmapped;		/* Permanently mapped functions */
+#endif
+
 
 /* MPU type and processor version */
 void show_mpucpu(void)
@@ -35,8 +40,8 @@ void show_mpucpu(void)
 	};
 	char const *calc_names[] = {
 		"Unknown",
-		"SH3 fx-9860G*",
-		"SH4 fx-9860G*",
+		"fx-9860G-like",
+		"fx-9860G-like",
 		"Graph 35+E II",
 		"Prizm fx-CG 20",
 		"fx-CG 50/Graph 90+E",
@@ -46,69 +51,101 @@ void show_mpucpu(void)
 	int mpu  = gint[HWMPU];
 	int calc = gint[HWCALC];
 
-	char const *str_calc = _("Model", "Calculator model");
-	if(calc < 0 || calc > 6)
-		row_print(1, 1, "%s: <CALCID %d>", str_calc, calc);
-	else
-		row_print(1, 1, "%s: %s", str_calc, calc_names[calc]);
+	/* Generate a default calc name if invalid values are found */
+	char calc_default[16];
+	sprintf(calc_default, "<CALCID %d>", calc);
+	char const *str_calc = calc_default;
+	if(calc >= 0 && calc < 7) str_calc = calc_names[calc];
 
-	if(mpu < 0 || mpu > 4)
-		row_print(_(2,3), 1, "MPU: <MPUID %d>", mpu);
-	else
-		row_print(_(2,3), 1, "MPU: %s", mpu_names[mpu]);
+	/* Generate a default MPU name if invalid values are found */
+	char mpu_default[16];
+	sprintf(mpu_default, "<MPUID %d>", mpu);
+	char const *str_mpu = mpu_default;
+	if(mpu >= 0 && mpu < 5) str_mpu = mpu_names[mpu];
 
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
-	uint32_t SR;
-	__asm__("stc sr, %0" : "=r"(SR));
+	uint32_t SR, r15;
+	__asm__("stc sr,  %0" : "=r"(SR));
+	__asm__("mov r15, %0" : "=r"(r15));
 
 	#ifdef FX9860G
-	if(isSH3())
-	{
-		row_print(4, 1, " SR %08x", SR);
-		return;
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+
+	dprint(1, 10, C_BLACK, "Model: %s", str_calc);
+	dprint(1, 16, C_BLACK, "MPU: %s", str_mpu);
+
+	print_prefix(29, 24,     "SR", "%08X", SR);
+	dline(29, 24, 29, 46, C_BLACK);
+	if(isSH3()) {
+		print_prefix(29, 30,    "PVR", "");
+		print_prefix(29, 36,    "PRR", "");
+		print_prefix(29, 42, "CPUOPM", "");
 	}
-	row_print(4, 1, "     SR %08x", SR);
-	row_print(5, 1, "    PVR %08x", gint[HWCPUVR]);
-	row_print(6, 1, "    PRR %08x", gint[HWCPUPR]);
-	row_print(7, 1, " CPUOPM %08x", *CPUOPM);
+	else {
+		print_prefix(29, 30,    "PVR", "%08X", gint[HWCPUVR]);
+		print_prefix(29, 36,    "PRR", "%08X", gint[HWCPUPR]);
+		print_prefix(29, 42, "CPUOPM", "%08X", *CPUOPM);
+	}
+	print_prefix(85, 24,    "VBR", "%08X", cpu_getVBR());
+	print_prefix(85, 30,    "R15", "%08X", r15);
+	dline(85, 24, 85, 34, C_BLACK);
+	dfont(old_font);
 	#endif
 
 	#ifdef FXCG50
+	row_print(1, 1, "Calculator model: %s", str_calc);
+	row_print(3, 1, "MPU: %s", str_mpu);
 	row_print(4, 1, " Status Register: %08x", SR);
 	row_print(5, 1, " Processor Version Register: %08x", gint[HWCPUVR]);
 	row_print(6, 1, " Product Register: %08x", gint[HWCPUPR]);
 	row_print(7, 1, " CPU Operation Mode: %08x", *CPUOPM);
+	row_print(8, 1, " Current VBR: %08x", cpu_getVBR());
+	row_print(9, 1, " Current stack pointer: %08x", r15);
 	#endif
 }
 
 /* Memory */
 static void show_memory(void)
 {
-	uint32_t base_rom  = 0x80000000;
-	uint32_t base_ram  = 0x88000000;
-	uint32_t base_uram = (uint32_t)mmu_uram();
-
-	int rom  = gint[HWROM];
-	int ram  = gint[HWRAM];
-	int uram = mmu_uram_size();
-
 	#ifdef FX9860G
-	row_title("Basic memory layout");
-	row_print(3, 2, "%08x %4dk ROM",  base_rom,   rom >> 10);
-	row_print(4, 2, "%08x %4dk RAM",  base_ram,   ram >> 10);
-	row_print(5, 2, "%08x %4dk URAM", base_uram, uram >> 10);
-	row_print(6, 2, "Mapped   %4dk", gint[HWURAM] >> 10);
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+	print_prefix(28, 10,   "brom", "%08X", &brom);
+	print_prefix(28, 16,  "rdata", "%08X", &rdata);
+	print_prefix(28, 22,   "rbss", "%08X", &rbss);
+	print_prefix(28, 28, "rreloc", "%08X", mmu_uram());
+
+	print_prefix(98, 10,   "srom", "%06d", &srom);
+	print_prefix(98, 16,  "sdata", "%06d", &sdata);
+	print_prefix(98, 22,   "sbss", "%06d", &sbss);
+	print_prefix(98, 28, "sreloc", "%06d", &sgmapped);
+
+	dprint(1, 38, C_BLACK, "ROM: %dk, RAM: %dk",
+		gint[HWROM] >> 10, gint[HWRAM] >> 10);
+	dprint(1, 45, C_BLACK, "User RAM: %08X (%dk, P0 %dk)",
+		mmu_uram(), mmu_uram_size() >> 10, gint[HWURAM] >> 10);
+	dfont(old_font);
 	#endif
 
 	#ifdef FXCG50
+	uint32_t base_ram  = 0x88000000;
 	if(gint[HWCALC] == HWCALC_FXCG50) base_ram = 0x8c000000;
-	row_print(1, 1, "ROM: %dM", rom >> 20);
-	row_print(2, 2, "%08X ... %08X", 0x80000000, 0x80000000+rom-1);
-	row_print(3, 1, "RAM: %dM", ram >> 20);
-	row_print(4, 2, "%08X ... %08X", base_ram, base_ram+ram-1);
-	row_print(5, 1, "Userspace RAM: %dk blocked", uram >> 10);
-	row_print(6, 2, "%08X ... %08X", base_uram, base_uram+uram-1);
-	row_print(7, 1, "Total mapped RAM: %dk", gint[HWURAM] >> 10);
+
+	row_print(1, 1, "RAM: %dM, RAM: %dM (starts at %08X)",
+		gint[HWROM] >> 20, gint[HWRAM] >> 20, base_ram);
+	row_print(2, 1, "Userspace RAM: %08X (%dk continuous block)",
+		mmu_uram(), mmu_uram_size() >> 10);
+	row_print(3, 1, "Total RAM mapped in P0: %dk",
+		gint[HWURAM] >> 10);
+
+	print_prefix(80, row_y(5),   "brom", "%08X", &brom);
+	print_prefix(80, row_y(6),  "rdata", "%08X", &rdata);
+	print_prefix(80, row_y(7),   "rbss", "%08X", &rbss);
+
+	print_prefix(240, row_y(5),   "srom", "%06d", &srom);
+	print_prefix(240, row_y(6),  "sdata", "%06d", &sdata);
+	print_prefix(240, row_y(7),   "sbss", "%06d", &sbss);
 	#endif
 }
 
@@ -164,6 +201,7 @@ void gintctl_gint_cpumem(void)
 		if(tab == 1) show_memory();
 
 		#ifdef FX9860G
+		row_title("CPU and memory");
 		extern bopti_image_t img_opt_gint_cpumem;
 		dimage(0, 56, &img_opt_gint_cpumem);
 		#endif

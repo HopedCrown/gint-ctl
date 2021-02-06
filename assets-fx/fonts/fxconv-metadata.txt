@@ -5,6 +5,15 @@ hexa.png:
   grid.size: 3x5
   grid.padding: 1
 
+mini.png:
+  type: font
+  name: font_mini
+  charset: ascii
+  proportional: true
+  height: 5
+  grid.size: 5x6
+  grid.padding: 1
+
 uf5x7:
   type: font
   name: font_uf5x7

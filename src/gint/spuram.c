@@ -41,7 +41,7 @@ static void restore(volatile uint32_t *area, uint32_t *save, int pages)
 }
 
 #ifdef FX9860G
-static void render_header(int y, int bank_count)
+static void render_header(int y, GUNUSED int bank_count)
 {
 	y = 9 + 6*y;
 	dtext( 1, 9, C_BLACK, "Area");
@@ -166,6 +166,8 @@ void gintctl_gint_spuram(void)
 	int cur_bank = 0;
 	int cur_page = 0;
 
+	int switch_key = _(KEY_F6, KEY_F1);
+
 	#ifdef FX9860G
 	int tab = 0;
 	#endif
@@ -178,7 +180,7 @@ void gintctl_gint_spuram(void)
 		row_title("SPU memory banking");
 
 		extern font_t font_hexa;
-		font_t *old_font = dfont(&font_hexa);
+		font_t const *old_font = dfont(&font_hexa);
 
 		if(tab == 0)
 		{
@@ -204,7 +206,8 @@ void gintctl_gint_spuram(void)
 
 		dfont(old_font);
 		extern bopti_image_t img_opt_gint_spuram;
-		dimage(0, 56, &img_opt_gint_spuram);
+		dsubimage(0, 56, &img_opt_gint_spuram, 0, 0,
+			(tab == 1 ? 128 : 107), 8, DIMAGE_NONE);
 		#endif
 
 		#ifdef FXCG50
@@ -244,20 +247,20 @@ void gintctl_gint_spuram(void)
 		if(key == KEY_DOWN && cur_bank == 0)
 			cur_bank++;
 
-		if(key == KEY_F1 && cur_bank == 0 && _(tab == 1, 1))
+		if(key == switch_key && cur_bank == 0 && _(tab == 1, 1))
 		{
 			SPU.PBANKC0 ^= (1 << cur_page);
 			SPU.PBANKC1 ^= (1 << cur_page);
 		}
-		if(key == KEY_F1 && cur_bank == 1 && _(tab == 1, 1))
+		if(key == switch_key && cur_bank == 1 && _(tab == 1, 1))
 		{
 			SPU.XBANKC0 ^= (1 << cur_page);
 			SPU.XBANKC1 ^= (1 << cur_page);
 		}
 
 		#ifdef FX9860G
-		if(key == KEY_F2) tab = 0;
-		if(key == KEY_F3) tab = 1;
+		if(key == KEY_F1) tab = 0;
+		if(key == KEY_F2) tab = 1;
 		#endif
 	}
 

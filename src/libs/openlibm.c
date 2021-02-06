@@ -3,6 +3,7 @@
 
 #include <gintctl/libs.h>
 #include <gintctl/plot.h>
+#include <gintctl/util.h>
 
 #define __BSD_VISIBLE 1
 #include <openlibm/openlibm.h>

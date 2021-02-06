@@ -25,12 +25,24 @@ void menu_init(struct menu *menu, int top, int bottom)
 }
 
 /* menu_move(): Move the cursor in a menu */
-void menu_move(struct menu *menu, int key, int wrap)
+void menu_move(struct menu *menu, int key, int quick, int wrap)
 {
 	int visible = menu->bottom - menu->top;
 	int max_offset = max(menu->len - visible, 0);
 
-	if(key == KEY_UP && menu->pos > 0)
+	/* Quick moves */
+	if(key == KEY_UP && quick)
+	{
+		menu->pos = 0;
+		menu->offset = 0;
+	}
+	else if(key == KEY_DOWN && quick)
+	{
+		menu->pos = menu->len - 1;
+		menu->offset = max_offset;
+	}
+	/* Normal move up and wrapping move up */
+	else if(key == KEY_UP && menu->pos > 0)
 	{
 		menu->pos--;
 		menu->offset = min(menu->offset, menu->pos);
@@ -40,8 +52,8 @@ void menu_move(struct menu *menu, int key, int wrap)
 		menu->pos = menu->len - 1;
 		menu->offset = max_offset;
 	}
-
-	if(key == KEY_DOWN && menu->pos + 1 < menu->len)
+	/* Normal move down and wrapping move down */
+	else if(key == KEY_DOWN && menu->pos + 1 < menu->len)
 	{
 		menu->pos++;
 		if(menu->pos > menu->offset + visible - 1

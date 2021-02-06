@@ -50,11 +50,23 @@ int row_x(int x);
 int row_y(int y);
 
 //---
-//	General (x,y) printing
+//	General rendering
 //---
 
-/* print(): Formatted printing shorthand */
-void print(int x, int y, char const *format, ...);
+/* scrollbar_px(): Pixel-based scrollbar
+   @view_top     First pixel covered by scrollbar area
+   @view_bottom  Pixel below last pixel covered by scrollbar area
+   @range_min    Minimum value in the virtual range we're scrolling through
+   @range_max    Maximum value in the virtual range
+   @range_pos    Position within the virtual range
+   @range_view   How much of the range is visible on-screen */
+void scrollbar_px(int view_top, int view_bottom, int range_min, int range_max,
+	int range_pos, int range_view);
+
+#define print_prefix(x, y, prefix, fmt, ...) { \
+	dtext_opt(x-_(3,5), y, C_BLACK,C_NONE,DTEXT_RIGHT,DTEXT_TOP, prefix); \
+	dprint(x+_(3,5), y, C_BLACK, fmt __VA_OPT__(,) __VA_ARGS__); \
+}
 
 //---
 //	F-key rendering

@@ -44,10 +44,11 @@ struct menu {
 void menu_init(struct menu *menu, int top, int bottom);
 
 /* menu_move(): Move the cursor in a menu
-   @menu  Initialized list menu
-   @key   Either KEY_UP, indicating up, or KEY_DOWN indicating down
-   @wrap  Allow wrap-around */
-void menu_move(struct menu *menu, int key, int wrap);
+   @menu   Initialized list menu
+   @key    Either KEY_UP, indicating up, or KEY_DOWN indicating down
+   @quick  Whether to quick-move to start or end
+   @wrap   Allow wrap-around */
+void menu_move(struct menu *menu, int key, int quick, int wrap);
 
 /* menu_show(): Render a list menu */
 void menu_show(struct menu const *menu);

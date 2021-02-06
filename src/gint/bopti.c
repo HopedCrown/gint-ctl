@@ -9,7 +9,6 @@
 /* gintctl_gint_bopti(): Test image rendering */
 void gintctl_gint_bopti(void)
 {
-	extern bopti_image_t img_swift;
 	extern bopti_image_t img_swords;
 	extern bopti_image_t img_potion_17x22, img_potion_18x22;
 	extern bopti_image_t img_applejack_31x27, img_applejack_36x25;

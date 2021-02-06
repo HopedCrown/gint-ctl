@@ -135,6 +135,29 @@ int row_y(int y)
 }
 
 //---
+//	General rendering
+//---
+
+/* scrollbar_px(): Pixel-based scrollbar */
+void scrollbar_px(int view_top, int view_bottom, int range_min, int range_max,
+	int range_pos, int range_view)
+{
+	int view_x      = _(127, 391);
+	int view_width  = _(1, 2);
+	int view_height = view_bottom - view_top;
+
+	/* Bring virtual range to 0..range_max */
+	range_max -= range_min;
+	range_pos -= range_min;
+
+	int bar_pos    = (range_pos  * view_height + range_max/2) / range_max;
+	int bar_height = (range_view * view_height + range_max/2) / range_max;
+
+	drect(view_x, view_top + bar_pos, view_x + view_width - 1,
+		view_top + bar_pos + bar_height, C_BLACK);
+}
+
+//---
 //	Other drawing utilities
 //---
 

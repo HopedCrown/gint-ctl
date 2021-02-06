@@ -12,7 +12,7 @@
 #define NAN __builtin_nan("")
 #define INFINITY __builtin_inf()
 
-#define SCROLL_HEIGHT _(8,12)
+#define SCROLL_HEIGHT _(9,12)
 
 struct printf_test {
 	char const *format;
@@ -198,27 +198,26 @@ static void draw(struct printf_test const *tests, char answers[][16],
 	dclear(C_WHITE);
 
 	#ifdef FX9860G
-	extern font_t font_hexa;
-	font_t const *old_font = dfont(&font_hexa);
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
 
 	dprint( 1, 0, C_BLACK, "ID");
 	dprint(13, 0, C_BLACK, "Format");
 	dprint(43, 0, C_BLACK, "Output");
-	dprint(91, 0, C_BLACK, "Valid");
+	dprint(99, 0, C_BLACK, "%d/%d", total_passed, total);
+	dhline(6, C_BLACK);
 
 	for(int i = 0; i < SCROLL_HEIGHT; i++)
 	{
 		struct printf_test const *t = &tests[offset+i];
-		int y = (i+1) * 6;
+		int y = (i+1) * 6 + 2;
 		dprint( 1, y, C_BLACK, "%d", offset+i+1);
 		dprint(13, y, C_BLACK, "%s", t->format);
 		dprint(43, y, C_BLACK, "%s", answers[offset+i][0]
 			? answers[offset+i] : "<empty>");
-		dprint(91, y, C_BLACK, "%s", passed[offset+i]?"Ok":"Err");
+		dprint(99, y, C_BLACK, "%s", passed[offset+i]?"Ok":"Err");
 	}
-
 	dfont(old_font);
-	row_print(8, 1, "Passed %d of %d.", total_passed, total);
 	#endif
 
 	#ifdef FXCG50
@@ -228,25 +227,28 @@ static void draw(struct printf_test const *tests, char answers[][16],
 	row_print(1,  5, "Format");
 	row_print(1, 13, "Argument");
 	row_print(1, 29, "Answer");
+	dline(12, 34, 355, 34, C_BLACK);
 
 	for(int i = 0; i < SCROLL_HEIGHT; i++)
 	{
 		struct printf_test const *t = &tests[offset+i];
-		row_print(i+2,  2, "%d", offset+i+1);
-		row_print(i+2,  5, "%s", t->format);
-		row_print(i+2, 13, "%s", t->argument_as_string);
+		int y = row_y(i+2) + 2;
+		dprint( 14, y, C_BLACK, "%d", offset+i+1);
+		dprint( 38, y, C_BLACK, "%s", t->format);
+		dprint(102, y, C_BLACK, "%s", t->argument_as_string);
 
 		int fg = passed[offset+i] ? C_RGB(0,31,0) : C_RGB(31,0,0);
-		row_print_color(i+2, 29, fg, C_NONE, "%s", answers[offset+i][0]
-			? answers[offset+i] : "<empty>");
+		dprint_opt(230, y, fg, C_NONE, DTEXT_LEFT, DTEXT_TOP, "%s",
+			answers[offset+i][0] ? answers[offset+i] : "<empty>");
 	}
 
 	row_print(14, 1, "Passed: %d/%d", total_passed, total);
 	#endif
 
-	if(offset > 0) triangle_up(_(7,38));
-	if(offset < total -  SCROLL_HEIGHT) triangle_down(_(49,192));
-
+	scrollbar_px(
+		/*    view */ _(8,37), _(60,201),
+		/*   range */ 0, total,
+		/* visible */ offset, SCROLL_HEIGHT);
 	dupdate();
 }
 
@@ -267,9 +269,16 @@ void gintctl_libs_printf(void)
 		draw(tests, answers, passed, offset);
 		key = (ev = getkey()).key;
 
-		if(key == KEY_UP && offset > 0) offset--;
-		if(key == KEY_UP && ev.shift) offset = 0;
-		if(key == KEY_DOWN && offset < total - SCROLL_HEIGHT) offset++;
-		if(key == KEY_DOWN && ev.shift) offset = total - SCROLL_HEIGHT;
+		int scroll_max = total - SCROLL_HEIGHT;
+		if(key == KEY_UP)
+		{
+			if(ev.shift || keydown(KEY_SHIFT)) offset = 0;
+			else if(offset > 0) offset--;
+		}
+		if(key == KEY_DOWN)
+		{
+			if(ev.shift || keydown(KEY_SHIFT)) offset = scroll_max;
+			else if(offset < scroll_max) offset++;
+		}
 	}
 }

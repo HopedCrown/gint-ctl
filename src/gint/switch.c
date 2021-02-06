@@ -12,7 +12,6 @@
 #include <gintctl/util.h>
 
 static int switches = 0;
-static int fast = 0;
 static int menus = 0;
 
 static void switch_function(void)
@@ -230,8 +229,7 @@ void render(void)
 	extern bopti_image_t img_opt_switch;
 	row_print(1, 1, "Switch to OS");
 	row_print(3, 1, "Switches done: %d", switches);
-	row_print(4, 1, "Fast done: %d", fast);
-	row_print(5, 1, "Menus done: %d", menus);
+	row_print(4, 1, "Menus done: %d", menus);
 
 	dimage(0, 56, &img_opt_switch);
 	#endif
@@ -239,11 +237,9 @@ void render(void)
 	#ifdef FXCG50
 	row_title("Hot switching between gint and OS");
 	row_print(2, 1, "Switches done: %d", switches);
-	row_print(3, 1, "Fast done: %d", fast);
-	row_print(4, 1, "Menus done: %d", menus);
+	row_print(3, 1, "Menus done: %d", menus);
 	fkey_button(1, "SWITCH");
-	fkey_button(2, "FAST");
-	fkey_button(3, "MENU");
+	fkey_button(2, "MENU");
 	fkey_action(6, "SYSTEM");
 	#endif
 }
@@ -260,10 +256,8 @@ void gintctl_gint_switch(void)
 
 		key = getkey().key;
 		if(key == KEY_F1) gint_switch(switch_function);
-		/* TODO: Fast gint switch in gintctl */
-		if(key == KEY_F2) {}
-		/* Wait for F3 to be released before calling next getkey() */
-		if(key == KEY_F3)
+		/* Wait for F2 to be released before calling next getkey() */
+		if(key == KEY_F2)
 		{
 			/* Render next frame in advance. When we return from
 			   the main menu, our VRAM will be displayed but
@@ -275,7 +269,7 @@ void gintctl_gint_switch(void)
 			dupdate();
 
 			gint_osmenu();
-			while(keydown(KEY_F3)) waitevent(NULL);
+			while(keydown(KEY_F2)) waitevent(NULL);
 		}
 		if(key == KEY_F6) system_contexts();
 	}

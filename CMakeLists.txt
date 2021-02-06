@@ -49,6 +49,7 @@ set(SOURCES
 )
 set(ASSETS_fx
   assets-fx/fonts/hexa.png
+  assets-fx/fonts/mini.png
   assets-fx/fonts/uf5x7
   assets-fx/img/bopti_1col.png
   assets-fx/img/bopti_2col.png
