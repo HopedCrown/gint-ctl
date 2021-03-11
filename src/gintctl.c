@@ -92,6 +92,8 @@ struct menu menu_libs = {
 		gintctl_libs_openlibm, 0 },
 	{ "libimg" _("",": Image transforms"),
 		gintctl_libs_libimg, 0 },
+	{ "JustUI widgets",
+		gintctl_libs_justui, 0 },
 	{ NULL, NULL, 0 },
 }};
 

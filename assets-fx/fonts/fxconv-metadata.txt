@@ -14,6 +14,13 @@ mini.png:
   grid.size: 5x6
   grid.padding: 1
 
+title.png:
+  type: font
+  name: font_title
+  charset: print
+  grid.size: 5x6
+  grid.padding: 1
+
 uf5x7:
   type: font
   name: font_uf5x7

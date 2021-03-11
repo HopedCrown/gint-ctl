@@ -20,4 +20,7 @@ void gintctl_libs_openlibm(void);
 /* gintctl_libs_libimg(): libimg-based rendering and image transform */
 void gintctl_libs_libimg(void);
 
+/* gintctl_libs_justui(): Just User Interfaces */
+void gintctl_libs_justui(void);
+
 #endif /* GINTCTL_LIBS */

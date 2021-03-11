@@ -10,6 +10,7 @@ include(Fxconv)
 find_package(Gint 2.1 REQUIRED)
 find_package(LibProf 2.1 REQUIRED)
 find_package(LibImg 2.1 REQUIRED)
+find_package(JustUI 1.0 REQUIRED)
 
 set(SOURCES
   src/gintctl.c
@@ -32,6 +33,7 @@ set(SOURCES
   src/gint/timer_callbacks.c
   src/gint/tlb.c
   src/gint/topti.c
+  src/libs/justui.c
   src/libs/libimg.c
   src/libs/memory.c
   src/libs/openlibm.c
@@ -46,10 +48,13 @@ set(SOURCES
   src/perf/memory.s
   src/perf/render.c
   src/regs/regs.c
+  src/widgets/gscreen.c
+  src/widgets/gtable.c
 )
 set(ASSETS_fx
   assets-fx/fonts/hexa.png
   assets-fx/fonts/mini.png
+  assets-fx/fonts/title.png
   assets-fx/fonts/uf5x7
   assets-fx/img/bopti_1col.png
   assets-fx/img/bopti_2col.png
@@ -69,6 +74,7 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_timer_callbacks.png
   assets-fx/img/opt_gint_timers.png
   assets-fx/img/opt_gint_tlb.png
+  assets-fx/img/opt_libs_jui.png
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
   assets-fx/img/opt_perf_libprof.png
@@ -117,7 +123,7 @@ target_include_directories(gintctl PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${FXSDK_COMPILER_INSTALL}/include/openlibm")
 target_link_libraries(gintctl
-  Gint::Gint LibProf::LibProf LibImg::LibImg -lopenlibm)
+  Gint::Gint LibProf::LibProf LibImg::LibImg JustUI::JustUI -lopenlibm)
 
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
   generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"
