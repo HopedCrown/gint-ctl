@@ -5,3 +5,6 @@ build-cg/
 # Targets
 gintctl.g1a
 gintctl.g3a
+
+# Development files
+*.sublime-*

@@ -54,13 +54,15 @@ set(ASSETS_fx
   assets-fx/img/bopti_1col.png
   assets-fx/img/bopti_2col.png
   assets-fx/img/bopti_3col.png
-  assets-fx/img/keypress.png
-  assets-fx/img/keyrelease.png
+  assets-fx/img/kbd_events.png
+  assets-fx/img/kbd_pressed.png
+  assets-fx/img/kbd_released.png
   assets-fx/img/libimg_swords.png
   assets-fx/img/opt_dump.png
   assets-fx/img/opt_gint_bopti.png
   assets-fx/img/opt_gint_cpumem.png
   assets-fx/img/opt_gint_gray.png
+  assets-fx/img/opt_gint_keyboard.png
   assets-fx/img/opt_gint_ram.png
   assets-fx/img/opt_gint_rtc.png
   assets-fx/img/opt_gint_spuram.png

@@ -3,11 +3,13 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/gint.h>
+#include <gint/drivers/keydev.h>
 #include <gint/hardware.h>
 #include <gint/kprint.h>
 
 #include <gintctl/util.h>
 #include <gintctl/menu.h>
+#include <gintctl/assets.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
@@ -132,7 +134,6 @@ static void draw(struct menu *menu)
 	else gintctl_main();
 
 	#ifdef FX9860G
-	extern bopti_image_t img_opt_main;
 	dimage(0, 56, &img_opt_main);
 	#endif
 
@@ -166,9 +167,13 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 
 	#ifdef FX9860G
 	/* Use the Unicode font uf5x7 on fx-9860G */
-	extern font_t font_uf5x7;
 	dfont(&font_uf5x7);
 	#endif
+
+	keydev_transform_t tr = keydev_transform(keydev_std());
+	tr.enabled |= KEYDEV_TR_DELAYED_SHIFT | KEYDEV_TR_INSTANT_SHIFT;
+	tr.enabled |= KEYDEV_TR_DELAYED_ALPHA | KEYDEV_TR_INSTANT_ALPHA;
+	keydev_set_transform(keydev_std(), tr);
 
 	key_event_t ev;
 	int key = 0;
