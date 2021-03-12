@@ -88,6 +88,7 @@ set(ASSETS_cg
   assets-cg/fonts/font8x9_bold.png
   assets-cg/img/applejack_31x27.png
   assets-cg/img/applejack_36x25.png
+  assets-cg/img/kbd_events.png
   assets-cg/img/kbd_pressed.png
   assets-cg/img/kbd_released.png
   assets-cg/img/libimg_even_odd.png

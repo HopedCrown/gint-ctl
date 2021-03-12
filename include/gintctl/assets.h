@@ -59,6 +59,7 @@ extern img_t
 extern bopti_image_t
 	img_applejack_31x27,
 	img_applejack_36x25,
+	img_kbd_events,
 	img_kbd_pressed,
 	img_kbd_released,
 	img_potion_17x22,

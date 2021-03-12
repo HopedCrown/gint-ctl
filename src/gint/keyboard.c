@@ -39,9 +39,7 @@ static void position(int row, int col, int *x, int *y, int *w, int *h)
 
 static void render_keyboard(keydev_t *d, int x0, int y0)
 {
-	int x, y, w, h;
-	extern bopti_image_t img_kbd_pressed;
-	extern bopti_image_t img_kbd_released;
+	int x=0, y=0, w=0, h=0;
 	dimage(x0, y0, &img_kbd_released);
 
 	for(int row = 0; row < 9; row++)
@@ -66,8 +64,17 @@ static void render_option(int x, int y, char const *name, bool enabled)
 	int w, h;
 	dsize(name, NULL, &w, &h);
 
-	if(enabled) drect(x, y, x+w+1, y+h+1, C_BLACK);
-	dtext(x+1, y+1, (enabled ? C_WHITE : C_BLACK), name);
+	if(enabled) drect(x, y, x+w+_(1,2), y+h+_(1,2), C_BLACK);
+	dtext(x+_(1,2), y+_(1,2), (enabled ? C_WHITE : C_BLACK), name);
+}
+
+static void render_icon(int x, int y, int id)
+{
+	int left   = _(6,9) * id + _(1, 0);
+	int top    = _(id != 3  && id != 4, 0);
+	int width  = _(5, 9);
+	int height = _(7 - 2*top, 9);
+	dsubimage(x, y+top, &img_kbd_events, left,top,width,height, DIMAGE_NONE);
 }
 
 static char const *key_name(int key)
@@ -100,7 +107,7 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	#ifdef FXCG50
 	row_title("Keyboard state visualizer");
 	int y0=190, dy=14, maxev=12;
-	int x1=230, x2=248;
+	int x1=290, x2=350;
 	#endif
 
 	#ifdef FX9860G
@@ -118,22 +125,17 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 		if(ev.type == KEYEV_NONE) continue;
 
 		int t = ev.type;
-		dsubimage(x1, y, &img_kbd_events,
-			(t == KEYEV_DOWN ? 1 : (t == KEYEV_UP ? 7 : 13)),
-			0, 5, 7, DIMAGE_NONE);
-		dtext(x1 + 7, y + 1, C_BLACK, key_name(ev.key));
+		render_icon(x1, y+_(0,2), (t==KEYEV_DOWN ? 0 : (t==KEYEV_UP ? 1 : 2)));
+		dtext(x1 + _(7,11), y + 1, C_BLACK, key_name(ev.key));
 
-		if(ev.shift)
-			dsubimage(x2, y, &img_kbd_events, 19, 0, 5, 7, DIMAGE_NONE);
-		if(ev.alpha)
-			dsubimage(x2+5, y, &img_kbd_events, 25, 0, 5, 7, DIMAGE_NONE);
+		if(ev.shift) render_icon(x2, y+_(0,1), 3);
+		if(ev.alpha) render_icon(x2 + _(5,9), y+_(0,1), 4);
 	}
 
-	render_keyboard(d, _(2,15), _(10,21));
-
-	#ifdef FX9860G
+	render_keyboard(d, _(2,15), _(6,21));
 	int tr = d->tr.enabled;
 
+	#ifdef FX9860G
 	dtext(35, 10, C_BLACK, "Shift:");
 	render_option(35, 16, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);
 	render_option(47, 16, "Ins", (tr & KEYDEV_TR_INSTANT_SHIFT) != 0);
@@ -144,25 +146,31 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	render_option(35, 46, "-Rels", (tr & KEYDEV_TR_DELETE_RELEASES) != 0);
 	render_option(64, 9, "Reps", (tr & KEYDEV_TR_REPEATS) != 0);
 
-	if(d->delayed_shift)
-		dsubimage(54, 10, &img_kbd_events, 43, 1, 5, 5, DIMAGE_NONE);
-	else if(d->pressed_shift)
-		dsubimage(54, 10, &img_kbd_events, 37, 1, 5, 5, DIMAGE_NONE);
-	else
-		dsubimage(54, 10, &img_kbd_events, 31, 1, 5, 5, DIMAGE_NONE);
-
-	if(d->delayed_alpha)
-		dsubimage(55, 24, &img_kbd_events, 43, 1, 5, 5, DIMAGE_NONE);
-	else if(d->pressed_alpha)
-		dsubimage(55, 24, &img_kbd_events, 37, 1, 5, 5, DIMAGE_NONE);
-	else
-		dsubimage(55, 24, &img_kbd_events, 31, 1, 5, 5, DIMAGE_NONE);
+	render_icon(54,  9, d->delayed_shift ? 7 : (d->pressed_shift ? 6 : 5));
+	render_icon(55, 23, d->delayed_alpha ? 7 : (d->pressed_alpha ? 6 : 5));
 
 	dtext(65, 17, C_BLACK, key_name(d->rep_key));
 	dprint(65, 29, C_BLACK, "L:%d", d->events_lost);
-
 	dfont(old_font);
-	#endif
+	#endif /* FX9860G */
+
+	#ifdef FXCG50
+	dtext(210, 30, C_BLACK, "Shift:");
+	render_option(210, 42, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);
+	render_option(245, 42, "Ins", (tr & KEYDEV_TR_INSTANT_SHIFT) != 0);
+	dtext(210, 56, C_BLACK, "Alpha:");
+	render_option(210, 68, "Del", (tr & KEYDEV_TR_DELAYED_ALPHA) != 0);
+	render_option(245, 68, "Ins", (tr & KEYDEV_TR_INSTANT_ALPHA) != 0);
+	render_option(210, 82, "-Mods", (tr & KEYDEV_TR_DELETE_MODIFIERS) != 0);
+	render_option(210, 96, "-Rels", (tr & KEYDEV_TR_DELETE_RELEASES) != 0);
+	render_option(210, 110, "Reps", (tr & KEYDEV_TR_REPEATS) != 0);
+
+	render_icon(252, 30, d->delayed_shift ? 7 : (d->pressed_shift ? 6 : 5));
+	render_icon(251, 56, d->delayed_alpha ? 7 : (d->pressed_alpha ? 6 : 5));
+
+	dtext(210, 124, C_BLACK, key_name(d->rep_key));
+	dprint(210, 136, C_BLACK, "L:%d", d->events_lost);
+	#endif /* FXCG50 */
 }
 
 static int handle_event(keydev_t *d, key_event_t *last_events, int counter)
