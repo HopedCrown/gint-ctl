@@ -5,6 +5,17 @@
 
 #include <gintctl/mem.h>
 #include <gintctl/util.h>
+#include <gintctl/assets.h>
+
+#include <gintctl/widgets/gscreen.h>
+#include <justui/jpainted.h>
+#include <justui/jinput.h>
+
+struct view {
+	uint32_t base;
+	bool ascii;
+	int lines;
+};
 
 /* Code of exception that occurs during a memory access */
 static uint32_t exception = 0;
@@ -29,10 +40,7 @@ int line(uint8_t *mem, char *header, char *bytes, char *ascii, int n)
 	exception = 0;
 	gint_exc_catch(catch_exc);
 	uint8_t z;
-	__asm__ volatile(
-		"mov.l	%1, %0"
-		: "=r"(z)
-		: "m"(*mem));
+	__asm__ volatile("mov.l	%1, %0" : "=r"(z) : "m"(*mem));
 	gint_exc_catch(NULL);
 
 	sprintf(header, "%08X:", (uint32_t)mem);
@@ -72,194 +80,119 @@ int line(uint8_t *mem, char *header, char *bytes, char *ascii, int n)
 	ascii[n] = 0;
 
 	for(int k = 0; 2 * k < n; k++)
-	{
 		sprintf(bytes + 5 * k, "%02X%02X ", mem[2*k], mem[2*k+1]);
-	}
+
 	return 0;
 }
 
-void draw_input(int x, int y, char *text, int cursor_pos)
+static void paint_mem(int x, int y, struct view *v)
 {
-	int w, h;
-	int next = text[cursor_pos];
-	text[cursor_pos] = 0;
-	dsize(text, NULL, &w, &h);
-	text[cursor_pos] = next;
+	char header[12], bytes[48], ascii[24];
+	uint32_t addr = v->base;
+	uint8_t *mem = (void *)addr;
 
-	dtext(x, y, C_BLACK, text);
-	dline(x+w, y, x+w, y+h-1, C_BLACK);
+	for(int i = 0; i < v->lines; i++, mem += 8, addr += 8)
+	{
+		GUNUSED int status = line(mem, header, bytes, ascii, 8);
+
+		#ifdef FX9860G
+		font_t const *old_font = dfont(&font_hexa);
+		dtext(x,      y + 6*i, C_BLACK, v->ascii ? ascii : header);
+		dtext(x + 40, y + 6*i, C_BLACK, bytes);
+		dfont(old_font);
+		#endif
+
+		#ifdef FXCG50
+		dtext(x,      y + 12*i, C_BLACK, header);
+		dtext(x + 85, y + 12*i, status ? C_RED : C_BLACK, bytes);
+
+		for(int k = 7; k >= 0; k--)
+		{
+			ascii[k+1] = 0;
+			dtext(x + 250 + 9*k, y + 12*i, C_BLACK, ascii+k);
+		}
+		#endif
+	}
 }
 
 /* gintctl_mem(): Memory browser */
 void gintctl_mem(void)
 {
-	uint32_t base = 0x88000000;
-	key_event_t ev;
+	struct view v = { .base = 0x88000000, .ascii = false, .lines = _(9,14) };
+
+	gscreen *s = gscreen_create2(NULL, &img_opt_mem,
+		"Memory browser", "@JUMP;;#ROM;#RAM;#ILRAM;#ADDIN");
+	jwidget *tab = jwidget_create(NULL);
+	jpainted *mem = jpainted_create(paint_mem, &v, _(115,321), _(53,167), tab);
+	jinput *input = jinput_create("Go to:" _(," "), 12, tab);
+
+	jwidget_set_margin(mem, _(0,8), 0, _(0,8), 0);
+	jwidget_set_margin(input, 0, 0, 0, _(1,4));
+	jwidget_set_stretch(input, 1, 0, false);
+	jwidget_set_visible(input, false);
+	jlayout_set_vbox(tab)->spacing = _(3,4);
+	gscreen_add_tab(s, tab, NULL);
+
 	int key = 0;
-
-	#ifdef FX9860G
-	extern font_t font_hexa;
-	font_t const *old_font = dfont(&font_hexa);
-	int view_ascii = 0;
-	#endif
-
-	char header[12];
-	char bytes[48];
-	char ascii[24];
-
-	int size = 8;
-	int lines = _(9,14);
-
-	char input[9];
-	int input_pos = -1;
-	int input_len = -1;
-	int input_keys[16] = {
-		KEY_0,   KEY_1,    KEY_2,    KEY_3,
-		KEY_4,   KEY_5,    KEY_6,    KEY_7,
-		KEY_8,   KEY_9,    KEY_XOT,  KEY_LOG,
-		KEY_LN,  KEY_SIN,  KEY_COS,  KEY_TAN,
-	};
-
 	while(key != KEY_EXIT)
 	{
-		dclear(C_WHITE);
+		bool input_focus = (jscene_focused_widget(s->scene) == input);
+		jevent e = jscene_run(s->scene);
 
-		uint32_t addr = base;
-		uint8_t *mem = (void *)addr;
-
-		for(int i = 0; i < lines; i++)
+		if(e.type == JSCENE_PAINT)
 		{
-			GUNUSED int status = line(mem,header,bytes,ascii,size);
-
-			#ifdef FX9860G
-			dtext( 5, 6*i + 1, C_BLACK, view_ascii?ascii:header);
-			dtext(45, 6*i + 1, C_BLACK, bytes);
-			#endif
-
-			#ifdef FXCG50
-			dtext(25,  26 + 12*i, C_BLACK, header);
-			dtext(110, 26 + 12*i, status ? C_RED : C_BLACK, bytes);
-
-			for(int k = size - 1; k >= 0; k--)
-			{
-				ascii[k+1] = 0;
-				dtext(275 + 9*k, 26 + 12*i, C_BLACK, ascii+k);
-			}
-			#endif
-
-			mem += size;
-			addr += size;
+			dclear(C_WHITE);
+			jscene_render(s->scene);
+			dupdate();
 		}
-
-		#ifdef FX9860G
-		if(input_pos < 0)
-		{
-			extern bopti_image_t img_opt_mem;
-			dsubimage(0, 56, &img_opt_mem, 0, 0, 128, 8,
-				DIMAGE_NONE);
-			if(view_ascii) dsubimage(23, 56, &img_opt_mem, 23, 9,
-				21, 8, DIMAGE_NONE);
-		}
-		else
-		{
-			extern font_t font_mini;
-			font_t const *old_font = dfont(&font_mini);
-
-			dtext(1, 57, C_BLACK, "Go to:");
-			draw_input(24, 57, input, input_pos);
-
-			dfont(old_font);
-		}
-		#endif
-
-		#ifdef FXCG50
-		row_title("Memory browser");
-		if(input_pos < 0)
-		{
-			fkey_button(1, "JUMP");
-			fkey_action(3, "ROM");
-			fkey_action(4, "RAM");
-			fkey_action(5, "ILRAM");
-			fkey_action(6, "ADDIN");
-		}
-		else
-		{
-			dtext(4, 210, C_BLACK, "Go to:");
-			draw_input(52, 210, input, input_pos);
-		}
-		#endif
-
-		dupdate();
-		ev = getkey();
-		key = ev.key;
-
-		int move_speed = 1;
-		if(ev.shift || keydown(KEY_SHIFT)) move_speed = 8;
-
-		if(key == KEY_UP)   base -= move_speed * size * lines;
-		if(key == KEY_DOWN) base += move_speed * size * lines;
-
-		if(key == KEY_F1 && input_pos < 0)
-		{
-			input[0] = 0;
-			input_pos = 0;
-			input_len = 0;
-		}
-		if(key == KEY_EXIT && input_pos >= 0)
-		{
-			input_pos = -1;
-			input_len = -1;
-			/* Don't quit the memory viewer */
-			key = 0;
-		}
-		if(key == KEY_EXE && input_pos >= 0)
+		if(e.type == JINPUT_VALIDATED)
 		{
 			/* Parse string into hexa */
 			uint32_t target = 0;
-			for(int k = 0; k < input_len; k++)
+			char const *str = jinput_value(input);
+
+			for(int k = 0; k < str[k]; k++)
 			{
 				target <<= 4;
-				if(input[k] <= '9') target += (input[k] - '0');
-				else target += (input[k] - 'A' + 10);
-
-				base = target & ~7;
+				if(str[k] <= '9') target += (str[k] - '0');
+				else target += ((str[k]|0x20) - 'a' + 10);
 			}
-
-			input_pos = -1;
-			input_len = -1;
+			v.base = target & ~7;
 		}
-
-		for(int i = 0; i < 16; i++)
-		if(key == input_keys[i] && input_pos >= 0 && input_len < 8)
+		if(e.type == JINPUT_VALIDATED || e.type == JINPUT_CANCELED)
 		{
-			/* Insert at input_pos, shift everything else right */
-			for(int k = 8; k >= input_pos; k--)
-				input[k + 1] = input[k];
-			input[input_pos++] = i + '0' + 7 * (i > 9);
-			input_len++;
+			jwidget_set_visible(input, false);
+			gscreen_set_tab_fkeys_visible(s, 0, true);
+			gscreen_focus(s, NULL);
 		}
-		if(key == KEY_DEL && input_pos > 0)
+
+		if(e.type != JSCENE_KEY || e.key.type == KEYEV_UP) continue;
+		key = e.key.key;
+
+		int move_speed = (e.key.shift ? 8 : 1);
+		if(key == KEY_UP)   v.base -= move_speed * 8 * v.lines;
+		if(key == KEY_DOWN) v.base += move_speed * 8 * v.lines;
+
+		if(key == KEY_F1 && !input_focus)
 		{
-			/* Shift everything after input_pos left one place */
-			for(int k = input_pos - 1; k < 8; k++)
-				input[k] = input[k + 1];
-			input_pos--;
-			input_len--;
+			jinput_clear(input);
+			jwidget_set_visible(input, true);
+			gscreen_set_tab_fkeys_visible(s, 0, false);
+			gscreen_focus(s, input);
 		}
-		if(key == KEY_LEFT  && input_pos > 0) input_pos--;
-		if(key == KEY_RIGHT && input_pos < input_len) input_pos++;
 
 		#ifdef FX9860G
-		if(key == KEY_F2 && input_pos < 0) view_ascii = !view_ascii;
+		if(key == KEY_F2 && !input_focus)
+		{
+			v.ascii = !v.ascii;
+			jfkeys_set_level(s->fkeys, v.ascii);
+		}
 		#endif
 
-		if(key == KEY_F3 && input_pos < 0) base = 0x80000000;
-		if(key == KEY_F4 && input_pos < 0) base = 0x88000000;
-		if(key == KEY_F5 && input_pos < 0) base = 0xe5200000;
-		if(key == KEY_F6 && input_pos < 0) base = 0x00300000;
+		if(key == KEY_F3 && !input_focus) v.base = 0x80000000;
+		if(key == KEY_F4 && !input_focus) v.base = 0x88000000;
+		if(key == KEY_F5 && !input_focus) v.base = 0xe5200000;
+		if(key == KEY_F6 && !input_focus) v.base = 0x00300000;
+		mem->widget.update = 1;
 	}
-
-	#ifdef FX9860G
-	dfont(old_font);
-	#endif
 }

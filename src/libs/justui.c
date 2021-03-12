@@ -103,11 +103,11 @@ void gintctl_libs_justui(void)
 	jwidget_set_border(c1, J_BORDER_SOLID, 1, C_BLACK);
 	jwidget_set_stretch(c1, 1, 1, false);
 
-	jwidget_set_stretch(c3, 2, 0, false);
+	jwidget_set_stretch(c3, 2, 1, false);
 	gtable_set_rows(c3, 5);
 	gtable_set_column_titles(c3, "C1", "C2", "Column 3");
 	gtable_set_column_sizes(c3, 1, 1, 3);
-	gtable_set_font(c3, &font_mini);
+	gtable_set_font(c3, _(&font_mini, dfont_default()));
 
 	jinput *input = jinput_create("Prompt:" _(," "), 12, tab1);
 	jwidget_set_stretch(input, 1, 0, false);
@@ -118,8 +118,8 @@ void gintctl_libs_justui(void)
 	gtable *tree = gtable_create(3, widget_tree_gen, scr->scene, NULL);
 	gtable_set_column_titles(tree, "Type", "Size", "Content");
 	gtable_set_column_sizes(tree, 3, 2, 2);
-	gtable_set_row_spacing(tree, 2);
-	gtable_set_font(tree, &font_mini);
+	gtable_set_row_spacing(tree, _(2,3));
+	gtable_set_font(tree, _(&font_mini, dfont_default()));
 
 	// Scene setup
 
@@ -127,15 +127,12 @@ void gintctl_libs_justui(void)
 	gscreen_add_tab(scr, tree, tree);
 	jscene_set_focused_widget(scr->scene, c3);
 	gtable_set_rows(tree, recursive_widget_count(scr->scene));
-	gscreen_set_tab_title_visible(scr, 1, false);
+	gscreen_set_tab_title_visible(scr, 1, _(false,true));
 
-	jevent e;
-	key_event_t k;
 	int key = 0;
-
 	while(key != KEY_EXIT)
 	{
-		jscene_run(scr->scene, &e, &k);
+		jevent e = jscene_run(scr->scene);
 
 		if(e.type == JSCENE_PAINT)
 		{
@@ -154,8 +151,8 @@ void gintctl_libs_justui(void)
 			gscreen_focus(scr, c3);
 		}
 
-		if(k.type != KEYEV_DOWN) continue;
-		key = k.key;
+		if(e.type != JSCENE_KEY || e.key.type != KEYEV_DOWN) continue;
+		key = e.key.key;
 
 		if(key == KEY_F3 && gscreen_in(scr, 0))
 		{

@@ -30,6 +30,8 @@ typedef struct {
 	/* Fixed widets */
 	jlabel *title;
 	jfkeys *fkeys;
+	/* Current function bar level */
+	int8_t fkey_level;
 
 } gscreen;
 
@@ -55,6 +57,17 @@ gscreen *gscreen_create(char const *title, char const *fkeys);
 #define gscreen_create2(short, img, long, fkeys) gscreen_create(long, fkeys)
 #endif
 
+//---
+// Function bar settings
+//---
+
+/* gscreen_set_fkeys_level(): Select the function key bar */
+void gscreen_set_fkeys_level(gscreen *s, int level);
+
+//---
+// Tab settings
+//---
+
 /* gscreen_add_tab(): Add a tab to the stacked layout
    The child's parent will be changed. The widget will also have a stretch of
    (1, 1, false) set by default. If not NULL, the last parameter indicates
@@ -64,6 +77,16 @@ void gscreen_add_tab(gscreen *scene, void *widget, void *focus);
 /* gcreen_add_tabs(): Add several tabs at once, with no special parameters */
 void gscreen_add_tabs(gscreen *s, ...);
 #define gscreen_add_tabs(...) gscreen_add_tabs(__VA_ARGS__, NULL)
+
+/* gscreen_set_tab_title_visible(): Set whether title bar is shown on a tab */
+void gscreen_set_tab_title_visible(gscreen *s, int tab, bool visible);
+
+/* gscreen_set_tab_fkeys_visible(): Set whether fkeys are shown on a tab */
+void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible);
+
+//---
+// Tab navigation
+//---
 
 /* gscreen_show_tab(): Show a tab from the stack
    Returns true if the tab changed, false if it was already active or if it is
@@ -75,12 +98,6 @@ int gscreen_current_tab(gscreen *s);
 
 /* gscreen_in(): Check if we're in a specific tab */
 bool gscreen_in(gscreen *s, int tab);
-
-/* gscreen_set_tab_title_visible(): Set whether title bar is shown on a tab */
-void gscreen_set_tab_title_visible(gscreen *s, int tab, bool visible);
-
-/* gscreen_set_tab_fkeys_visible(): Set whether fkeys are shown on a tab */
-void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible);
 
 //---
 // Focus management

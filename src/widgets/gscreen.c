@@ -23,6 +23,7 @@ gscreen *gscreen_create(char const *name, char const *labels)
 	g->scene = s;
 	g->tabs = NULL;
 	g->tab_count = 0;
+	g->fkey_level = 0;
 
 	jlabel *title = name ? jlabel_create(name, s) : NULL;
 	jwidget *stack = jwidget_create(s);
@@ -63,6 +64,27 @@ gscreen *gscreen_create(char const *name, char const *labels)
 	return g;
 }
 
+/* tab_stack(): Stacked widget where the tabs are located */
+static jwidget *tab_stack(gscreen *s)
+{
+	int index = (s->title != NULL) ? 1 : 0;
+	return s->scene->widget.children[index];
+}
+
+//---
+// Function bar settings
+//---
+
+/* gscreen_set_fkeys_level(): Select the function key bar */
+void gscreen_set_fkeys_level(gscreen *s, int level)
+{
+	s->fkey_level = level;
+}
+
+//---
+// Tab settings
+//---
+
 void gscreen_add_tab(gscreen *s, void *widget, void *focus)
 {
 	struct gscreen_tab *t = realloc(s->tabs, (s->tab_count+1) * sizeof *t);
@@ -74,8 +96,7 @@ void gscreen_add_tab(gscreen *s, void *widget, void *focus)
 	s->tabs[s->tab_count].focus = focus;
 	s->tab_count++;
 
-	jwidget *stack = s->scene->widget.children[1];
-	jwidget_add_child(stack, widget);
+	jwidget_add_child(tab_stack(s), widget);
 	jwidget_set_stretch(widget, 1, 1, false);
 }
 
@@ -92,9 +113,31 @@ void gscreen_add_tabs(gscreen *s, ...)
 	va_end(args);
 }
 
+void gscreen_set_tab_title_visible(gscreen *s, int tab, bool visible)
+{
+	if(!s->title || tab < 0 || tab >= s->tab_count) return;
+	s->tabs[tab].title_visible = visible;
+
+	if(gscreen_current_tab(s) == tab)
+		jwidget_set_visible(s->title, visible);
+}
+
+void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible)
+{
+	if(!s->fkeys || tab < 0 || tab >= s->tab_count) return;
+	s->tabs[tab].fkeys_visible = visible;
+
+	if(gscreen_current_tab(s) == tab)
+		jwidget_set_visible(s->fkeys, visible);
+}
+
+//---
+// Tab navigation
+//---
+
 bool gscreen_show_tab(gscreen *s, int tab)
 {
-	jwidget *stack = s->scene->widget.children[1];
+	jwidget *stack = tab_stack(s);
 	jlayout_stack *l = jlayout_get_stack(stack);
 
 	/* Find widget ID in the stack
@@ -119,7 +162,7 @@ bool gscreen_show_tab(gscreen *s, int tab)
 
 int gscreen_current_tab(gscreen *s)
 {
-	jwidget *stack = s->scene->widget.children[1];
+	jwidget *stack = tab_stack(s);
 	jlayout_stack *l = jlayout_get_stack(stack);
 	return l->active;
 }
@@ -129,17 +172,9 @@ bool gscreen_in(gscreen *s, int tab)
 	return gscreen_current_tab(s) == tab;
 }
 
-void gscreen_set_tab_title_visible(gscreen *s, int tab, bool visible)
-{
-	if(tab < 0 || tab >= s->tab_count) return;
-	s->tabs[tab].title_visible = visible;
-}
-
-void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible)
-{
-	if(tab < 0 || tab >= s->tab_count) return;
-	s->tabs[tab].fkeys_visible = visible;
-}
+//---
+// Focus management
+//---
 
 void gscreen_focus(gscreen *s, void *widget)
 {

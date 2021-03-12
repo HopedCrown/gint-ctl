@@ -311,17 +311,16 @@ static bool gtable_poly_event(void *t0, jevent e)
 
 	if(e.type != JWIDGET_KEY) return false;
 
-	key_event_t kev = e.data.key;
-	if(kev.type == KEYEV_UP) return false;
+	if(e.key.type == KEYEV_UP) return false;
 
-	if(kev.key == KEY_DOWN && t->offset < end) {
-		if(kev.shift) t->offset = end;
+	if(e.key.key == KEY_DOWN && t->offset < end) {
+		if(e.key.shift) t->offset = end;
 		else t->offset++;
 		t->widget.update = 1;
 		return true;
 	}
-	if(kev.key == KEY_UP && t->offset > 0) {
-		if(kev.shift) t->offset = 0;
+	if(e.key.key == KEY_UP && t->offset > 0) {
+		if(e.key.shift) t->offset = 0;
 		else t->offset--;
 		t->widget.update = 1;
 		return true;
