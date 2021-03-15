@@ -195,4 +195,5 @@ void gintctl_mem(void)
 		if(key == KEY_F6 && !input_focus) v.base = 0x00300000;
 		mem->widget.update = 1;
 	}
+	gscreen_destroy(s);
 }

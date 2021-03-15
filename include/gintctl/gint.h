@@ -44,6 +44,9 @@ void gintctl_gint_bopti(void);
 /* gintctl_gint_topti(): Test text rendering */
 void gintctl_gint_topti(void);
 
+/* gintctl_gint_kmalloc(): Dynamic memory allocator */
+void gintctl_gint_kmalloc(void);
+
 #ifdef FXCG50
 
 /* gintctl_gint_dma(): Test the Direct Access Memory Controller */

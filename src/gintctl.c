@@ -18,16 +18,7 @@
 
 #include <libprof.h>
 
-/* Drawing functions:
-   * ...
-   Keyboard tests:
-   * ...
-   Timer tests:
-   * Do more in-depth things than previous application
-   * Stress testing for number of interrupts
-   * ...
-   TODO:
-   * Add-in size and mappings
+/* TODO:
    * Interrupt controller state?
    * Clock frequencies
    * F2 to save hardware data to file */
@@ -45,6 +36,7 @@ struct menu menu_gint = {
 	{ "Memory dump",      gintctl_gint_dump, 0 },
 	{ "Switching to OS",  gintctl_gint_switch, 0 },
 	{ "TLB management",   gintctl_gint_tlb, 0 },
+	{ "Memory allocation",gintctl_gint_kmalloc, 0 },
 	{ "Keyboard",         gintctl_gint_keyboard, 0 },
 	{ "Timers",           gintctl_gint_timer, 0 },
 	{ "Timer callbacks",  gintctl_gint_timer_callbacks, 0 },

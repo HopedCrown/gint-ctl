@@ -27,6 +27,7 @@ extern bopti_image_t
 	img_opt_gint_cpumem,
 	img_opt_gint_gray,
 	img_opt_gint_keyboard,
+	img_opt_gint_kmalloc,
 	img_opt_gint_ram,
 	img_opt_gint_rtc,
 	img_opt_gint_spuram,

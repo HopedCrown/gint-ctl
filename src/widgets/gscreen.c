@@ -64,6 +64,13 @@ gscreen *gscreen_create(char const *name, char const *labels)
 	return g;
 }
 
+void gscreen_destroy(gscreen *s)
+{
+	if(s->scene) jwidget_destroy(s->scene);
+	free(s->tabs);
+	free(s);
+}
+
 /* tab_stack(): Stacked widget where the tabs are located */
 static jwidget *tab_stack(gscreen *s)
 {
@@ -75,7 +82,6 @@ static jwidget *tab_stack(gscreen *s)
 // Function bar settings
 //---
 
-/* gscreen_set_fkeys_level(): Select the function key bar */
 void gscreen_set_fkeys_level(gscreen *s, int level)
 {
 	s->fkey_level = level;

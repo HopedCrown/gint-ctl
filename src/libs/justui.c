@@ -168,5 +168,5 @@ void gintctl_libs_justui(void)
 		#endif
 	}
 
-	jwidget_destroy(scr->scene);
+	gscreen_destroy(scr);
 }

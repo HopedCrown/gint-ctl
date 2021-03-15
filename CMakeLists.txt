@@ -25,6 +25,7 @@ set(SOURCES
   src/gint/dump.c
   src/gint/gray.c
   src/gint/keyboard.c
+  src/gint/kmalloc.c
   src/gint/ram.c
   src/gint/rtc.c
   src/gint/spuram.c
@@ -68,6 +69,7 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_cpumem.png
   assets-fx/img/opt_gint_gray.png
   assets-fx/img/opt_gint_keyboard.png
+  assets-fx/img/opt_gint_kmalloc.png
   assets-fx/img/opt_gint_ram.png
   assets-fx/img/opt_gint_rtc.png
   assets-fx/img/opt_gint_spuram.png

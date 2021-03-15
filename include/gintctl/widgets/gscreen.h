@@ -57,6 +57,8 @@ gscreen *gscreen_create(char const *title, char const *fkeys);
 #define gscreen_create2(short, img, long, fkeys) gscreen_create(long, fkeys)
 #endif
 
+void gscreen_destroy(gscreen *s);
+
 //---
 // Function bar settings
 //---
