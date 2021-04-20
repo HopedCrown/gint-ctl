@@ -25,11 +25,11 @@ enum {
 struct menu {
 	char const *name;
 
-	int len;
-	int offset;
-	int pos;
-	int top;
-	int bottom;
+	int8_t len;
+	int8_t offset;
+	int8_t pos;
+	int8_t top;
+	int8_t bottom;
 
 	struct menuentry entries[];
 };

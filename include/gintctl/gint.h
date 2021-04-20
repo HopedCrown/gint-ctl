@@ -47,6 +47,9 @@ void gintctl_gint_topti(void);
 /* gintctl_gint_kmalloc(): Dynamic memory allocator */
 void gintctl_gint_kmalloc(void);
 
+/* gintctl_gint_usb(): USB communication */
+void gintctl_gint_usb(void);
+
 #ifdef FXCG50
 
 /* gintctl_gint_dma(): Test the Direct Access Memory Controller */

@@ -12,6 +12,8 @@ find_package(LibProf 2.1 REQUIRED)
 find_package(LibImg 2.1 REQUIRED)
 find_package(JustUI 1.0 REQUIRED)
 
+set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
+
 set(SOURCES
   src/gintctl.c
   src/menu.c
@@ -34,6 +36,7 @@ set(SOURCES
   src/gint/timer_callbacks.c
   src/gint/tlb.c
   src/gint/topti.c
+  src/gint/usb.c
   src/libs/justui.c
   src/libs/libimg.c
   src/libs/memory.c
@@ -76,6 +79,7 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_timer_callbacks.png
   assets-fx/img/opt_gint_timers.png
   assets-fx/img/opt_gint_tlb.png
+  assets-fx/img/opt_gint_usb.png
   assets-fx/img/opt_libs_jui.png
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
