@@ -3,6 +3,8 @@
 #include <gint/mpu/usb.h>
 #include <gint/usb.h>
 #include <gint/usb-ff-bulk.h>
+#include <gint/drivers.h>
+#include <gint/drivers/states.h>
 #include <gint/intc.h>
 #include <gint/mpu/power.h>
 #include <gint/mpu/cpg.h>
@@ -17,17 +19,6 @@
 #include <gintctl/assets.h>
 
 #define USB SH7305_USB
-
-/* Copy of the context structure from the driver (edgy style but heck) */
-typedef struct
-{
-	uint16_t SYSCFG, DVSTCTR, TESTMODE, REG_C2;
-	uint16_t CFIFOSEL, D0FIFOSEL, D1FIFOSEL;
-	uint16_t INTENB0, BRDYENB, NRDYENB, BEMPENB, SOFCFG;
-	uint16_t DCPCFG, DCPMAXP, DCPCTR;
-	uint16_t PIPECFG[9], PIPEBUF[9], PIPEMAXP[9], PIPEPERI[9];
-	uint16_t PIPEnCTR[9], PIPEnTRE[5], PIPEnTRN[5];
-} ctx_t;
 
 /* USB log buffer */
 #define LOG_SIZE _(1023, 16383)
@@ -155,25 +146,28 @@ static void draw_registers(GUNUSED int scroll)
 
 static void draw_context(void)
 {
-	extern void *driver_ctx(char const *name);
-	ctx_t *ctx = driver_ctx("USB");
-	GUNUSED int scroll = 0;
+	usb_state_t *s = NULL;
+	for(int i = 0; i < gint_driver_count(); i++) {
+		if(!strcmp(gint_drivers[i].name, "USB")) s = gint_world_os[i];
+	}
+	if(!s) return;
 
-	val( 0, "SYSCFG",    ctx->SYSCFG);
-	val( 1, "DVSTCTR",   ctx->DVSTCTR);
-	val( 2, "TESTMODE",  ctx->TESTMODE);
-	val( 3, "REG_C2",    ctx->REG_C2);
-	val( 4, "CFIFOSEL",  ctx->CFIFOSEL);
-	val( 5, "D0FIFOSEL", ctx->D0FIFOSEL);
-	val( 6, "D1FIFOSEL", ctx->D1FIFOSEL);
-	val( 7, "INTENB0",   ctx->INTENB0);
-	val( 8, "BRDYENB",   ctx->BRDYENB);
-	val( 9, "NRDYENB",   ctx->NRDYENB);
-	val(10, "BEMPENB",   ctx->BEMPENB);
-	val(11, "SOFCFG",    ctx->SOFCFG);
-	val(12, "DCPCFG",    ctx->DCPCFG);
-	val(13, "DCPMAXP",   ctx->DCPMAXP);
-	val(14, "DCPCTR",    ctx->DCPCTR);
+	GUNUSED int scroll = 0;
+	val( 0, "SYSCFG",    s->SYSCFG);
+	val( 1, "DVSTCTR",   s->DVSTCTR);
+	val( 2, "TESTMODE",  s->TESTMODE);
+	val( 3, "REG_C2",    s->REG_C2);
+	val( 4, "CFIFOSEL",  s->CFIFOSEL);
+	val( 5, "D0FIFOSEL", s->D0FIFOSEL);
+	val( 6, "D1FIFOSEL", s->D1FIFOSEL);
+	val( 7, "INTENB0",   s->INTENB0);
+	val( 8, "BRDYENB",   s->BRDYENB);
+	val( 9, "NRDYENB",   s->NRDYENB);
+	val(10, "BEMPENB",   s->BEMPENB);
+	val(11, "SOFCFG",    s->SOFCFG);
+	val(12, "DCPCFG",    s->DCPCFG);
+	val(13, "DCPMAXP",   s->DCPMAXP);
+	val(14, "DCPCTR",    s->DCPCTR);
 
 	// uint16_t PIPECFG[9], PIPEBUF[9], PIPEMAXP[9], PIPEPERI[9];
 	// uint16_t PIPEnCTR[9], PIPEnTRE[5], PIPEnTRN[5];
@@ -305,7 +299,8 @@ void gintctl_gint_usb(void)
 		if(key == KEY_F3) tab = 2;
 		if(key == KEY_F4) tab = 3;
 
-		if(tab == 2 && key == KEY_F5) gint_switch(save_logger);
+		if(tab == 2 && key == KEY_F5)
+			gint_world_switch(GINT_CALL(save_logger));
 
 		if(key == KEY_F6)
 		{
@@ -313,7 +308,7 @@ void gintctl_gint_usb(void)
 			else
 			{
 				usb_interface_t const *interfaces[] = { &usb_ff_bulk, NULL };
-				int rc = usb_open(interfaces, GINT_CB(open_callback));
+				int rc = usb_open(interfaces, GINT_CALL(open_callback));
 				open = (rc == 0);
 			}
 		}

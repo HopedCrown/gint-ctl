@@ -3,28 +3,26 @@
 #include <gint/mpu/dma.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/mmu.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
 
-#ifdef FXCG50
-
 #define DMA SH7305_DMA
 #define dprint(x, y, ...) dprint(x, y, C_BLACK, __VA_ARGS__)
 
-void show_dma(int x, int y, int channel, sh7305_dma_channel_t *dma)
+void show_dma(int x, int y, GUNUSED int channel, sh7305_dma_channel_t *dma)
 {
 	#ifdef FX9860G
-	dma->SAR = 0x12345678;
-	dma->DAR = 0x9abcdef0;
-	dma->TCR = 0x12481248;
-
 	int dx=60, dy=8;
-	dprint(x,    y,      "DMA%d:", channel);
-	dprint(x,    y+1*dy, "%08X", (uint32_t)dma);
+	dprint(x, y,      "SAR:");
+	dprint(x, y+1*dy, "DAR:");
+	dprint(x, y+2*dy, "TCR:");
+	dprint(x, y+3*dy, "CHCR:");
+	dprint(x+dx, y,      "%08X", dma->SAR);
 	dprint(x+dx, y+1*dy, "%08X", dma->DAR);
-	dprint(x,    y+2*dy, "%08X", dma->TCR);
-	dprint(x+dx, y+2*dy, "%08X", dma->CHCR);
+	dprint(x+dx, y+2*dy, "%08X", dma->TCR);
+	dprint(x+dx, y+3*dy, "%08X", dma->CHCR);
 	#endif
 
 	#ifdef FXCG50
@@ -44,28 +42,30 @@ void show_dma(int x, int y, int channel, sh7305_dma_channel_t *dma)
 /* gintctl_gint_dma(): Test the Direct Access Memory Controller */
 void gintctl_gint_dma(void)
 {
-	/* Here we'll display the DMA status at "full speed", only limited by
-	   the dupdate() time. */
-	int key = 0, timeout = 1;
+	/* We'll display the DMA status at "full speed", without sleeping. */
+	int key=0, timeout=1;
+	/* Test channel, interrupts, and source; successful attempts */
+	int channel=0, interrupts=0, source=0, successes=0;
 
-	/* Test channel, interrupts, and source */
-	int channel = 0, interrupts = 0, source = 0;
-	/* Number of successful attempts */
-	int successes = 0;
-
+	/* Get the physical VRAM address */
+	void *vram_address = gint_vram;
 	#ifdef FX9860G
-	/* Currently visible channel */
-	int view = 0;
+	uint32_t virt_page = (uint32_t)vram_address & 0xfffff000;
+	uint32_t phys_page = 0x80000000 + mmu_translate(virt_page, NULL);
+	vram_address = (void *)phys_page + (vram_address - (void *)virt_page);
 	#endif
+
+	sh7305_dma_channel_t *addr[6] = {
+		&DMA.DMA0, &DMA.DMA1, &DMA.DMA2, &DMA.DMA3, &DMA.DMA4, &DMA.DMA5,
+	};
 
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		show_dma(1, 1, view);
-
-		dprint(1, 32, "Channel     %d", channel);
+		show_dma(1, 0, channel, addr[channel]);
+		dprint(1, 32, "Channel     DMA%d", channel);
 		dprint(1, 40, "Interrupts  %s", interrupts ? "Yes" : "No");
 		dprint(1, 48, "Source      %s", source ? "IL" : "RAM");
 		dprint(103, 40, "%d", successes);
@@ -75,11 +75,6 @@ void gintctl_gint_dma(void)
 		#endif
 
 		#ifdef FXCG50
-		sh7305_dma_channel_t *addr[6] = {
-			&DMA.DMA0, &DMA.DMA1, &DMA.DMA2,
-			&DMA.DMA3, &DMA.DMA4, &DMA.DMA5,
-		};
-
 		row_title("Direct Memory Access status");
 
 		show_dma(6,   24, 0, addr[0]);
@@ -105,11 +100,11 @@ void gintctl_gint_dma(void)
 		dupdate();
 		key = getkey_opt(GETKEY_DEFAULT, &timeout).key;
 
-		/* On F1, start a DMA transfer and see what happens */
+		/* On F1, start a 1024-byte DMA transfer and see what happens */
 		if(key == KEY_F1)
 		{
 			void *src = (void *)(source ? 0xe5200000 : 0x88000000);
-			void *dst = gint_vram;
+			void *dst = vram_address;
 			int blocks = 256;
 
 			if(interrupts)
@@ -124,16 +119,8 @@ void gintctl_gint_dma(void)
 			successes++;
 		}
 
-		#ifdef FX9860G
-		/* On F2, switch the visible channel */
-		if(key == KEY_F2) view = (view + 1) % 6;
-		#endif
-
-		/* On F4, F5 and F6, change parameters */
 		if(key == KEY_F4) channel = (channel + 1) % 6;
 		if(key == KEY_F5) interrupts = !interrupts;
 		if(key == KEY_F6) source = !source;
 	}
 }
-
-#endif /* FXCG50 */

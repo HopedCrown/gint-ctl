@@ -27,29 +27,27 @@
 struct menu menu_gint = {
 	_("gint tests", "gint features and driver tests"), .entries = {
 
-	{ "CPU and memory",   gintctl_gint_cpumem, 0 },
-	{ "RAM discovery",    gintctl_gint_ram, MENU_SH4_ONLY },
+	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
+	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
 	#ifdef FXCG50
-	{ "DSP processors",   gintctl_gint_dsp, 0 },
+	{ "DSP processors",     gintctl_gint_dsp, 0 },
 	#endif
-	{ "SPU memory",       gintctl_gint_spuram, MENU_SH4_ONLY },
-	{ "Memory dump",      gintctl_gint_dump, 0 },
-	{ "Switching to OS",  gintctl_gint_switch, 0 },
-	{ "TLB management",   gintctl_gint_tlb, 0 },
-	{ "Memory allocation",gintctl_gint_kmalloc, 0 },
-	{ "Keyboard",         gintctl_gint_keyboard, 0 },
-	{ "Timers",           gintctl_gint_timer, 0 },
-	{ "Timer callbacks",  gintctl_gint_timer_callbacks, 0 },
-	#ifdef FXCG50
-	{ "DMA control",      gintctl_gint_dma, 0 },
-	#endif
-	{ "Real-time clock",  gintctl_gint_rtc, 0 },
-	{ "USB communication",gintctl_gint_usb, MENU_SH4_ONLY },
-	{ "Image rendering",  gintctl_gint_bopti, 0 },
-	{ "Text rendering",   gintctl_gint_topti, 0 },
+	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
+	{ "Memory dump",        gintctl_gint_dump, 0 },
+	{ "Drivers and worlds", gintctl_gint_drivers, 0 },
+	{ "TLB management",     gintctl_gint_tlb, 0 },
+	{ "Memory allocation",  gintctl_gint_kmalloc, 0 },
+	{ "Keyboard",           gintctl_gint_keyboard, 0 },
+	{ "Timers",             gintctl_gint_timer, 0 },
+	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },
+	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
+	{ "Real-time clock",    gintctl_gint_rtc, 0 },
+	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
+	{ "Image rendering",    gintctl_gint_bopti, 0 },
+	{ "Text rendering",     gintctl_gint_topti, 0 },
 	#ifdef FX9860G
-	{ "Gray engine",      gintctl_gint_gray, 0 },
-	{ "Gray rendering",   gintctl_gint_grayrender, 0 },
+	{ "Gray engine",        gintctl_gint_gray, 0 },
+	{ "Gray rendering",     gintctl_gint_grayrender, 0 },
 	#endif
 	{ NULL, NULL, 0 },
 }};
@@ -61,9 +59,7 @@ struct menu menu_perf = {
 	{ "libprof basics",      gintctl_perf_libprof, 0 },
 	{ "CPU and cache",       gintctl_perf_cpucache, 0 },
 	{ "Interrupt stress",    gintctl_perf_interrupts, 0 },
-	#ifdef FXCG50
 	{ "Memory access speed", gintctl_perf_memory, 0 },
-	#endif
 	{ "Rendering functions", gintctl_perf_render, 0 },
 
 	/* TODO: Comparison with MonochromeLib */

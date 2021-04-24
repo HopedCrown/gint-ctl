@@ -3,9 +3,11 @@
 #include <gint/hardware.h>
 #include <gint/dma.h>
 #include <gint/std/string.h>
+#include <gint/mmu.h>
 
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
+#include <gintctl/assets.h>
 
 #include <libprof.h>
 
@@ -104,17 +106,13 @@ static void test(struct results *r, void *address, uint32_t size, int rounds)
 	});
 
 	r->dma_memset_time = prof_exec({
-		#ifdef FXCG50
 		for(int i = 0; i < rounds; i++)
-			dma_memset(address, 0, size);
-		#endif
+			if(isSH4()) dma_memset(address, 0, size);
 	});
 
 	r->dma_memcpy_time = 2 * prof_exec({
-		#ifdef FXCG50
 		for(int i = 0; i < rounds; i++)
-			dma_memcpy(address + size / 2, address, size / 2);
-		#endif
+			if(isSH4()) dma_memcpy(address + size / 2, address, size / 2);
 	});
 
 	if(address == &xram_buffer)
@@ -122,14 +120,14 @@ static void test(struct results *r, void *address, uint32_t size, int rounds)
 		/* Since the buffers are small, repeat 16 times */
 		r->dsp_xram_memset_time = prof_exec({
 			for(int i = 0; i < rounds; i++)
-				memory_dsp_xram_memset(address, size);
+				if(isSH4()) memory_dsp_xram_memset(address, size);
 		});
 	}
 	if(address == &yram_buffer)
 	{
 		r->dsp_yram_memset_time = prof_exec({
 			for(int i = 0; i < rounds; i++)
-				memory_dsp_yram_memset(address, size);
+				if(isSH4()) memory_dsp_yram_memset(address, size);
 		});
 	}
 	if(address == &xram_buffer)
@@ -140,7 +138,7 @@ static void test(struct results *r, void *address, uint32_t size, int rounds)
 		/* Since the buffers are small, repeat 16 times */
 		r->dsp_xyram_memcpy_time = prof_exec({
 			for(int i = 0; i < rounds; i++)
-				memory_dsp_xyram_memcpy(y, x, size);
+				if(isSH4()) memory_dsp_xyram_memcpy(y, x, size);
 		});
 	}
 	if(address == &yram_buffer)
@@ -150,7 +148,7 @@ static void test(struct results *r, void *address, uint32_t size, int rounds)
 
 		r->dsp_xyram_memcpy_time = prof_exec({
 			for(int i = 0; i < rounds; i++)
-				memory_dsp_xyram_memcpy(x, y, size);
+				if(isSH4()) memory_dsp_xyram_memcpy(x, y, size);
 		});
 	}
 
@@ -171,25 +169,76 @@ static void test(struct results *r, void *address, uint32_t size, int rounds)
 
 static void results_line(int row, uint32_t time, uint32_t speed)
 {
-	dprint_opt(260, row_y(row), C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
+	int y = _(8+6*row, row_y(row));
+	dprint_opt(_(80,260), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
 		"%d us", time);
-	dprint_opt(370, row_y(row), C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
-		"%3.3j MB/s", speed);
+	dprint_opt(_(125,370), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
+		_("%3.1j MB/s", "%3.3j MB/s"), _(speed/100, speed));
 }
 
 /* gintctl_perf_memory(): Memory primitives and reading/writing speed */
 void gintctl_perf_memory(void)
 {
-	/* TODO: Memory performance on SH3 */
-	if(isSH3()) return;
-
 	int key = 0;
 	struct results r = { 0 };
+
+	/* Get the physical VRAM address */
+	void *vram_address = gint_vram;
+	#ifdef FX9860G
+	uint32_t virt_page = (uint32_t)vram_address & 0xfffff000;
+	uint32_t phys_page = 0x80000000 + mmu_translate(virt_page, NULL);
+	vram_address = (void *)phys_page + (vram_address - (void *)virt_page);
+	#endif
 
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 		row_title("Memory access speed");
+		font_t const *old_font = dfont(_(&font_mini, dfont_default()));
+
+		#ifdef FX9860G
+		/* Due to less space, focus on the non-trivial methods */
+		dprint(1, 14, C_BLACK, "gint memcpy:");
+		dprint(1, 20, C_BLACK, "gint memset:");
+		if(isSH4()) {
+			dprint(1, 26, C_BLACK, "dma_memcpy:");
+			dprint(1, 32, C_BLACK, "dma_memset:");
+
+			if(r.address == &xram_buffer)
+				dprint(1, 38, C_BLACK, "DSP memset:");
+			if(r.address == &yram_buffer)
+				dprint(1, 38, C_BLACK, "DSP memset:");
+			if(r.address == &xram_buffer || r.address == &yram_buffer)
+				dprint(1, 44, C_BLACK, "DSP memcpy:");
+		}
+
+		if(!r.address) dprint(1, 8, C_BLACK, "No test yet");
+		else
+		{
+			dprint(1, 8, C_BLACK, "Area: %08X (%d B, %d round%s)",
+				(uint32_t)r.address, r.size, r.rounds, (r.rounds>1)?"s":"");
+			results_line(1, r.memcpy_time,     r.memcpy_speed);
+			results_line(2, r.memset_time,     r.memset_speed);
+			if(isSH4()) {
+				results_line(3, r.dma_memcpy_time, r.dma_memcpy_speed);
+				results_line(4, r.dma_memset_time, r.dma_memset_speed);
+				if(r.address == &xram_buffer)
+					results_line(5, r.dsp_xram_memset_time,
+						r.dsp_xram_memset_speed);
+				if(r.address == &yram_buffer)
+					results_line(5, r.dsp_yram_memset_time,
+						r.dsp_yram_memset_speed);
+				if(r.address==&xram_buffer || r.address==&yram_buffer)
+					results_line(6, r.dsp_xyram_memcpy_time,
+						r.dsp_xyram_memcpy_speed);
+			}
+		}
+
+		if(isSH3())
+			dimage(0, 56, &img_opt_perf_memory_sh3);
+		else
+			dimage(0, 56, &img_opt_perf_memory);
+		#endif
 
 		#ifdef FXCG50
 		row_print( 3, 1, "Naive C-loop u8 read:");
@@ -208,10 +257,7 @@ void gintctl_perf_memory(void)
 		if(r.address == &xram_buffer || r.address == &yram_buffer)
 			row_print(12, 1, "DSP XRAM->YRAM memcpy():");
 
-		if(!r.address)
-		{
-			row_print(1, 1, "No test yet");
-		}
+		if(!r.address) row_print(1, 1, "No test yet");
 		else
 		{
 			row_print(1, 1, "Results for area %08x (%d bytes, %d "
@@ -227,20 +273,14 @@ void gintctl_perf_memory(void)
 			results_line(10,r.dma_memset_time, r.dma_memset_speed);
 
 			if(r.address == &xram_buffer)
-			{
 				results_line(11, r.dsp_xram_memset_time,
 					r.dsp_xram_memset_speed);
-			}
 			if(r.address == &yram_buffer)
-			{
 				results_line(11, r.dsp_yram_memset_time,
 					r.dsp_yram_memset_speed);
-			}
 			if(r.address==&xram_buffer || r.address==&yram_buffer)
-			{
 				results_line(12, r.dsp_xyram_memcpy_time,
 					r.dsp_xyram_memcpy_speed);
-			}
 		}
 
 		fkey_button(1, "RAM");
@@ -249,12 +289,15 @@ void gintctl_perf_memory(void)
 		fkey_button(4, "YRAM");
 		#endif
 
+		dfont(old_font);
 		dupdate();
 		key = getkey().key;
 
-		if(key == KEY_F1) test(&r, gint_vram, _(0x400,0x8000), 1);
-		if(key == KEY_F2) test(&r, &ilram_buffer, 0x800, 64);
-		if(key == KEY_F3) test(&r, &xram_buffer, 0x800, 64);
-		if(key == KEY_F4) test(&r, &yram_buffer, 0x800, 64);
+		if(key == KEY_F1) test(&r, vram_address, _(0x400,0x8000), _(32,1));
+		if(isSH4()) {
+			if(key == KEY_F2) test(&r, &ilram_buffer, 0x800, 64);
+			if(key == KEY_F3) test(&r, &xram_buffer, 0x800, 64);
+			if(key == KEY_F4) test(&r, &yram_buffer, 0x800, 64);
+		}
 	}
 }

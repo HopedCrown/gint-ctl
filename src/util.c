@@ -218,9 +218,7 @@ void fkey_menu(int position, char const *text)
 //	Screenshot saving
 //---
 
-static uint16_t const *path;
-
-void switch_screen_mono(void)
+void switch_screen_mono(uint16_t const *path)
 {
 	int size = 1024;
 
@@ -235,6 +233,5 @@ void switch_screen_mono(void)
 /* screen_mono(): Take a screenshot of the mono VRAM */
 void screen_mono(uint16_t const *filepath)
 {
-	path = filepath;
-	gint_switch(switch_screen_mono);
+	gint_world_switch(GINT_CALL(switch_screen_mono, filepath));
 }

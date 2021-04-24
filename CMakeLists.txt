@@ -22,6 +22,7 @@ set(SOURCES
   src/gint/bopti.c
   src/gint/cpumem.c
   src/gint/dma.c
+  src/gint/drivers.c
   src/gint/dsp.c
   src/gint/dsp.s
   src/gint/dump.c
@@ -31,7 +32,6 @@ set(SOURCES
   src/gint/ram.c
   src/gint/rtc.c
   src/gint/spuram.c
-  src/gint/switch.c
   src/gint/timer.c
   src/gint/timer_callbacks.c
   src/gint/tlb.c
@@ -70,6 +70,8 @@ set(ASSETS_fx
   assets-fx/img/opt_dump.png
   assets-fx/img/opt_gint_bopti.png
   assets-fx/img/opt_gint_cpumem.png
+  assets-fx/img/opt_gint_dma.png
+  assets-fx/img/opt_gint_drivers.png
   assets-fx/img/opt_gint_gray.png
   assets-fx/img/opt_gint_keyboard.png
   assets-fx/img/opt_gint_kmalloc.png
@@ -84,10 +86,9 @@ set(ASSETS_fx
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
   assets-fx/img/opt_perf_libprof.png
+  assets-fx/img/opt_perf_memory.png
+  assets-fx/img/opt_perf_memory_sh3.png
   assets-fx/img/opt_perf_render.png
-  assets-fx/img/opt_switch_ctx.png
-  assets-fx/img/opt_switch_ctx_sh3.png
-  assets-fx/img/opt_switch.png
   assets-fx/img/profile_gray_alpha.png
   assets-fx/img/profile_gray.png
   assets-fx/img/profile_mono_alpha.png

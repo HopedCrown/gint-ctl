@@ -15,13 +15,6 @@ struct region {
 	int segment_count;
 };
 
-struct {
-	int region;
-	int segment;
-	char filename[30];
-	int retcode;
-} dump;
-
 static struct region const regs[] = {
 	#ifdef FX9860G
 	{ "ROM",    0x80000000, 0x807fffff, 8 },
@@ -36,15 +29,15 @@ static struct region const regs[] = {
 	#endif
 };
 
-static void switch_dump(void)
+static void switch_dump(int region, int segment, char *filename, int *retcode)
 {
-	uint32_t start = regs[dump.region].start;
-	int size = regs[dump.region].end + 1 - start;
+	uint32_t start = regs[region].start;
+	int size = regs[region].end + 1 - start;
 
 	/* For segmented regions, use blocks of 1M */
-	if(regs[dump.region].segment_count > 1)
+	if(regs[region].segment_count > 1)
 	{
-		start += dump.segment << 20;
+		start += segment << 20;
 		size = 1 << 20;
 	}
 
@@ -52,35 +45,34 @@ static void switch_dump(void)
 	size &= ~1;
 
 	uint16_t file[30] = { 0 };
-	for(int i = 0; i < 30; i++) file[i] = dump.filename[i];
+	for(int i = 0; i < 30; i++) file[i] = filename[i];
 
-	dump.retcode = 1;
+	*retcode = 1;
 
 	int x = BFile_Remove(file);
-	if(x < 0 && x != -1) { dump.retcode = x; return; }
+	if(x < 0 && x != -1) { *retcode = x; return; }
 
 	x = BFile_Create(file, BFile_File, &size);
-	if(x < 0) { dump.retcode = x; return; }
+	if(x < 0) { *retcode = x; return; }
 
 	int fd = BFile_Open(file, BFile_WriteOnly);
-	if(fd < 0) { dump.retcode = fd; return; }
+	if(fd < 0) { *retcode = fd; return; }
 
 	x = BFile_Write(fd, (void *)start, size);
-	if(x < 0) { dump.retcode = x; return; }
+	if(x < 0) { *retcode = x; return; }
 
 	BFile_Close(fd);
 }
 
 static int do_dump(int region, int segment)
 {
-	/* Pass around parameters through the global variable */
-	dump.region = region;
-	dump.segment = segment;
-	sprintf(dump.filename, "\\\\fls0\\%s%02x.bin", regs[region].name,
-		segment);
+	char filename[30];
+	int retcode = 0;
 
-	gint_switch(switch_dump);
-	return dump.retcode;
+	sprintf(filename, "\\\\fls0\\%s%02x.bin", regs[region].name, segment);
+	gint_world_switch(GINT_CALL(switch_dump,region,segment,filename,&retcode));
+
+	return retcode;
 }
 
 /* gintctl_gint_dump(): Dump memory to filesystem */

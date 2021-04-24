@@ -20,8 +20,8 @@ void gintctl_gint_spuram(void);
 /* gintctl_gint_dump(): Dump memory to filesystem */
 void gintctl_gint_dump(void);
 
-/* gintctl_gint_switch(): Test the gint switch-in-out procedures */
-void gintctl_gint_switch(void);
+/* gintctl_gint_drivers(): Test the gint driver logic and world switch */
+void gintctl_gint_drivers(void);
 
 /* gintctl_gint_tlb(): TLB miss handler and TLB management */
 void gintctl_gint_tlb(void);
@@ -34,6 +34,9 @@ void gintctl_gint_timer(void);
 
 /* gintctl_gint_timer_callbacks(): Stunts in the environment of callbacks */
 void gintctl_gint_timer_callbacks(void);
+
+/* gintctl_gint_dma(): Test the Direct Access Memory Controller */
+void gintctl_gint_dma(void);
 
 /* gintctl_gint_rtc(): Configure RTC and check timer speed */
 void gintctl_gint_rtc(void);
@@ -49,13 +52,6 @@ void gintctl_gint_kmalloc(void);
 
 /* gintctl_gint_usb(): USB communication */
 void gintctl_gint_usb(void);
-
-#ifdef FXCG50
-
-/* gintctl_gint_dma(): Test the Direct Access Memory Controller */
-void gintctl_gint_dma(void);
-
-#endif /* FXCG50 */
 
 #ifdef FX9860G
 
