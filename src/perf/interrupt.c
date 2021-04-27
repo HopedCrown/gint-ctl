@@ -19,7 +19,8 @@ int stress_callback(int *counter)
 uint32_t stress_interrupts(void)
 {
 	int counter = 0;
-	int timer = timer_setup(TIMER_ANY, 1, stress_callback, &counter);
+	int timer = timer_configure(TIMER_ANY, 1,
+		GINT_CALL(stress_callback, &counter));
 	if(timer < 0) return 0;
 
 	return prof_exec({

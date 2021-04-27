@@ -419,8 +419,8 @@ void gintctl_gint_tlb(void)
 		}
 		if(key == KEY_F6 && next_miss != 0xffffffff)
 		{
-			int timer = timer_setup(TIMER_ANY, 10000,
-				generate_tlb_miss, next_miss);
+			int timer = timer_configure(TIMER_ANY, 10000,
+				GINT_CALL(generate_tlb_miss, next_miss));
 			if(timer >= 0)
 			{
 				timer_start(timer);

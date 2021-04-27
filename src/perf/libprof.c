@@ -12,7 +12,7 @@ static uint32_t run_sleep(int us)
 {
 	/* We can't use sleep_us() as we want a TMU */
 	volatile int flag = 0;
-	int timer = timer_setup(TIMER_TMU, us, timer_timeout, &flag);
+	int timer = timer_configure(TIMER_TMU, us, GINT_CALL_SET_STOP(&flag));
 	if(timer < 0) return 0;
 
 	return prof_exec({

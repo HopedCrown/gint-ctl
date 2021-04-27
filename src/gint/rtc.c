@@ -237,7 +237,7 @@ static uint32_t test_speed(void)
 	int volatile flag = 0;
 	prof = prof_make();
 
-	rtc_start_timer(RTC_16Hz, speed_callback, &flag);
+	rtc_periodic_enable(RTC_16Hz, GINT_CALL(speed_callback, &flag));
 
 	while(flag != 2) sleep();
 	return prof_time(prof);
@@ -548,15 +548,6 @@ static void edit_date(void)
 //	Main screen with lazy update
 //---
 
-static volatile int frame_done = 0;
-
-static int rtc_timer_callback(void)
-{
-	frame_done = 0;
-	return TIMER_CONTINUE;
-}
-
-/* gintctl_gint_rtc(): Configure RTC and check timer speed */
 void gintctl_gint_rtc(void)
 {
 	key_event_t ev;
@@ -566,23 +557,18 @@ void gintctl_gint_rtc(void)
 	int tab = 1;
 
 	uint32_t elapsed = test_speed();
+	volatile int frame_needed = 1;
 
-	rtc_start_timer(RTC_1Hz, rtc_timer_callback);
+	rtc_periodic_enable(RTC_1Hz, GINT_CALL_SET(&frame_needed));
 
 	while(run_loop)
 	{
-		if(!frame_done) rtc_get_time(&time);
-
-		/* Redraw only when a second elapses */
-		if(!frame_done && tab == 1)
+		if(frame_needed)
 		{
-			draw_rtc(&time);
-			frame_done = 1;
-		}
-		else if(!frame_done && tab == 2)
-		{
-			draw_speed(&time, elapsed);
-			frame_done = 1;
+			rtc_get_time(&time);
+			if(tab == 1) draw_rtc(&time);
+			if(tab == 2) draw_speed(&time, elapsed);
+			frame_needed = 0;
 		}
 
 		/* Handle keyboard events */
@@ -599,13 +585,13 @@ void gintctl_gint_rtc(void)
 			else if(ev.key == KEY_F6 && tab == 1) edit_time();
 			else action = 0;
 
-			if(action) frame_done = 0;
+			if(action) frame_needed = 1;
 		}
 
 		/* Wait for either keyboard or RTC to produce an event, except
 		   if we already have work to do */
-		if(frame_done) sleep();
+		if(!frame_needed) sleep();
 	}
 
-	rtc_stop_timer();
+	rtc_periodic_disable();
 }

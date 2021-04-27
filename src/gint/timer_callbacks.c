@@ -103,7 +103,7 @@ void gintctl_gint_timer_callbacks(void)
 		if(!callback) continue;
 
 		/* Allocate a first timer to run the callback */
-		int t = timer_setup(TIMER_ANY, 40000, callback, arg);
+		int t = timer_configure(TIMER_ANY, 40000, GINT_CALL(callback, arg));
 		if(t < 0)
 		{
 			status = 2;
@@ -114,7 +114,7 @@ void gintctl_gint_timer_callbacks(void)
 		if(key == KEY_F2 || key == KEY_F3)
 		{
 			/* Request a TMU (higher priority) */
-			auxiliary_timer = timer_setup(TIMER_TMU, 10000, NULL);
+			auxiliary_timer = timer_configure(TIMER_TMU,10000,GINT_CALL_NULL);
 			if(auxiliary_timer < 0)
 			{
 				status = 2;

@@ -145,8 +145,8 @@ void gintctl_gint_timer(void)
 		/* On F1, pretend to sleep and just see what happens */
 		if(key == KEY_F1)
 		{
-			int free = timer_setup(tid, timer_delay(tid, 1000000,
-				TIMER_Pphi_4), NULL);
+			int free = timer_configure(tid, timer_delay(tid, 1000000,
+				TIMER_Pphi_4), GINT_CALL_NULL);
 			if(free == tid) timer_start(tid);
 		}
 
