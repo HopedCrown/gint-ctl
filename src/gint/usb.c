@@ -244,8 +244,11 @@ static void draw_pipes(void)
 static void open_callback(void)
 {
 	usb_log("Open callback, doing test!\n");
-	extern void usb_tests(void);
-	usb_tests();
+
+	int pipe = 5;
+	usb_write_async(pipe, gint_vram, _(1024, 396*224*2), 4, false,
+		GINT_CALL_NULL);
+	usb_commit_async(pipe, GINT_CALL_NULL);
 }
 
 /* gintctl_gint_usb(): USB communication */
