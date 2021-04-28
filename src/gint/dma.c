@@ -107,14 +107,10 @@ void gintctl_gint_dma(void)
 			void *dst = vram_address;
 			int blocks = 256;
 
-			if(interrupts)
-			{
-				dma_transfer(channel, DMA_4B, blocks,
-					src, DMA_INC, dst, DMA_INC);
-				dma_transfer_wait(channel);
-			}
-			else dma_transfer_noint(channel, DMA_4B, blocks,
-				src, DMA_INC, dst, DMA_INC);
+			if(interrupts) dma_transfer_sync(channel, DMA_4B,
+				blocks, src, DMA_INC, dst, DMA_INC);
+			else dma_transfer_atomic(channel, DMA_4B, blocks, src,
+				DMA_INC, dst, DMA_INC);
 
 			successes++;
 		}
