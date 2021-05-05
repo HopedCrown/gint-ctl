@@ -36,6 +36,7 @@ extern bopti_image_t
 	img_opt_gint_timers,
 	img_opt_gint_tlb,
 	img_opt_gint_usb,
+	img_opt_libs_bfile,
 	img_opt_libs_jui,
 	img_opt_main,
 	img_opt_mem,

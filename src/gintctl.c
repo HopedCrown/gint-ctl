@@ -83,6 +83,8 @@ struct menu menu_libs = {
 		gintctl_libs_libimg, 0 },
 	{ "JustUI widgets",
 		gintctl_libs_justui, 0 },
+	{ "BFile filesystem",
+		gintctl_libs_bfile, 0 },
 	{ NULL, NULL, 0 },
 }};
 

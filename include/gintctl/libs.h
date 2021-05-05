@@ -23,4 +23,7 @@ void gintctl_libs_libimg(void);
 /* gintctl_libs_justui(): Just User Interfaces */
 void gintctl_libs_justui(void);
 
+/* gintctl_libs_bfile(): BFile filesystem */
+void gintctl_libs_bfile(void);
+
 #endif /* GINTCTL_LIBS */

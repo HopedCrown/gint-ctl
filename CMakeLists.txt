@@ -37,6 +37,7 @@ set(SOURCES
   src/gint/tlb.c
   src/gint/topti.c
   src/gint/usb.c
+  src/libs/bfile.c
   src/libs/justui.c
   src/libs/libimg.c
   src/libs/memory.c
@@ -82,6 +83,7 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_timers.png
   assets-fx/img/opt_gint_tlb.png
   assets-fx/img/opt_gint_usb.png
+  assets-fx/img/opt_libs_bfile.png
   assets-fx/img/opt_libs_jui.png
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
