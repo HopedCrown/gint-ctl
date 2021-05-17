@@ -1,6 +1,6 @@
 # gintctl: gint's control application
 
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.15)
 project(gintctl VERSION 2.2.1 LANGUAGES C ASM)
 
 include(GenerateG1A)

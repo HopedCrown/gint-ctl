@@ -6,6 +6,12 @@
 #include <gint/drivers/keydev.h>
 #include <gint/hardware.h>
 #include <gint/kprint.h>
+#include <gint/usb.h>
+#include <gint/usb-ff-bulk.h>
+
+#ifdef FX9860G
+#include <gint/gray.h>
+#endif
 
 #include <gintctl/util.h>
 #include <gintctl/menu.h>
@@ -89,6 +95,29 @@ struct menu menu_libs = {
 }};
 
 //---
+// Global shortcuts
+//---
+
+static bool getkey_global_shortcuts(key_event_t e)
+{
+	if(usb_is_open() && e.key == KEY_OPTN && !e.shift && !e.alpha) {
+		#ifdef FX9860G
+		if(dgray_enabled())
+			usb_fxlink_screenshot_gray(true);
+		else
+			usb_fxlink_screenshot(true);
+		#endif
+
+		#ifdef FXCG50
+		usb_fxlink_screenshot(true);
+		#endif
+
+		return true;
+	}
+	return false;
+}
+
+//---
 //	Main application
 //---
 
@@ -151,6 +180,9 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	#ifdef FX9860G
 	gint_setrestart(1);
 	#endif
+
+	/* Enable global getkey() shortcuts */
+	getkey_set_feature_function(getkey_global_shortcuts);
 
 	/* Start the profiling library */
 	prof_init();

@@ -6,6 +6,7 @@
 #include <gint/drivers.h>
 #include <gint/drivers/states.h>
 #include <gint/intc.h>
+#include <gint/cpu.h>
 #include <gint/mpu/power.h>
 #include <gint/mpu/cpg.h>
 #include <gint/defs/util.h>
@@ -18,27 +19,33 @@
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
+#include <libprof.h>
+
 #define USB SH7305_USB
 
 /* USB log buffer */
-#define LOG_SIZE _(1023, 16383)
-static char log_buffer[LOG_SIZE+1];
+#define LOG_SIZE _(1024, 4096)
+static char log_buffer[LOG_SIZE];
 static int log_pos;
+static int const log_lines = _(8,15);
 static int volatile log_interrupt = 0;
 
 static void reset_logger(void)
 {
-	memset(log_buffer, 0, LOG_SIZE+1);
+	memset(log_buffer, 0, LOG_SIZE);
 	log_pos = 0;
 }
 
 static void usb_logger(char const *format, va_list args)
 {
-	if(log_pos >= LOG_SIZE) return;
-	int length = vsnprintf(log_buffer+log_pos, LOG_SIZE-log_pos, format, args);
-	log_pos = min(log_pos + length, LOG_SIZE);
 	/* Interrupt getkey() so that the log can be printed */
 	log_interrupt = 1;
+	if(log_pos >= LOG_SIZE) return;
+
+	cpu_atomic_start();
+	int length = vsnprintf(log_buffer+log_pos, LOG_SIZE-log_pos, format, args);
+	log_pos += min(length, LOG_SIZE - 1 - log_pos);
+	cpu_atomic_end();
 }
 
 static void save_logger(void)
@@ -139,8 +146,8 @@ static void draw_registers(GUNUSED int scroll)
 	#endif
 
 	#ifdef FXCG50
-	dprint(row_x(1), 188, C_BLACK, "USBCLKCR: %08X   MSTPCR2: %08X",
-		SH7305_CPG.USBCLKCR.lword, SH7305_POWER.MSTPCR2.lword);
+	dprint(row_x(1), 188, C_BLACK, "USBCLKCR:%08X  MSTPCR2:%08X  %d",
+		SH7305_CPG.USBCLKCR.lword, SH7305_POWER.MSTPCR2.lword, log_pos);
 	#endif
 }
 
@@ -175,7 +182,7 @@ static void draw_context(void)
 
 static int draw_log(int offset)
 {
-	int const y0=_(8,20), dy=_(6,12), lines=_(8,15);
+	int const y0=_(8,20), dy=_(6,12);
 	int const x=_(2,6), w=DWIDTH-_(9,15);
 
 	/* Split log into lines */
@@ -185,21 +192,28 @@ static int draw_log(int offset)
 
 	while(log < log_buffer + log_pos)
 	{
+		if(log[0] == '\n') {
+			y += dy;
+			line++;
+			log++;
+			continue;
+		}
+
 		char const *endscreen = drsize(log, NULL, w, NULL);
 		char const *endline = strchrnul(log, '\n');
-		int end = min(endscreen-log, endline-log);
+		int len = min(endscreen-log, endline-log);
 
-		if(y >= y0 && y < y0 + lines * dy)
-			dtext_opt(x, y, C_BLACK, C_NONE, DTEXT_LEFT, DTEXT_TOP, log, end);
+		if(y >= y0 && y < y0 + log_lines * dy)
+			dtext_opt(x, y, C_BLACK, C_NONE, DTEXT_LEFT, DTEXT_TOP, log, len);
 		y += dy;
 		line++;
-		log += end + (log[end] == '\n');
+		log += len + (log[len] == '\n');
 	}
 
-	if(line > lines)
+	if(line > log_lines)
 	{
-		scrollbar_px(y0, y0 + lines*dy, 0, line, offset, lines);
-		return line - lines;
+		scrollbar_px(y0, y0 + log_lines*dy, 0, line, offset, log_lines);
+		return line - log_lines;
 	}
 
 	return 0;
@@ -241,21 +255,68 @@ static void draw_pipes(void)
 #endif
 }
 
-static void open_callback(void)
+static void draw_tests(void)
 {
-	usb_log("Open callback, doing test!\n");
-
-	int pipe = 5;
-	usb_write_async(pipe, gint_vram, _(1024, 396*224*2), 4, false,
-		GINT_CALL_NULL);
-	usb_commit_async(pipe, GINT_CALL_NULL);
+#ifdef FXCG50
+	row_print(1, 1, "[1]: Take screenshot (fxlink API)");
+	row_print(2, 1, "[2]: Take screenshot (asynchronous)");
+	row_print(3, 1, "[3]: Send some text (fxlink API)");
+	row_print(4, 1, "[4]: Send some logs (fxlink API)");
+#endif
 }
+
+//---
+// Tests
+//---
+
+static prof_t screenshot_async_prof;
+
+static void screenshot_async_4(void)
+{
+	prof_leave(screenshot_async_prof);
+	usb_log("Async DMA screenshot: %d us\n", prof_time(screenshot_async_prof));
+}
+static void screenshot_async_3(void)
+{
+	int pipe = usb_ff_bulk_output();
+	int rc = usb_commit_async(pipe, GINT_CALL(screenshot_async_4));
+	usb_log("commit_async: %d\n", rc);
+}
+static void screenshot_async_2(void)
+{
+	int pipe = usb_ff_bulk_output();
+	int rc = usb_write_async(pipe, gint_vram, _(1024, 396*224*2), 4, true,
+		GINT_CALL(screenshot_async_3));
+	usb_log("write_async 2: %d\n", rc);
+}
+static void screenshot_async(void)
+{
+	usb_log("<TEST: Screenshot (async)>\n");
+	int pipe = usb_ff_bulk_output();
+
+	int data_size = _(1024, 396*224*2);
+
+	screenshot_async_prof = prof_make();
+	prof_enter(screenshot_async_prof);
+
+	usb_fxlink_header_t header;
+	if(!usb_fxlink_fill_header(&header, "gintctl", "asyncscreen", data_size))
+		return;
+
+	int rc = usb_write_async(pipe, &header, sizeof header, 4, false,
+		GINT_CALL(screenshot_async_2));
+	usb_log("write_async 1: %d\n", rc);
+}
+
+//---
+// Main function
+//---
 
 /* gintctl_gint_usb(): USB communication */
 void gintctl_gint_usb(void)
 {
 	int key=0, tab=0;
-	bool open=false;
+	int open = usb_is_open();
 	GUNUSED int scroll0=0, scroll2=0, maxscroll2=0;
 
 	reset_logger();
@@ -277,6 +338,7 @@ void gintctl_gint_usb(void)
 		if(tab == 1) draw_context();
 		if(tab == 2) maxscroll2 = draw_log(scroll2);
 		if(tab == 3) draw_pipes();
+		if(tab == 4) draw_tests();
 
 		#ifdef FXCG50
 		row_title("USB 2.0 function module and communication");
@@ -284,7 +346,7 @@ void gintctl_gint_usb(void)
 		fkey_menu(2, "CTX");
 		fkey_menu(3, "LOG");
 		fkey_menu(4, "PIPES");
-		if(tab == 2) fkey_button(5, "FILE");
+		fkey_menu(5, "TESTS");
 		fkey_action(6, open ? "CLOSE" : "OPEN");
 		#endif
 
@@ -295,6 +357,11 @@ void gintctl_gint_usb(void)
 		dupdate();
 
 		key = getkey_opt(GETKEY_DEFAULT, &log_interrupt).key;
+
+		/* Scroll down log automatically at the cost of a redraw */
+		if(log_interrupt == 1 && tab == 2)
+			scroll2 = draw_log(0);
+
 		log_interrupt = 0;
 
 		if(key == KEY_F1) tab = 0;
@@ -307,21 +374,57 @@ void gintctl_gint_usb(void)
 
 		if(key == KEY_F6)
 		{
-			if(open) usb_close(), open = false;
+			if(open) usb_close(), open = 0;
 			else
 			{
 				usb_interface_t const *interfaces[] = { &usb_ff_bulk, NULL };
-				int rc = usb_open(interfaces, GINT_CALL(open_callback));
-				open = (rc == 0);
+				usb_open(interfaces, GINT_CALL_SET(&open));
 			}
 		}
+
+		int scroll_speed = 1;
+		if(keydown(KEY_SHIFT)) scroll_speed = 4;
+		if(keydown(KEY_ALPHA)) scroll_speed = 16;
 
 		#ifdef FX9860G
 		if(tab == 0 && key == KEY_UP && scroll0 > 0) scroll0--;
 		if(tab == 0 && key == KEY_DOWN && scroll0 < 15) scroll0++;
 		#endif
 
-		if(tab == 2 && key == KEY_UP && scroll2 > 0) scroll2--;
-		if(tab == 2 && key == KEY_DOWN && scroll2 < maxscroll2) scroll2++;
+		if(tab == 2 && key == KEY_UP)
+			scroll2 = max(scroll2 - scroll_speed, 0);
+		if(tab == 2 && key == KEY_DOWN)
+			scroll2 = min(scroll2 + scroll_speed, maxscroll2);
+
+		if(key == KEY_1 && usb_is_open()) {
+//			extern prof_t usb_cpu_write_prof;
+//			usb_cpu_write_prof = prof_make();
+
+//			uint32_t time = prof_exec({
+				usb_fxlink_screenshot(true);
+//			});
+
+//			usb_log("Screenshot: %d us\n", time);
+//			usb_log("Spent CPU writing: %d us\n", prof_time(usb_cpu_write_prof));
+		}
+		if(key == KEY_2 && usb_is_open()) screenshot_async();
+		if(key == KEY_3 && usb_is_open()) {
+			GALIGNED(4) char str[] = "Hi! This is gintctl!";
+			usb_fxlink_text(str, 0);
+		}
+		if(key == KEY_4 && usb_is_open()) {
+			uint32_t time = prof_exec({
+				int pipe = usb_ff_bulk_output();
+				int data_size = _(1024, 396*224*2);
+				usb_fxlink_header_t header;
+				usb_fxlink_fill_header(&header, "gintctl", "dmascreen", data_size);
+
+				usb_write_sync(pipe, &header, sizeof header, 4, false);
+//				usb_write_sync(pipe, (void *)0xfe200000, _(1024, 396*224*2), 4, true);
+				usb_write_sync(pipe, gint_vram, _(1024, 396*224*2), 4, true);
+				usb_commit_sync(pipe);
+			});
+			usb_log("DMA screenshot: %d us\n", time);
+		}
 	}
 }

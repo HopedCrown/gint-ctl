@@ -51,6 +51,8 @@ void show_mpucpu(void)
 	int mpu  = gint[HWMPU];
 	int calc = gint[HWCALC];
 
+	extern volatile int cpu_sleep_block_counter;
+
 	/* Generate a default calc name if invalid values are found */
 	char calc_default[16];
 	sprintf(calc_default, "<CALCID %d>", calc);
@@ -89,7 +91,8 @@ void show_mpucpu(void)
 	}
 	print_prefix(85, 24,    "VBR", "%08X", cpu_getVBR());
 	print_prefix(85, 30,    "R15", "%08X", r15);
-	dline(85, 24, 85, 34, C_BLACK);
+	print_prefix(85, 36,    "sbc", "%d", cpu_sleep_block_counter);
+	dline(85, 24, 85, 40, C_BLACK);
 	dfont(old_font);
 	#endif
 
@@ -102,6 +105,7 @@ void show_mpucpu(void)
 	row_print(7, 1, " CPU Operation Mode: %08x", *CPUOPM);
 	row_print(8, 1, " Current VBR: %08x", cpu_getVBR());
 	row_print(9, 1, " Current stack pointer: %08x", r15);
+	row_print(10, 1, " CPU sleep block level: %d", cpu_sleep_block_counter);
 	#endif
 }
 

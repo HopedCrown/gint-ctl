@@ -86,6 +86,7 @@ void gintctl_gint_gray(void)
 void gintctl_gint_grayrender(void)
 {
 	int x, y;
+	int key = 0;
 
 	dgray(DGRAY_ON);
 	dclear(C_WHITE);
@@ -144,7 +145,10 @@ void gintctl_gint_grayrender(void)
 	dimage(x + 56, y + 2, &img_profile_gray_alpha);
 
 	dupdate();
-	getkey();
+
+	while(key != KEY_EXIT) {
+		key = getkey().key;
+	}
 
 	dgray(DGRAY_OFF);
 }
