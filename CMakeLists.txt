@@ -123,16 +123,13 @@ set(ASSETS_cg
 fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
 
 add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})
-
 target_compile_options(gintctl PRIVATE
   -Wall -Wextra -Os)
 target_link_options(gintctl PRIVATE
   -Wl,-Map=map -Wl,--print-memory-usage)
-target_include_directories(gintctl PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  "${FXSDK_COMPILER_INSTALL}/include/openlibm")
+target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(gintctl
-  Gint::Gint LibProf::LibProf LibImg::LibImg JustUI::JustUI -lopenlibm)
+  LibProf::LibProf LibImg::LibImg JustUI::JustUI Gint::Gint)
 
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
   generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"
