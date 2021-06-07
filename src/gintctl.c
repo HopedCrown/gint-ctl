@@ -5,7 +5,6 @@
 #include <gint/gint.h>
 #include <gint/drivers/keydev.h>
 #include <gint/hardware.h>
-#include <gint/kprint.h>
 #include <gint/usb.h>
 #include <gint/usb-ff-bulk.h>
 
@@ -23,6 +22,8 @@
 #include <gintctl/mem.h>
 
 #include <libprof.h>
+
+#include <fxlibc/printf.h>
 
 /* TODO:
    * Interrupt controller state?
@@ -188,7 +189,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	prof_init();
 
 	/* Enable floating-point formatters */
-	kprint_enable_fp();
+	__printf_enable_fp();
 
 	#ifdef FX9860G
 	/* Use the Unicode font uf5x7 on fx-9860G */

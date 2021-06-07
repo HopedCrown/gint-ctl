@@ -56,8 +56,8 @@ void gintctl_libs_openlibm(void)
 	};
 	plot(&plotspec);
 
-	row_print(8, 1, "exp(1.0) = %.8j", (int)(1e8*exp(1.0)));
-	row_print(9, 1, "atan(1.0)*4 = %.8j", (int)(1e8*4*atan(1.0)));
+	row_print(8, 1, "exp(1.0) = %g", exp(1.0));
+	row_print(9, 1, "atan(1.0)*4 = %g", atan(1.0)*4);
 	#endif
 
 	dupdate();
