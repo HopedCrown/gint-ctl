@@ -1,6 +1,5 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
-#include <gint/std/stdio.h>
 #include <gint/exc.h>
 
 #include <gintctl/mem.h>
@@ -10,6 +9,8 @@
 #include <gintctl/widgets/gscreen.h>
 #include <justui/jpainted.h>
 #include <justui/jinput.h>
+
+#include <stdio.h>
 
 struct view {
 	uint32_t base;

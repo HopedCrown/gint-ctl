@@ -4,12 +4,13 @@
 #include <gint/timer.h>
 #include <gint/clock.h>
 #include <gint/gint.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
 #include <libprof.h>
+
+#include <stdio.h>
 
 //---
 //	Date and time display

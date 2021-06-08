@@ -2,11 +2,12 @@
 #include <gint/keyboard.h>
 #include <gint/bfile.h>
 #include <gint/gint.h>
-#include <gint/std/stdio.h>
 #include <gint/hardware.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
+
+#include <stdio.h>
 
 struct region {
 	char const *name;

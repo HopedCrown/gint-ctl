@@ -1,8 +1,6 @@
 #include <gint/kmalloc.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
-#include <gint/std/string.h>
-#include <gint/std/stdlib.h>
 #include <gint/hardware.h>
 #include <gint/rtc.h>
 #include <gint/defs/util.h>
@@ -10,6 +8,9 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
+
+#include <string.h>
+#include <stdlib.h>
 
 //---
 // Arena information

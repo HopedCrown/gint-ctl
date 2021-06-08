@@ -1,13 +1,12 @@
-#include <gint/std/stdio.h>
-#include <gint/std/string.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
 
-#include <stdarg.h>
-#include <stdint.h>
-
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 
 #define NAN __builtin_nan("")
 #define INFINITY __builtin_inf()

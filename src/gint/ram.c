@@ -1,10 +1,10 @@
-#include <gint/std/stdio.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
 
+#include <stdio.h>
 #include <stdbool.h>
 
 /* Byte-based memory detection functions */

@@ -1,11 +1,12 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/util.h>
 #include <gintctl/perf.h>
 
 #include <libprof.h>
+
+#include <stdio.h>
 
 struct elapsed {
 	uint32_t clear;

@@ -1,7 +1,8 @@
 #include <gintctl/widgets/gtable.h>
 #include <justui/jwidget-api.h>
-#include <gint/std/stdlib.h>
 #include <gintctl/util.h>
+
+#include <stdlib.h>
 #include <stdarg.h>
 
 struct gtable_column {

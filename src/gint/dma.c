@@ -1,4 +1,3 @@
-#include <gint/std/stdio.h>
 #include <gint/dma.h>
 #include <gint/mpu/dma.h>
 #include <gint/display.h>
@@ -7,6 +6,8 @@
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
+
+#include <stdio.h>
 
 #define DMA SH7305_DMA
 #define dprint(x, y, ...) dprint(x, y, C_BLACK, __VA_ARGS__)

@@ -13,13 +13,14 @@
 //---
 
 #include <gint/defs/types.h>
-#include <gint/std/string.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/exc.h>
 
 #include <gintctl/libs.h>
 #include <gintctl/util.h>
+
+#include <string.h>
 
 /* Source buffer, used as a data source when copying */
 GALIGNED(4) static uint8_t *src;

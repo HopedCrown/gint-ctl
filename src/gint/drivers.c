@@ -7,11 +7,12 @@
 #include <gint/hardware.h>
 #include <gint/mpu/tmu.h>
 #include <gint/mpu/dma.h>
-#include <gint/std/string.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
+
+#include <string.h>
 
 //---
 // Driver list and information

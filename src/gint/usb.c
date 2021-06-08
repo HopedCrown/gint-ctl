@@ -10,8 +10,6 @@
 #include <gint/mpu/power.h>
 #include <gint/mpu/cpg.h>
 #include <gint/defs/util.h>
-#include <gint/std/stdio.h>
-#include <gint/std/string.h>
 #include <gint/bfile.h>
 #include <gint/gint.h>
 
@@ -20,6 +18,9 @@
 #include <gintctl/assets.h>
 
 #include <libprof.h>
+
+#include <stdio.h>
+#include <string.h>
 
 #define USB SH7305_USB
 

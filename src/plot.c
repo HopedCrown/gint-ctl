@@ -1,8 +1,9 @@
 #include <gint/display.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/plot.h>
 #include <gintctl/util.h>
+
+#include <stdio.h>
 
 struct tick_info
 {

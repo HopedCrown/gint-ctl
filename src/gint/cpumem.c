@@ -2,10 +2,11 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
 #include <gint/mmu.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+
+#include <stdio.h>
 
 /* TODO: Include <gint/cpu.h> */
 extern uint32_t cpu_getVBR(void);

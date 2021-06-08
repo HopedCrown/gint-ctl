@@ -1,11 +1,12 @@
 #include <gintctl/widgets/gscreen.h>
 #include <gintctl/assets.h>
 #include <gintctl/util.h>
-#include <gint/std/stdlib.h>
 
 #include <justui/jscene.h>
 #include <justui/jlabel.h>
 #include <justui/jfkeys.h>
+
+#include <stdlib.h>
 
 #ifdef FX9860G
 gscreen *gscreen_create(char const *name, bopti_image_t const *img)

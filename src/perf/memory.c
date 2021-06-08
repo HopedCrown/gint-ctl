@@ -2,7 +2,6 @@
 #include <gint/keyboard.h>
 #include <gint/hardware.h>
 #include <gint/dma.h>
-#include <gint/std/string.h>
 #include <gint/mmu.h>
 
 #include <gintctl/perf.h>
@@ -10,6 +9,8 @@
 #include <gintctl/assets.h>
 
 #include <libprof.h>
+
+#include <string.h>
 
 extern void memory_read(volatile uint8_t *area, uint32_t size);
 extern void memory_write(volatile uint8_t *area, uint32_t size);

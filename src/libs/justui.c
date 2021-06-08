@@ -1,6 +1,5 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/libs.h>
 #include <gintctl/widgets/gscreen.h>
@@ -14,6 +13,8 @@
 #include <justui/jinput.h>
 #include <justui/jpainted.h>
 #include <justui/jfkeys.h>
+
+#include <stdio.h>
 
 static int recursive_widget_count(void *w0)
 {

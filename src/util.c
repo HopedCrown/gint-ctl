@@ -1,9 +1,10 @@
 #include <gint/display.h>
-#include <gint/std/stdio.h>
 #include <gint/gint.h>
 #include <gint/bfile.h>
 
 #include <gintctl/util.h>
+
+#include <stdio.h>
 
 /* Short-shorthand for calling out vsprintf() */
 #define shortprint(str, format) {	\

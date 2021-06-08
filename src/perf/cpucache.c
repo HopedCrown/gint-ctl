@@ -1,13 +1,14 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/clock.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
 #include <gintctl/plot.h>
 
 #include <libprof.h>
+
+#include <stdio.h>
 
 #define CACHE_MAX 4096
 #define SAMPLES 129

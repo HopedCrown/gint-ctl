@@ -1,5 +1,4 @@
 #include <gint/mpu/tmu.h>
-#include <gint/std/stdio.h>
 #include <gint/timer.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
@@ -7,6 +6,8 @@
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
+
+#include <stdio.h>
 
 /* timer_print(): Print a timer's details */
 void timer_print(int x, int y, char const *name, uint32_t TCOR, uint32_t TCNT,

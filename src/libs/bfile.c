@@ -2,7 +2,6 @@
 #include <gint/bfile.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
-#include <gint/std/stdio.h>
 
 #include <gintctl/libs.h>
 #include <gintctl/util.h>
@@ -10,6 +9,8 @@
 
 #include <gintctl/widgets/gscreen.h>
 #include <gintctl/widgets/gtable.h>
+
+#include <stdio.h>
 
 /* Names and file informations (allocated on the stack) */
 static uint16_t (*test_names)[32][32];

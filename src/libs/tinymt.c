@@ -1,9 +1,10 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
-#include <gint/std/stdlib.h>
 
 #include <gintctl/libs.h>
 #include <gintctl/util.h>
+
+#include <stdlib.h>
 
 void gintctl_libs_tinymt(void)
 {

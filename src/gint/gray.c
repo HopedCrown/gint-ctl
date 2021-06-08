@@ -3,9 +3,10 @@
 #include <gint/gray.h>
 #include <gint/keyboard.h>
 #include <gint/hardware.h>
-#include <gint/std/string.h>
-#include <gint/std/stdio.h>
 #include <gintctl/gint.h>
+
+#include <string.h>
+#include <stdio.h>
 
 /* gintctl_gint_gray(): Gray engine tuning */
 void gintctl_gint_gray(void)
