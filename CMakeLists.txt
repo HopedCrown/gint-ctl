@@ -40,10 +40,7 @@ set(SOURCES
   src/libs/bfile.c
   src/libs/justui.c
   src/libs/libimg.c
-  src/libs/memory.c
   src/libs/openlibm.c
-  src/libs/printf.c
-  src/libs/tinymt.c
   src/mem/mem.c
   src/perf/cpucache.c
   src/perf/cpucache.S

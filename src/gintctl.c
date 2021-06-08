@@ -78,12 +78,6 @@ struct menu menu_perf = {
 struct menu menu_libs = {
 	_("Libraries", "External and standard libraries"), .entries = {
 
-	{ "libc: " _("TinyMT32", "TinyMT random number generation"),
-		gintctl_libs_tinymt, 0 },
-	{ "libc: " _("printf family", "Formatted printing (with Grisu2b)"),
-		gintctl_libs_printf, 0 },
-	{ "libc: " _("mem functions", "Core memory functions"),
-		gintctl_libs_memory, 0 },
 	{ "libm: " _("OpenLibm", "OpenLibm floating-point functions"),
 		gintctl_libs_openlibm, 0 },
 	{ "libimg" _("",": Image transforms"),
