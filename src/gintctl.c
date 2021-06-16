@@ -184,6 +184,8 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 
 	/* Enable floating-point formatters */
 	__printf_enable_fp();
+	/* Enable fixed-point formatters */
+	__printf_enable_fixed();
 
 	#ifdef FX9860G
 	/* Use the Unicode font uf5x7 on fx-9860G */

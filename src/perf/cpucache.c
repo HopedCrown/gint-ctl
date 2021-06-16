@@ -150,7 +150,7 @@ void gintctl_perf_cpucache(void)
 
 		row_print(12, 1, "X: Size of buffer (bytes)");
 		row_print(13, 1, "Y: Iphi cycles for 16 8-bit traversals");
-		row_print(14, 1, "Last samples suggests: %.2j Iphi/byte access",
+		row_print(14, 1, "Last samples suggests: %.2D Iphi/byte access",
 			100 * y_time[SAMPLES-1] / x_size[SAMPLES-1] / 16);
 		#endif
 

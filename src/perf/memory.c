@@ -174,7 +174,7 @@ static void results_line(int row, uint32_t time, uint32_t speed)
 	dprint_opt(_(80,260), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
 		"%d us", time);
 	dprint_opt(_(125,370), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
-		_("%3.1j MB/s", "%3.3j MB/s"), _(speed/100, speed));
+		_("%3.1D MB/s", "%3.3D MB/s"), _(speed/100, speed));
 }
 
 /* gintctl_perf_memory(): Memory primitives and reading/writing speed */

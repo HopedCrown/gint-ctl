@@ -46,7 +46,7 @@ void gintctl_perf_libprof(void)
 
 		if(test)
 		{
-			row_print(5, 1, "Sleep: %.3j ms", sleep_delay);
+			row_print(5, 1, "Sleep: %.3D ms", sleep_delay);
 			row_print(6, 1, "Empty: %d us", empty);
 		}
 
@@ -65,7 +65,7 @@ void gintctl_perf_libprof(void)
 
 		if(test)
 		{
-			row_print(7, 1, "Sleep: %.3j ms", sleep_delay);
+			row_print(7, 1, "Sleep: %.3D ms", sleep_delay);
 			row_print(8, 1, "Empty: %d us", empty);
 			row_print(9, 1, "Tests: %d", test);
 		}
