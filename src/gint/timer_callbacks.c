@@ -11,15 +11,14 @@ static int tests = 0;
 /* Auxiliary timer for tests than need an interrupt during the callback */
 static int auxiliary_timer = -1;
 
-static int callback_simple(volatile void *arg)
+static int callback_simple(volatile int *base)
 {
 	/* Perform a multiplication to check basic register saves */
-	int base = *(volatile int *)arg;
 	tests++;
-	return base * 387 + TIMER_STOP;
+	return (*base) * 387 + TIMER_STOP;
 }
 
-static int callback_sleep(GUNUSED volatile void *arg)
+static int callback_sleep(void)
 {
 	/* Start the aux. timer to have a guaranteed non-masked interrupt */
 	timer_start(auxiliary_timer);
@@ -28,11 +27,18 @@ static int callback_sleep(GUNUSED volatile void *arg)
 	return TIMER_STOP;
 }
 
-static int callback_timer(GUNUSED volatile void *arg)
+static int callback_timer(void)
 {
 	/* Wait specifically on the auxiliary timer */
 	timer_start(auxiliary_timer);
 	timer_wait(auxiliary_timer);
+	tests++;
+	return TIMER_STOP;
+}
+
+static int callback_ics(cpu_csleep_t *ics)
+{
+	cpu_csleep_cancel(ics);
 	tests++;
 	return TIMER_STOP;
 }
@@ -59,7 +65,7 @@ void gintctl_gint_timer_callbacks(void)
 
 		extern bopti_image_t img_opt_gint_timer_callbacks;
 		dimage(0, 56, &img_opt_gint_timer_callbacks);
-		dprint(69, 56, C_BLACK, "Done:%d", tests);
+		dprint(86, 56, C_BLACK, "Done:%d", tests);
 		#endif
 
 		#ifdef FXCG50
@@ -77,33 +83,41 @@ void gintctl_gint_timer_callbacks(void)
 			"TIMER runs a callback that starts a timer (with its");
 		row_print(8, 1,
 			"own callback) and waits for the interrupt.");
+		row_print(10, 1,
+			"ICS uses an interrupt-cancellable sleep.");
 
-		row_print(10, 1, "Tests run: %d", tests);
+		row_print(12, 1, "Tests run: %d", tests);
 
-		if(status == 1) row_print(12, 1, "Success!");
-		if(status == 2) row_print(12, 1, "Not enough timers!");
+		if(status == 1) row_print(13, 1, "Success!");
+		if(status == 2) row_print(13, 1, "Not enough timers!");
 
-		fkey_action(1, "SIMPLE");
-		fkey_action(2, "SLEEP");
-		fkey_action(3, "TIMER");
+		fkey_button(1, "SIMPLE");
+		fkey_button(2, "SLEEP");
+		fkey_button(3, "TIMER");
+		fkey_button(4, "ICS");
 		#endif
 
 		dupdate();
 		key = getkey().key;
 
 		status = 0;
-		int (*callback)(volatile void *arg) = NULL;
-		volatile void *arg = NULL;
+		gint_call_t cb;
 		auxiliary_timer = -1;
 
-		if(key == KEY_F1) callback = callback_simple, arg = &base;
-		if(key == KEY_F2) callback = callback_sleep;
-		if(key == KEY_F3) callback = callback_timer;
+		cpu_csleep_t ics;
 
-		if(!callback) continue;
+		if(key == KEY_F4)
+		{
+			cpu_csleep_init(&ics);
+			cb = GINT_CALL(callback_ics, (void *)&ics);
+		}
+		else if(key == KEY_F1) cb = GINT_CALL(callback_simple, &base);
+		else if(key == KEY_F2) cb = GINT_CALL(callback_sleep);
+		else if(key == KEY_F3) cb = GINT_CALL(callback_timer);
+		else continue;
 
 		/* Allocate a first timer to run the callback */
-		int t = timer_configure(TIMER_ANY, 40000, GINT_CALL(callback, arg));
+		int t = timer_configure(TIMER_ANY, 40000, cb);
 		if(t < 0)
 		{
 			status = 2;
@@ -128,7 +142,10 @@ void gintctl_gint_timer_callbacks(void)
 
 		status = 1;
 		timer_start(t);
-		timer_wait(t);
+
+		/* Test the ICS on F4 */
+		if(key == KEY_F4) cpu_csleep(&ics);
+		else timer_wait(t);
 	}
 }
 

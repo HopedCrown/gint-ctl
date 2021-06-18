@@ -22,6 +22,7 @@ extern void memory_dsp_xyram_memcpy(volatile uint8_t *dst,
 GILRAM GALIGNED(32) static char ilram_buffer[0x800];
 GXRAM  GALIGNED(32) static char xram_buffer[0x800];
 GYRAM  GALIGNED(32) static char yram_buffer[0x800];
+#define pram0 ((void *)0xfe200000)
 
 struct results
 {
@@ -288,6 +289,7 @@ void gintctl_perf_memory(void)
 		fkey_button(2, "ILRAM");
 		fkey_button(3, "XRAM");
 		fkey_button(4, "YRAM");
+		fkey_button(5, "PRAM0");
 		#endif
 
 		dfont(old_font);
@@ -299,6 +301,7 @@ void gintctl_perf_memory(void)
 			if(key == KEY_F2) test(&r, &ilram_buffer, 0x800, 64);
 			if(key == KEY_F3) test(&r, &xram_buffer, 0x800, 64);
 			if(key == KEY_F4) test(&r, &yram_buffer, 0x800, 64);
+			if(key == KEY_F5) test(&r, pram0, 0x8000, 1);
 		}
 	}
 }
