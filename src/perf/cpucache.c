@@ -9,8 +9,9 @@
 #include <libprof.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
-#define CACHE_MAX 4096
+#define CACHE_MAX 65536
 #define SAMPLES 129
 
 extern void cpucache_nop1024(int repeats);
@@ -60,7 +61,9 @@ void gintctl_perf_cpucache(void)
 	uint32_t nop4096 = test_nop4096();
 	nop4096 = test_nop4096();
 
-	uint8_t buf[CACHE_MAX];
+	uint8_t *buf = malloc(CACHE_MAX);
+	if(!buf) return;
+
 	int32_t x_size[SAMPLES];
 	int32_t y_time[SAMPLES];
 
@@ -103,7 +106,7 @@ void gintctl_perf_cpucache(void)
 			.subtick_divisions = 4,
 		},
 		.ticks_y = {
-			.multiples = 10000,
+			.multiples = 125000,
 			.subtick_divisions = 2,
 		},
 		.grid = {
@@ -122,7 +125,7 @@ void gintctl_perf_cpucache(void)
 	for(int i = 0; i < SAMPLES; i++)
 	{
 		x_size[i] = (CACHE_MAX / (SAMPLES-1)) * i;
-		y_time[i] = test_cpucache_rounds(buf, x_size[i], 16);
+		y_time[i] = test_cpucache_rounds(buf, x_size[i], 8);
 
 		if(y_time[i] < y_min || y_min == -1) y_min = y_time[i];
 		if(y_time[i] > y_max || y_max == -1) y_max = y_time[i];
@@ -149,9 +152,9 @@ void gintctl_perf_cpucache(void)
 		plot(&plotspec);
 
 		row_print(12, 1, "X: Size of buffer (bytes)");
-		row_print(13, 1, "Y: Iphi cycles for 16 8-bit traversals");
+		row_print(13, 1, "Y: Iphi cycles for 8x 32-bit traversals");
 		row_print(14, 1, "Last samples suggests: %.2D Iphi/byte access",
-			100 * y_time[SAMPLES-1] / x_size[SAMPLES-1] / 16);
+			100 * y_time[SAMPLES-1] / x_size[SAMPLES-1] / 8);
 		#endif
 
 		dupdate();
