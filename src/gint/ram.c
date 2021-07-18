@@ -121,6 +121,26 @@ static void explore_region(struct region *r)
 	r->reason = 3;
 }
 
+/* Detailed 0xe50[01]xxxx search
+   On the SH-4A this region contains the OLRAM. On the SH4AL-DSP it is supposed
+   to contain nothing, but on the calculator the XRAM and YRAM (normally in P1)
+   use part of the SH-4A OLRAM region. How exactly they wrap around is
+   uncertain, so this analysis finds independent pages accurately. */
+static void e500_search(int e500_pages[32])
+{
+	for(int i = 0; i < 32; i++) {
+		uint8_t volatile *p1 = (void *)0xe5000000 + (i << 12);
+
+		for(int j = 0; j < 32; j++) {
+			uint8_t volatile *p2 = (void *)0xe5000000 + (j << 12);
+			if(same_location(p1, p2)) {
+				e500_pages[i] = j;
+				break;
+			}
+		}
+	}
+}
+
 #ifdef FX9860G
 static void show_region(int row, struct region *r)
 {
@@ -207,6 +227,13 @@ void gintctl_gint_ram(void)
 	/* List scroll no fx-9860G */
 	GUNUSED int scroll = spu_zero();
 
+	/* 0: Standard regions, 1: Detailed e500 search */
+	int tab = 0;
+
+	/* Detailed 16-page e500 search */
+	int e500_pages[32];
+	e500_search(e500_pages);
+
 	key_event_t ev;
 	int key = 0;
 	while(key != KEY_EXIT)
@@ -214,59 +241,68 @@ void gintctl_gint_ram(void)
 		dclear(C_WHITE);
 
 		#ifdef FX9860G
-		show_region(1, NULL);
-		dhline(6, C_BLACK);
-		for(int i = 0; i < region_count; i++)
-		{
-			show_region(i+2-scroll, &r[i]);
+		if(tab == 0) {
+			show_region(1, NULL);
+			dhline(6, C_BLACK);
+			for(int i = 0; i < region_count; i++)
+				show_region(i+2-scroll, &r[i]);
+			scrollbar_px(/* view */ 8, 54, /* range */ 0, region_count,
+				/* visible */ scroll, 8);
+			dimage(0, 56, &img_opt_gint_ram);
 		}
-		scrollbar_px(/* view */ 8, 54, /* range */ 0, region_count,
-			/* visible */ scroll, 8);
-
-		extern bopti_image_t img_opt_gint_ram;
-		dimage(0, 56, &img_opt_gint_ram);
+		else if(tab == 1) {
+			// TODO
+		}
 		#endif
 
 		#ifdef FXCG50
 		row_title("On-chip memory discovery");
-		show_region(1, NULL);
-		for(int i = 0; r[i].name; i++)
-		{
-			show_region(i+2, &r[i]);
-		}
 
-		fkey_button(1, "ILRAM");
-		fkey_button(2, "XYRAM");
-		fkey_button(3, "DSP0");
-		fkey_button(4, "DSP1");
+		if(tab == 0) {
+			show_region(1, NULL);
+			for(int i = 0; r[i].name; i++)
+				show_region(i+2, &r[i]);
+
+			fkey_button(1, "ILRAM");
+			fkey_button(2, "XYRAM");
+			fkey_button(3, "DSP0");
+			fkey_button(4, "DSP1");
+			fkey_action(6, "E500");
+		}
+		else if(tab == 1) {
+			for(int i = 0; i < 32; i++) {
+				row_print(2 + i / 4, 2 + 12 * (i % 4), "%08X:%d",
+					0xe5000000 + (i << 12), e500_pages[i]);
+			}
+		}
 		#endif
 
 		dupdate();
 
 		ev = getkey();
 		key = ev.key;
-		if(key == KEY_F1)
+		if(tab == 0 && key == KEY_F1)
 		{
 			explore_region(&r[0]);
 		}
-		if(key == KEY_F2)
+		if(tab == 0 && key == KEY_F2)
 		{
 			explore_region(&r[1]);
 			explore_region(&r[2]);
 		}
-		if(key == KEY_F3)
+		if(tab == 0 && key == KEY_F3)
 		{
 			explore_region(&r[3]);
 			explore_region(&r[4]);
 			explore_region(&r[5]);
 		}
-		if(key == KEY_F4)
+		if(tab == 0 && key == KEY_F4)
 		{
 			explore_region(&r[6]);
 			explore_region(&r[7]);
 			explore_region(&r[8]);
 		}
-		if(key == KEY_F5)
+		if(tab == 0 && key == KEY_F5)
 		{
 			explore_region(&r[9]);
 			explore_region(&r[10]);
@@ -274,16 +310,23 @@ void gintctl_gint_ram(void)
 
 		#ifdef FX9860G
 		int scroll_max = region_count - 8;
-		if(key == KEY_UP)
+		if(tab == 0 && key == KEY_UP)
 		{
 			if(ev.shift || keydown(KEY_SHIFT)) scroll=0;
 			else if(scroll > 0) scroll--;
 		}
-		if(key == KEY_DOWN)
+		if(tab == 0 && key == KEY_DOWN)
 		{
 			if(ev.shift || keydown(KEY_SHIFT)) scroll=scroll_max;
 			else if(scroll < scroll_max) scroll++;
 		}
 		#endif
+
+		if(tab == 0 && key == KEY_F6)
+			tab = 1;
+		if(tab == 1 && key == KEY_EXIT) {
+			tab = 0;
+			key = 0;
+		}
 	}
 }
