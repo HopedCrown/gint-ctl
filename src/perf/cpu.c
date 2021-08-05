@@ -5,19 +5,16 @@
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
 
+#include <gintctl/widgets/gscreen.h>
+#include <gintctl/widgets/gtable.h>
+
 #include <libprof.h>
 
-/* Baseline */
-void perf_cpu_empty(void);
-/* Loop control */
-void perf_cpu_nop_2048x1(void);
-void perf_cpu_nop_1024x2(void);
-void perf_cpu_nop_512x4(void);
-void perf_cpu_nop_256x8(void);
-/* Parallel execution */
-void perf_cpu_EX_EX(void);
-void perf_cpu_MT_MT(void);
-void perf_cpu_LS_LS(void);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+GXRAM uint32_t cpu_perf_xram_buffer[512];
 
 /* Is subtracted from result times if specified; in TMU units (prof.elapsed) */
 static uint32_t baseline_ticks = 0;
@@ -39,14 +36,22 @@ uint32_t Iphi_cycles(void (*function)(void))
 
 /* Number of CPU cycles per iteration; the number of iterations must obviously
    match assembler code for that test */
-float Iphi_per_iteration(void (*function)(void), int count)
+int Iphi_cycles_per_iteration(int total, int count)
 {
-	return (float)Iphi_cycles(function) / count;
+	div_t d = div(total, count);
+
+	if(d.rem < 128)
+		return d.quot;
+	if(d.rem > count - 128)
+		return d.quot + 1;
+
+	return -1;
 }
 
 /* Number of TMU cycles for an empty function */
 uint32_t TMU_baseline(void)
 {
+	void perf_cpu_empty(void);
 	prof_t perf = prof_make();
 
 	for(int i = 0; i < 16; i++)
@@ -61,62 +66,132 @@ uint32_t TMU_baseline(void)
 
 //---
 
+struct results {
+	int nop_2048x1, nop_1024x2, nop_512x4, nop_256x8;
+	int EX_EX, MT_MT, LS_LS;
+	int align_4, align_2;
+	int pipeline_1, pipeline_2, pipeline_3;
+	int raw_EX_EX, raw_LS_LS, raw_EX_LS, raw_LS_EX;
+	int noraw_LS_LS, noraw_LS_EX;
+	int raw_EX_LS_addr, raw_DSPLS_DSPLS;
+	int darken_1, darken_2, darken_3, darken_4;
+	int double_read, double_incr_read;
+	int tex2d;
+};
+
+/* Number of Iphi cycles total, and number of iterations */
+static struct results r_cycles, r_iter;
+
+static void table_gen(gtable *t, int row)
+{
+	static char const *names[] = {
+		"Single nop", "2 nop", "4 nop", "8 nop",
+		"EX/EX pair", "MT/MT pair", "LS/LS pair",
+		"4-aligned parallel pair", "2-aligned parallel pair",
+		"mac.w/nop pipeline", "mac.w/mac.w pipeline",
+		  "mac.w/nop*5 pipeline",
+		"RAW dep.: EX/EX", "RAW dep.: LS/LS", "RAW dep.: EX/LS",
+		  "RAW dep.: LS/EX",
+		  "No dep.: LS/LS", "No dep.: LS/EX",
+		  "RAW on address: EX/LS",
+		  "RAW dep.: DSP-LS/DSP-LS",
+		"32-bit VRAM darken #1", "32-bit VRAM darken #2",
+		  "Interwoven darken", "Interwoven open darken",
+		"Double read", "Double increment read",
+		"Texture2D shader",
+	};
+
+	int cycles = ((int *)&r_cycles)[row];
+	int iter = ((int *)&r_iter)[row];
+	int cpi = Iphi_cycles_per_iteration(cycles, iter);
+
+	char c2[16], c3[16], c4[16];
+	sprintf(c2, "%d", cpi);
+	sprintf(c3, "%d", cycles);
+	sprintf(c4, "%d", iter);
+
+	gtable_provide(t, names[row], (cpi == -1 ? "-" : c2), c3, c4);
+}
+
 void gintctl_perf_cpu(void)
 {
+	memset(&r_cycles, 0, sizeof r_cycles);
+	memset(&r_iter, 0, sizeof r_iter);
+
+	gtable *table = gtable_create(4, table_gen, NULL, NULL);
+	gtable_set_rows(table, sizeof r_cycles / sizeof(int));
+	gtable_set_row_spacing(table, _(1,2));
+	gtable_set_column_titles(table, "Name", "CPI", "Cycles", "Iter.");
+	gtable_set_column_sizes(table, 6, 1, 2, 2);
+	gtable_set_font(table, _(&font_mini, dfont_default()));
+	jwidget_set_margin(table, 0, 2, 1, 2);
+
+	gscreen *scr = gscreen_create2("CPU parallelism", &img_opt_perf_cpu,
+		"CPU instruction parallelism and pipelining", "@RUN;;;;;");
+	gscreen_add_tabs(scr, table, table);
+	jscene_set_focused_widget(scr->scene, table);
+
 	int key = 0;
+	while(key != KEY_EXIT) {
+		jevent e = jscene_run(scr->scene);
 
-	/* Measure baseline time */
-	baseline_ticks = TMU_baseline();
+		if(e.type == JSCENE_PAINT) {
+			dclear(C_WHITE);
+			jscene_render(scr->scene);
+			dupdate();
+		}
 
-	uint32_t Iphi_cpu_nop_2048x1 = 0;
-	uint32_t Iphi_cpu_nop_1024x2 = 0;
-	uint32_t Iphi_cpu_nop_512x4 = 0;
-	uint32_t Iphi_cpu_nop_256x8 = 0;
+		key = 0;
+		if(e.type == JSCENE_KEY && e.key.type == KEYEV_DOWN)
+			key = e.key.key;
 
-	uint32_t Iphi_cpu_EX_EX = 0;
-	uint32_t Iphi_cpu_MT_MT = 0;
-	uint32_t Iphi_cpu_LS_LS = 0;
+		if(key == KEY_F1) {
+			baseline_ticks = TMU_baseline();
 
-	while(key != KEY_EXIT)
-	{
-		dclear(C_WHITE);
+			#define run(name, iter) {								\
+				extern void perf_cpu_ ## name (void);				\
+				r_cycles.name = Iphi_cycles(perf_cpu_ ## name);		\
+				r_iter.name = iter;									\
+			}
 
-		#ifdef FXCG50
-		row_title("CPU instruction parallelism and pipelining");
+			run(nop_2048x1, 2048);
+			run(nop_1024x2, 1024);
+			run(nop_512x4, 512);
+			run(nop_256x8, 256);
 
-		row_print(1, 1, "Baseline ticks: %d",
-			baseline_ticks);
-		row_print(3, 1, "Iphi cycles for 2048x1 nop: %d",
-			Iphi_cpu_nop_2048x1);
-		row_print(4, 1, "Iphi cycles for 1024x2 nop: %d",
-			Iphi_cpu_nop_1024x2);
-		row_print(5, 1, "Iphi cycles for 512x4 nop: %d",
-			Iphi_cpu_nop_512x4);
-		row_print(6, 1, "Iphi cycles for 256x8 nop: %d",
-			Iphi_cpu_nop_256x8);
-		row_print(8, 1, "Iphi cycles for EX/EX: %d",
-			Iphi_cpu_EX_EX);
-		row_print(9, 1, "Iphi cycles for MT/MT: %d",
-			Iphi_cpu_MT_MT);
-		row_print(10, 1, "Iphi cycles for LS/LS: %d",
-			Iphi_cpu_LS_LS);
+			run(EX_EX, 1024);
+			run(MT_MT, 1024);
+			run(LS_LS, 1024);
 
-		fkey_button(1, "RUN");
-		#endif
+			run(align_4, 1024);
+			run(align_2, 1024);
 
-		dupdate();
-		key = getkey().key;
+			run(pipeline_1, 1024);
+			run(pipeline_2, 1024);
+			run(pipeline_3, 1024);
 
-		if(key == KEY_F1)
-		{
-			Iphi_cpu_nop_2048x1 = Iphi_cycles(perf_cpu_nop_2048x1);
-			Iphi_cpu_nop_1024x2 = Iphi_cycles(perf_cpu_nop_1024x2);
-			Iphi_cpu_nop_512x4  = Iphi_cycles(perf_cpu_nop_512x4);
-			Iphi_cpu_nop_256x8  = Iphi_cycles(perf_cpu_nop_256x8);
+			run(raw_EX_EX, 1024);
+			run(raw_LS_LS, 1024);
+			run(raw_EX_LS, 1024);
+			run(raw_LS_EX, 1024);
+			run(noraw_LS_LS, 1024);
+			run(noraw_LS_EX, 1024);
+			run(raw_EX_LS_addr, 1024);
+			run(raw_DSPLS_DSPLS, 512);
 
-			Iphi_cpu_EX_EX = Iphi_cycles(perf_cpu_EX_EX);
-			Iphi_cpu_MT_MT = Iphi_cycles(perf_cpu_MT_MT);
-			Iphi_cpu_LS_LS = Iphi_cycles(perf_cpu_LS_LS);
+			run(darken_1, 512);
+			run(darken_2, 512);
+			run(darken_3, 256);
+			run(darken_4, 256);
+
+			run(double_read, 1024);
+			run(double_incr_read, 1024);
+
+			run(tex2d, 512);
+
+			table->widget.update = 1;
 		}
 	}
+
+	gscreen_destroy(scr);
 }

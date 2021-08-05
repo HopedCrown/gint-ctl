@@ -65,6 +65,8 @@ struct menu menu_perf = {
 
 	{ "libprof basics",      gintctl_perf_libprof, 0 },
 	{ "CPU and cache",       gintctl_perf_cpucache, 0 },
+	{ _("CPU parallelism", "Superscalar and pipeline parallelism"),
+	                         gintctl_perf_cpu, 0 },
 	{ "Interrupt stress",    gintctl_perf_interrupts, 0 },
 	{ "Memory access speed", gintctl_perf_memory, 0 },
 	{ "Rendering functions", gintctl_perf_render, 0 },

@@ -44,6 +44,8 @@ set(SOURCES
   src/mem/mem.c
   src/perf/cpucache.c
   src/perf/cpucache.S
+  src/perf/cpu.c
+  src/perf/cpu.S
   src/perf/interrupt.c
   src/perf/libprof.c
   src/perf/memory.c

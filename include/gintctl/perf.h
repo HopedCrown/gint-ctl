@@ -11,6 +11,9 @@ void gintctl_perf_libprof(void);
 /* gintctl_perf_cpucache(): CPU speed and cache size */
 void gintctl_perf_cpucache(void);
 
+/* gintctl_perf_cpu(): CPU instruction parallelism and pipelining */
+void gintctl_perf_cpu(void);
+
 /* gintctl_perf_interrupts(): Interrupt handling */
 void gintctl_perf_interrupts(void);
 
