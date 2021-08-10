@@ -40,6 +40,7 @@ extern bopti_image_t
 	img_opt_libs_jui,
 	img_opt_main,
 	img_opt_mem,
+	img_opt_perf_cpu,
 	img_opt_perf_libprof,
 	img_opt_perf_memory,
 	img_opt_perf_memory_sh3,

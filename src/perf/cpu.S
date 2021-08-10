@@ -440,6 +440,7 @@ _perf_cpu_double_incr_read:
    This section is used to investigate the performance of the 2D texture shader
    of azur. */
 
+#ifdef FXCG50
 .global _perf_cpu_tex2d
 
 .align 4
@@ -451,15 +452,19 @@ _perf_cpu_tex2d:
 1:	movs.l	@r3+, x0
 2:	movs.l	x0, @r5+
 	EPILOGUE()
+#endif
 
 /* XRAM buffer */
 
 .align 4
 .buffer:
 	.long	_cpu_perf_xram_buffer
+
+#ifdef FXCG50
 .buffer2:
 	.long	_buffer2
 
 .section .data
 _buffer2:
 	.zero	2048
+#endif

@@ -86,6 +86,7 @@ set(ASSETS_fx
   assets-fx/img/opt_libs_jui.png
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
+  assets-fx/img/opt_perf_cpu.png
   assets-fx/img/opt_perf_libprof.png
   assets-fx/img/opt_perf_memory.png
   assets-fx/img/opt_perf_memory_sh3.png

@@ -3,6 +3,7 @@
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
+#include <gintctl/assets.h>
 
 #include <stdio.h>
 #include <stdbool.h>

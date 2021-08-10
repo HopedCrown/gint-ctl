@@ -4,6 +4,7 @@
 
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
+#include <gintctl/assets.h>
 
 #include <gintctl/widgets/gscreen.h>
 #include <gintctl/widgets/gtable.h>
@@ -76,7 +77,9 @@ struct results {
 	int raw_EX_LS_addr, raw_DSPLS_DSPLS;
 	int darken_1, darken_2, darken_3, darken_4;
 	int double_read, double_incr_read;
+	#ifdef FXCG50
 	int tex2d;
+	#endif
 };
 
 /* Number of Iphi cycles total, and number of iterations */
@@ -187,7 +190,9 @@ void gintctl_perf_cpu(void)
 			run(double_read, 1024);
 			run(double_incr_read, 1024);
 
+			#ifdef FXCG50
 			run(tex2d, 512);
+			#endif
 
 			table->widget.update = 1;
 		}
