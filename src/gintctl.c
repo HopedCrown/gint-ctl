@@ -95,6 +95,23 @@ struct menu menu_libs = {
 // Global shortcuts
 //---
 
+/* Whether we're recording */
+static bool getkey_recording = false;
+
+static void getkey_record_video_frame(int onscreen)
+{
+		#ifdef FX9860G
+		if(dgray_enabled())
+			usb_fxlink_videocapture_gray(true);
+		else
+			usb_fxlink_videocapture(onscreen);
+		#endif
+
+		#ifdef FXCG50
+		usb_fxlink_videocapture(onscreen);
+		#endif
+}
+
 static bool getkey_global_shortcuts(key_event_t e)
 {
 	if(usb_is_open() && e.key == KEY_OPTN && !e.shift && !e.alpha) {
@@ -110,6 +127,17 @@ static bool getkey_global_shortcuts(key_event_t e)
 		#endif
 
 		return true;
+	}
+	if(usb_is_open() && e.key == KEY_VARS && e.shift && !e.alpha) {
+		if(!getkey_recording) {
+			dupdate_set_hook(GINT_CALL(getkey_record_video_frame, (int)false));
+			getkey_record_video_frame(true);
+			getkey_recording = true;
+		}
+		else {
+			dupdate_set_hook(GINT_CALL_NULL);
+			getkey_recording = false;
+		}
 	}
 	return false;
 }
