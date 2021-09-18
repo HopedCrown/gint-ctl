@@ -3,6 +3,8 @@
 #include <gint/bfile.h>
 #include <gint/gint.h>
 #include <gint/hardware.h>
+#include <gint/usb.h>
+#include <gint/usb-ff-bulk.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
@@ -25,7 +27,8 @@ static struct region const regs[] = {
 
 	#ifdef FXCG50
 	{ "ROM",    0x80000000, 0x81ffffff, 32 },
-	{ "RAM",    0x88000000, 0x881fffff, 2 },
+	{ "RAM_88", 0x88000000, 0x881fffff, 2 },
+	{ "RAM_8C", 0x8c000000, 0x8c7fffff, 8 },
 	{ "RS",     0xfd800000, 0xfd8007ff, 1 },
 	#endif
 };
@@ -65,7 +68,7 @@ static void switch_dump(int region, int segment, char *filename, int *retcode)
 	BFile_Close(fd);
 }
 
-static int do_dump(int region, int segment)
+static int do_dump_smem(int region, int segment)
 {
 	char filename[30];
 	int retcode = 0;
@@ -74,6 +77,29 @@ static int do_dump(int region, int segment)
 	gint_world_switch(GINT_CALL(switch_dump,region,segment,filename,&retcode));
 
 	return retcode;
+}
+
+static void do_dump_usb(int region)
+{
+	bool open = usb_is_open();
+	if(!open) {
+		usb_interface_t const *interfaces[] = { &usb_ff_bulk, NULL };
+		usb_open(interfaces, GINT_CALL_NULL);
+		usb_open_wait();
+	}
+
+	int size = regs[region].end - regs[region].start + 1;
+
+	usb_fxlink_header_t header;
+	usb_fxlink_fill_header(&header, "gintctl", "dump", size);
+
+	int pipe = usb_ff_bulk_output();
+	usb_write_sync(pipe, &header, sizeof header, 4, false);
+	usb_write_sync(pipe, (void *)regs[region].start, size, 4, false);
+	usb_commit_sync(pipe);
+
+	/* Close the USB link if it wasn't open before */
+	if(!open) usb_close();
 }
 
 /* gintctl_gint_dump(): Dump memory to filesystem */
@@ -121,9 +147,11 @@ void gintctl_gint_dump(void)
 		if(retcode < 0)  row_print(5, 1, "Error %d", retcode);
 
 		fkey_button(1, "ROM");
-		fkey_button(2, "RAM");
-		fkey_button(3, "RS");
-		fkey_action(6, "DUMP");
+		fkey_button(2, "RAM_88");
+		fkey_button(3, "RAM_8C");
+		fkey_button(4, "RS");
+		fkey_action(5, "USB");
+		fkey_action(6, "SMEM");
 		#endif
 
 		dupdate();
@@ -134,6 +162,7 @@ void gintctl_gint_dump(void)
 		if(key == KEY_F1) select = 0;
 		if(key == KEY_F2) select = 1;
 		if(key == KEY_F3) select = 2;
+		if(key == KEY_F4 && _(0,1)) select = 3;
 
 		if(select >= 0 && select == region)
 		{
@@ -146,6 +175,7 @@ void gintctl_gint_dump(void)
 		}
 
 		retcode = 0;
-		if(key == KEY_F6) retcode = do_dump(region, segment);
+		if(key == KEY_F5) do_dump_usb(region);
+		if(key == KEY_F6) retcode = do_dump_smem(region, segment);
 	}
 }

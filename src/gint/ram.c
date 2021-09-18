@@ -86,6 +86,8 @@ struct region {
 	uint32_t mem;
 	/* Whether region supports only 32-bit access [input] */
 	bool use_lword;
+	/* How often to probe memory (1 in step_size bytes will be tested) */
+	int step_size;
 	/* Size of region [output] */
 	uint32_t size;
 	/* Reason why region is not larger [output] */
@@ -97,7 +99,7 @@ static void explore_region(struct region *r)
 	uint8_t volatile *mem = (void *)r->mem;
 	r->size = 0;
 
-	while(r->size < (1 << 20))
+	while(r->size < (16 << 20))
 	{
 		int x = r->use_lword
 			? writable_lword(mem + r->size)
@@ -115,8 +117,7 @@ static void explore_region(struct region *r)
 			if(y) return;
 		}
 
-		/* In PXYRAM, skip some longwords to go faster */
-		r->size += r->use_lword ? 32 : 4;
+		r->size += r->step_size;
 	}
 
 	r->reason = 3;
@@ -200,7 +201,7 @@ static void show_region(int y, struct region *r)
 	row_print(y,  2, "%s", r->name);
 	row_print(y,  9, "%08X", r->mem);
 	row_print(y, 18, "%d", r->use_lword ? 32 : 8);
-	row_print(y, 22, "%d bytes", r->size);
+	row_print(y, 22, "%d %s", r->size, r->size >= (1000000) ? "B" : "bytes");
 	row_print(y, 35, reasons[r->reason]);
 }
 #endif
@@ -209,17 +210,18 @@ static void show_region(int y, struct region *r)
 void gintctl_gint_ram(void)
 {
 	struct region r[] = {
-		{ "ILRAM", 0xe5200000, false, 0, 0 },
-		{ "XRAM",  0xe5007000, false, 0, 0 },
-		{ "YRAM",  0xe5017000, false, 0, 0 },
-		{ "PRAM0", 0xfe200000, true,  0, 0 },
-		{ "XRAM0", 0xfe240000, true,  0, 0 },
-		{ "YRAM0", 0xfe280000, true,  0, 0 },
-		{ "PRAM1", 0xfe300000, true,  0, 0 },
-		{ "XRAM1", 0xfe340000, true,  0, 0 },
-		{ "YRAM1", 0xfe380000, true,  0, 0 },
-		{ "X_P2",  0xa5007000, false, 0, 0 },
-		{ "URAM",  0xa55f0000, false, 0, 0 },
+		{ "ILRAM", 0xe5200000, false,    4, /**/ 0, 0 },
+		{ "XRAM",  0xe5007000, false,    4, /**/ 0, 0 },
+		{ "YRAM",  0xe5017000, false,    4, /**/ 0, 0 },
+		{ "PRAM0", 0xfe200000, true,    32, /**/ 0, 0 },
+		{ "XRAM0", 0xfe240000, true,    32, /**/ 0, 0 },
+		{ "YRAM0", 0xfe280000, true,    32, /**/ 0, 0 },
+		{ "PRAM1", 0xfe300000, true,    32, /**/ 0, 0 },
+		{ "XRAM1", 0xfe340000, true,    32, /**/ 0, 0 },
+		{ "YRAM1", 0xfe380000, true,    32, /**/ 0, 0 },
+		{ "X_P2",  0xa5007000, false,    4, /**/ 0, 0 },
+		{ "URAM",  0xa55f0000, false,    4, /**/ 0, 0 },
+		{ "RAM",   0xac000000, false, 1024, /**/ 0, 0 },
 		{ NULL },
 	};
 
@@ -307,6 +309,7 @@ void gintctl_gint_ram(void)
 		{
 			explore_region(&r[9]);
 			explore_region(&r[10]);
+			explore_region(&r[11]);
 		}
 
 		#ifdef FX9860G
