@@ -48,9 +48,15 @@ void show_mpucpu(void)
 		"fx-CG 50/Graph 90+E",
 		"fx-CG Manager",
 	};
+	char const *fs_names[] = {
+		"Unknown",
+		"CASIOWIN",
+		"Fugue",
+	};
 
 	int mpu  = gint[HWMPU];
 	int calc = gint[HWCALC];
+	int fs   = gint[HWFS];
 
 	extern volatile int cpu_sleep_block_counter;
 
@@ -66,6 +72,12 @@ void show_mpucpu(void)
 	char const *str_mpu = mpu_default;
 	if(mpu >= 0 && mpu < 5) str_mpu = mpu_names[mpu];
 
+	/* Generate a default fs name if invalid values are found */
+	char fs_default[16];
+	sprintf(fs_default, "<FSID %d>", fs);
+	char const *str_fs = fs_default;
+	if(fs >= 0 && fs < 3) str_fs = fs_names[fs];
+
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
 	uint32_t SR, r15;
 	__asm__("stc sr,  %0" : "=r"(SR));
@@ -77,23 +89,24 @@ void show_mpucpu(void)
 
 	dprint(1, 10, C_BLACK, "Model: %s", str_calc);
 	dprint(1, 16, C_BLACK, "MPU: %s", str_mpu);
+	dprint(1, 22, C_BLACK, "Filesystem: %s", str_fs);
 
-	print_prefix(29, 24,     "SR", "%08X", SR);
-	dline(29, 24, 29, 46, C_BLACK);
+	print_prefix(29, 30,     "SR", "%08X", SR);
+	dline(29, 36, 29, 52, C_BLACK);
 	if(isSH3()) {
-		print_prefix(29, 30,    "PVR", "");
-		print_prefix(29, 36,    "PRR", "");
-		print_prefix(29, 42, "CPUOPM", "");
+		print_prefix(29, 36,    "PVR", "");
+		print_prefix(29, 42,    "PRR", "");
+		print_prefix(29, 48, "CPUOPM", "");
 	}
 	else {
-		print_prefix(29, 30,    "PVR", "%08X", gint[HWCPUVR]);
-		print_prefix(29, 36,    "PRR", "%08X", gint[HWCPUPR]);
-		print_prefix(29, 42, "CPUOPM", "%08X", *CPUOPM);
+		print_prefix(29, 36,    "PVR", "%08X", gint[HWCPUVR]);
+		print_prefix(29, 42,    "PRR", "%08X", gint[HWCPUPR]);
+		print_prefix(29, 48, "CPUOPM", "%08X", *CPUOPM);
 	}
-	print_prefix(85, 24,    "VBR", "%08X", cpu_getVBR());
-	print_prefix(85, 30,    "R15", "%08X", r15);
-	print_prefix(85, 36,    "sbc", "%d", cpu_sleep_block_counter);
-	dline(85, 24, 85, 40, C_BLACK);
+	print_prefix(85, 30,    "VBR", "%08X", cpu_getVBR());
+	print_prefix(85, 36,    "R15", "%08X", r15);
+	print_prefix(85, 42,    "sbc", "%d", cpu_sleep_block_counter);
+	dline(85, 30, 85, 46, C_BLACK);
 	dfont(old_font);
 	#endif
 
@@ -107,6 +120,7 @@ void show_mpucpu(void)
 	row_print(8, 1, " Current VBR: %08x", cpu_getVBR());
 	row_print(9, 1, " Current stack pointer: %08x", r15);
 	row_print(10, 1, " CPU sleep block level: %d", cpu_sleep_block_counter);
+	row_print(12, 1, "Filesystem type: %s", str_fs);
 	#endif
 }
 
