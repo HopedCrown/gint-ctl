@@ -131,10 +131,14 @@ target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
 target_link_libraries(gintctl
   LibProf::LibProf LibImg::LibImg JustUI::JustUI Gint::Gint)
 
+
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
   generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"
     NAME "gintctl" INTERNAL "@GINTCTL" ICON assets-fx/icon.png)
 elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCG50)
   generate_g3a(TARGET gintctl OUTPUT "gintctl.g3a"
     NAME "" ICONS assets-cg/icon-uns.png assets-cg/icon-sel.png)
+  add_custom_command(TARGET gintctl POST_BUILD
+    COMMAND echo -n "g3a file size: "
+    COMMAND stat -c %s "${CMAKE_CURRENT_SOURCE_DIR}/gintctl.g3a")
 endif()
