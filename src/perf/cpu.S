@@ -233,6 +233,7 @@ _perf_cpu_pipeline_3:
 
 .global _perf_cpu_raw_EX_EX
 
+/* Forwarding after the ALU is seamless, no delay -> 2 cycles /i */
 .align 4
 _perf_cpu_raw_EX_EX:
 	PROLOGUE(1024)
@@ -242,6 +243,8 @@ _perf_cpu_raw_EX_EX:
 
 .global _perf_cpu_raw_LS_LS
 
+/* Value is available immediately for memory... at a *different address* (the
+   same addresse would give 4 cycles /i) -> 2 cycles /i */
 .align 4
 _perf_cpu_raw_LS_LS:
 	PROLOGUE(1024)
@@ -249,11 +252,12 @@ _perf_cpu_raw_LS_LS:
 	nop
 
 1:	mov.l	@r4, r0
-2:	mov.l	r0, @r4
+2:	mov.l	r0, @(4,r4)
 	EPILOGUE()
 
 .global _perf_cpu_raw_EX_LS
 
+/* Perfect forwarding from ALU to memory access -> 1 cycle /i */
 .align 4
 _perf_cpu_raw_EX_LS:
 	PROLOGUE(1024)
@@ -266,30 +270,40 @@ _perf_cpu_raw_EX_LS:
 
 .global _perf_cpu_raw_LS_EX
 
+/* 1-cycle stall after loading a register from memory -> 3 cycles /i */
 .align 4
 _perf_cpu_raw_LS_EX:
 	PROLOGUE(1024)
-	mov.l	.buffer, r4
-	nop
-
-1:	mov.l	@r4, r0
+1:	mov.l	@r15, r0
 2:	add	#1, r0
+	EPILOGUE()
+
+.global _perf_cpu_raw_LS_MT
+
+/* Same - it's not like you could move to avoid the stall -> 3 cycles /i */
+.align 4
+_perf_cpu_raw_LS_MT:
+	PROLOGUE(1024)
+1:	mov.l	@r15, r0
+2:	mov	r0, r1
 	EPILOGUE()
 
 .global _perf_cpu_noraw_LS_LS
 
+/* Still efficient as long as the addresses are different -> 2 cycles /i */
 .align 4
 _perf_cpu_noraw_LS_LS:
 	PROLOGUE(1024)
 	mov.l	.buffer, r4
-	nop
+	mov	r4, r5
 
 1:	mov.l	@r4, r0
-2:	mov.l	r1, @r4
+2:	mov.l	r1, @(4,r5)
 	EPILOGUE()
 
 .global _perf_cpu_noraw_LS_EX
 
+/* Normal superscalar parallelism at work -> 1 cycle /i */
 .align 4
 _perf_cpu_noraw_LS_EX:
 	PROLOGUE(1024)
@@ -302,6 +316,8 @@ _perf_cpu_noraw_LS_EX:
 
 .global _perf_cpu_raw_EX_LS_addr
 
+/* There is no forwarding on the address, so similar to loading this actually
+   takes much longer than when modifying the operand -> 3 cycles /i */
 .align 4
 _perf_cpu_raw_EX_LS_addr:
 	PROLOGUE(1024)
@@ -312,13 +328,29 @@ _perf_cpu_raw_EX_LS_addr:
 2:	mov.l	r0, @r4
 	EPILOGUE()
 
+.global _perf_cpu_raw_LS_LS_addr
+
+/* The worst of all; 2-cycle stall to use a loaded address -> 4 cycles /i */
+.align 4
+_perf_cpu_raw_LS_LS_addr:
+	PROLOGUE(1024)
+	mov.l	.buffer, r4
+	mov.l	r15, @r4
+
+1:	mov.l	@r4, r5
+2:	mov.l	@r5, r6
+	EPILOGUE()
+
 .global _perf_cpu_raw_DSPLS_DSPLS
 
+/* As previously, the addresses must be different -> 2 cycles /i */
 .align 4
 _perf_cpu_raw_DSPLS_DSPLS:
 	PROLOGUE(512)
 	mov.l	.buffer, r4
 	mov	r4, r5
+	add	#2, r5
+	nop
 
 1:	movs.w	@r4, x0
 2:	movs.w	x0, @r5
@@ -327,10 +359,14 @@ _perf_cpu_raw_DSPLS_DSPLS:
 /* [Iteration weaving]
 
    In this section we analyze how iterations can be woven and opened to improve
-   performance by reducing RAW dependencies. */
+   performance by reducing RAW dependencies. This is illustrated with a
+   function that darkens a continuous section of VRAM. The initial version
+   takes 3 cycles /pixel, whereas the optimized takes 1.25 cycle /pixel. */
 
 .global _perf_cpu_darken_1
 
+/* Darkening RGB565 by (color = (color & 0xf7de) >> 1). This base version does
+   two pixels at a time but has pretty complex RAWs -> 6 cycles /i */
 .align 4
 _perf_cpu_darken_1:
 	PROLOGUE(512)
@@ -340,14 +376,17 @@ _perf_cpu_darken_1:
 	nop
 
 1:	mov.l	@r4+, r1
+	/* Stall because of loading r1 */
 	and	r2, r1
 	add	#4, r5
 	shlr	r1
+	/* Stall because of access to r5 as address */
 2:	mov.l	r1, @r5
 	EPILOGUE()
 
 .global _perf_cpu_darken_2
 
+/* Here the change to r5 is moved to eliminate both stalls -> 4 cycles /i */
 .align 4
 _perf_cpu_darken_2:
 	PROLOGUE(512)
@@ -359,12 +398,17 @@ _perf_cpu_darken_2:
 1:	mov.l	@r4+, r1
 	add	#4, r5
 	and	r2, r1
+	/* The EX/LS pair below is the only one parallelized */
 	shlr	r1
 2:	mov.l	r1, @r5
 	EPILOGUE()
 
 .global _perf_cpu_darken_3
 
+/* Here iterations are woven together to increase the amount of independent
+   data. Each iteration processes twice as much data and uses EX cycles of the
+   first longword to do LS work on the second one. Plus r5 is incremented only
+   once -> 6 cycles /i */
 .align 4
 _perf_cpu_darken_3:
 	PROLOGUE(256)
@@ -375,17 +419,25 @@ _perf_cpu_darken_3:
 
 1:	mov.l	@r4+, r1
 	add	#8, r5
+
 	mov.l	@r4+, r3
+
 	and	r2, r1
+
 	shlr	r1
 	mov.l	r1, @r5
+
 	and	r2, r3
+
 	shlr	r3
 2:	mov.l	r3, @(4,r5)
 	EPILOGUE()
 
 .global _perf_cpu_darken_4
 
+/* Finally iterations are opened here to eliminate the long chain of dependency
+   from the loads to the stores. Late EX instructions are parallelized with
+   loads for the next iteration -> 5 cycles/i */
 .align 4
 _perf_cpu_darken_4:
 	PROLOGUE(256)
@@ -413,6 +465,7 @@ _perf_cpu_darken_4:
 
 .global _perf_cpu_double_read
 
+/* No problem here -> 2 cycles /i */
 .align 4
 _perf_cpu_double_read:
 	PROLOGUE(1024)
@@ -425,6 +478,7 @@ _perf_cpu_double_read:
 
 .global _perf_cpu_double_incr_read
 
+/* Post-increment feeds into address much faster than ALU -> 2 cycles /i */
 .align 4
 _perf_cpu_double_incr_read:
 	PROLOGUE(1024)
@@ -433,6 +487,21 @@ _perf_cpu_double_incr_read:
 
 1:	mov.b	@r4+, r0
 2:	mov.b	@r4+, r0
+	EPILOGUE()
+
+.global _perf_cpu_double_write
+
+/* No delay writing twice, whether with r4/r4 or r4/r5 -> 2 cycles/i */
+.align 4
+_perf_cpu_double_write:
+	PROLOGUE(1024)
+	mov.l	.buffer, r4
+	mov.l	@r4, r0
+	mov	r0, r1
+	mov	r4, r5
+
+1:	mov.l	r0, @r4
+2:	mov.l	r1, @r5
 	EPILOGUE()
 
 /* [2D texture copy]

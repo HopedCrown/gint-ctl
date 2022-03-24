@@ -41,9 +41,9 @@ int Iphi_cycles_per_iteration(int total, int count)
 {
 	div_t d = div(total, count);
 
-	if(d.rem < 128)
+	if(d.rem < 192)
 		return d.quot;
-	if(d.rem > count - 128)
+	if(d.rem > count - 192)
 		return d.quot + 1;
 
 	return -1;
@@ -72,11 +72,11 @@ struct results {
 	int EX_EX, MT_MT, LS_LS;
 	int align_4, align_2;
 	int pipeline_1, pipeline_2, pipeline_3;
-	int raw_EX_EX, raw_LS_LS, raw_EX_LS, raw_LS_EX;
+	int raw_EX_EX, raw_LS_LS, raw_EX_LS, raw_LS_EX, raw_LS_MT;
 	int noraw_LS_LS, noraw_LS_EX;
-	int raw_EX_LS_addr, raw_DSPLS_DSPLS;
+	int raw_EX_LS_addr, raw_LS_LS_addr, raw_DSPLS_DSPLS;
 	int darken_1, darken_2, darken_3, darken_4;
-	int double_read, double_incr_read;
+	int double_read, double_incr_read, double_write;
 	#ifdef FXCG50
 	int tex2d;
 	#endif
@@ -94,13 +94,13 @@ static void table_gen(gtable *t, int row)
 		"mac.w/nop pipeline", "mac.w/mac.w pipeline",
 		  "mac.w/nop*5 pipeline",
 		"RAW dep.: EX/EX", "RAW dep.: LS/LS", "RAW dep.: EX/LS",
-		  "RAW dep.: LS/EX",
+		  "RAW dep.: LS/EX", "RAW dep.: LS/MT",
 		  "No dep.: LS/LS", "No dep.: LS/EX",
-		  "RAW on address: EX/LS",
+		  "RAW on address: EX/LS", "RAW on address: LS/LS",
 		  "RAW dep.: DSP-LS/DSP-LS",
 		"32-bit VRAM darken #1", "32-bit VRAM darken #2",
 		  "Interwoven darken", "Interwoven open darken",
-		"Double read", "Double increment read",
+		"Double read", "Double increment read", "Double write",
 		"Texture2D shader",
 	};
 
@@ -177,9 +177,11 @@ void gintctl_perf_cpu(void)
 			run(raw_LS_LS, 1024);
 			run(raw_EX_LS, 1024);
 			run(raw_LS_EX, 1024);
+			run(raw_LS_MT, 1024);
 			run(noraw_LS_LS, 1024);
 			run(noraw_LS_EX, 1024);
 			run(raw_EX_LS_addr, 1024);
+			run(raw_LS_LS_addr, 1024);
 			run(raw_DSPLS_DSPLS, 512);
 
 			run(darken_1, 512);
@@ -189,6 +191,7 @@ void gintctl_perf_cpu(void)
 
 			run(double_read, 1024);
 			run(double_incr_read, 1024);
+			run(double_write, 1024);
 
 			#ifdef FXCG50
 			run(tex2d, 512);
