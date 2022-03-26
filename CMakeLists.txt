@@ -49,7 +49,7 @@ set(SOURCES
   src/perf/interrupt.c
   src/perf/libprof.c
   src/perf/memory.c
-  src/perf/memory.s
+  src/perf/memory.S
   src/perf/render.c
   src/regs/regs.c
   src/widgets/gscreen.c

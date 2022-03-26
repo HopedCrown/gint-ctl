@@ -68,7 +68,10 @@ struct menu menu_perf = {
 	{ _("CPU parallelism", "Superscalar and pipeline parallelism"),
 	                         gintctl_perf_cpu, 0 },
 	{ "Interrupt stress",    gintctl_perf_interrupts, 0 },
-	{ "Memory access speed", gintctl_perf_memory, 0 },
+	#ifdef FXCG50
+	{ "Memory read/write speed",
+	                         gintctl_perf_memory, 0 },
+	#endif
 	{ "Rendering functions", gintctl_perf_render, 0 },
 
 	/* TODO: Comparison with MonochromeLib */

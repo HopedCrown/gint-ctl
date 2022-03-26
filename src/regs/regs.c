@@ -68,6 +68,8 @@ void gintctl_regs(void)
 		SH7305_CPG.SPUCLKCR.lword);
 	row_print(4, 1, "%08X",
 		*(volatile uint32_t *)0xff000074);
+	row_print(5, 1, "CCR: %08X",
+		*(volatile uint32_t *)0xff00001c);
 
 	dupdate();
 	getkey();

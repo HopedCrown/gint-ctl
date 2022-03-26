@@ -328,6 +328,25 @@ _perf_cpu_raw_EX_LS_addr:
 2:	mov.l	r0, @r4
 	EPILOGUE()
 
+.global _perf_cpu_raw_EX_LS_index
+
+/* Same process for the index -> 3 cycles /i
+
+   Also more results:
+     EX on r0/LS indexing r0, into rm (m != 0)   -> 3 cycles /i
+     EX in r0/LS indexing r0, into r0            -> 4 cycles /i (!)
+     MT in r0/LS indexing r0, into rm (m != 0)   -> 1 cycle  /i
+     MT in r0/LS indexing r0, into r0            -> 1 cycle  /i */
+.align 4
+_perf_cpu_raw_EX_LS_index:
+	PROLOGUE(1024)
+	mov.l	.buffer, r4
+	mov	#0, r6
+
+1:	mov	r6, r0
+2:	mov.l	@(r0,r4), r0
+	EPILOGUE()
+
 .global _perf_cpu_raw_LS_LS_addr
 
 /* The worst of all; 2-cycle stall to use a loaded address -> 4 cycles /i */
@@ -516,10 +535,38 @@ _perf_cpu_double_write:
 _perf_cpu_tex2d:
 	PROLOGUE(512)
 	mov.l	.buffer2, r3
-	mov	r3, r5 /*.buffer, r5 */
+	mov.l	.buffer, r5
 
-1:	movs.l	@r3+, x0
-2:	movs.l	x0, @r5+
+	mov.l	r10, @-r15
+	mov	#0, r0
+
+	mov.l	r8, @-r15
+	mov	#0, r10
+
+	mov	r3, r8
+	nop
+
+	/* 2-unrolled 2-stage main loop */
+1:	mov.b	@r3+, r6
+	shll	r10
+
+	mov.w	@(r0,r8), r0
+	nop
+
+	mov.w	r0, @(4,r5)
+	mov	r10, r0
+
+	mov.b	@r3+, r10
+	add	#4, r5
+
+	mov.w	@(r0,r8), r0
+	shll	r6
+
+	mov.w	r0, @(2,r5)
+2:	mov	r6, r0
+
+	mov.l	@r15+, r8
+	mov.l	@r15+, r10
 	EPILOGUE()
 #endif
 

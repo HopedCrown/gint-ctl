@@ -74,7 +74,7 @@ struct results {
 	int pipeline_1, pipeline_2, pipeline_3;
 	int raw_EX_EX, raw_LS_LS, raw_EX_LS, raw_LS_EX, raw_LS_MT;
 	int noraw_LS_LS, noraw_LS_EX;
-	int raw_EX_LS_addr, raw_LS_LS_addr, raw_DSPLS_DSPLS;
+	int raw_EX_LS_addr, raw_EX_LS_index, raw_LS_LS_addr, raw_DSPLS_DSPLS;
 	int darken_1, darken_2, darken_3, darken_4;
 	int double_read, double_incr_read, double_write;
 	#ifdef FXCG50
@@ -96,7 +96,8 @@ static void table_gen(gtable *t, int row)
 		"RAW dep.: EX/EX", "RAW dep.: LS/LS", "RAW dep.: EX/LS",
 		  "RAW dep.: LS/EX", "RAW dep.: LS/MT",
 		  "No dep.: LS/LS", "No dep.: LS/EX",
-		  "RAW on address: EX/LS", "RAW on address: LS/LS",
+		  "RAW on address: EX/LS", "RAW on index: EX/LS",
+		  "RAW on address: LS/LS",
 		  "RAW dep.: DSP-LS/DSP-LS",
 		"32-bit VRAM darken #1", "32-bit VRAM darken #2",
 		  "Interwoven darken", "Interwoven open darken",
@@ -181,6 +182,7 @@ void gintctl_perf_cpu(void)
 			run(noraw_LS_LS, 1024);
 			run(noraw_LS_EX, 1024);
 			run(raw_EX_LS_addr, 1024);
+			run(raw_EX_LS_index, 1024);
 			run(raw_LS_LS_addr, 1024);
 			run(raw_DSPLS_DSPLS, 512);
 

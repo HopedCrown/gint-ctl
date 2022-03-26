@@ -9,299 +9,333 @@
 #include <gintctl/assets.h>
 
 #include <libprof.h>
-
 #include <string.h>
+#include <stdlib.h>
 
-extern void memory_read(volatile uint8_t *area, uint32_t size);
-extern void memory_write(volatile uint8_t *area, uint32_t size);
-extern void memory_dsp_xram_memset(volatile uint8_t *area, uint32_t size);
-extern void memory_dsp_yram_memset(volatile uint8_t *area, uint32_t size);
-extern void memory_dsp_xyram_memcpy(volatile uint8_t *dst,
-	volatile uint8_t *src, uint32_t size);
+#ifdef FXCG50
+
+//---
+// Functions for read/write access patterns
+//---
+
+/* Tight asm reads of different sizes. SPU2 memory only supports 32-bit */
+extern void mem_read8          (void *mem, int size);
+extern void mem_read16         (void *mem, int size);
+extern void mem_read32         (void *mem, int size);
+/* Right asm writes of different sizes. SPU2 memory only supports 32-bit */
+extern void mem_write8         (void *mem, int size);
+extern void mem_write16        (void *mem, int size);
+extern void mem_write32        (void *mem, int size);
+/* Same using the DSP's XRAM addressing instructions (movx) */
+extern void mem_dspx_read16    (void *mem, int size);
+extern void mem_dspx_read32    (void *mem, int size);
+extern void mem_dspx_write16   (void *mem, int size);
+extern void mem_dspx_write32   (void *mem, int size);
+/* Same with the DSP's external addressing instructions (movs) */
+extern void mem_dsps_read16    (void *mem, int size);
+extern void mem_dsps_read32    (void *mem, int size);
+extern void mem_dsps_write16   (void *mem, int size);
+extern void mem_dsps_write32   (void *mem, int size);
+/* 32-byte-aligned dma_memset() */
+extern void *dma_memset        (void *mem, uint32_t pattern, size_t size);
+
+/* Copy with same-sized reads and writes (LS pipe saturated by unrolling) */
+extern void mem_copy8          (void *dst, void *src, int size);
+extern void mem_copy16         (void *dst, void *src, int size);
+extern void mem_copy32         (void *dst, void *src, int size);
+/* Same with DSP's XRAM -> YRAM addressing instructions (movx/movy) */
+extern void mem_dspxy_copy16   (void *dst, void *src, int size);
+extern void mem_dspxy_copy32   (void *dst, void *src, int size);
+/* Copy using 32-byte-aligned DMA access in burst mode */
+extern void *dma_memcpy        (void *dst, void const *src, size_t size);
+
+//---
+// Areas to check performance for
+//---
+
+#define READONLY       0x0001
+#define ONLY32BIT      0x0002
+#define DSPXRAM        0x0004
+#define VIRTUAL        0x0008
 
 GILRAM GALIGNED(32) static char ilram_buffer[0x800];
 GXRAM  GALIGNED(32) static char xram_buffer[0x800];
-GYRAM  GALIGNED(32) static char yram_buffer[0x800];
-#define pram0 ((void *)0xfe200000)
+// GYRAM  GALIGNED(32) static char yram_buffer[0x800];
+#define pram0_buffer ((void *)0xfe200000)
 
-struct results
+typedef struct
 {
-	void *address;
-	uint32_t size;
-	int rounds;
+    void *pointer;
+    int size;
+    /* How many rounds per test, to compensate for small size */
+    int rounds;
+    /* Flags for which tests to perform */
+    int flags;
 
-	/* In microseconds for the whole area */
-	uint32_t read_C_u8_time;
-	uint32_t write_C_u8_time;
-	uint32_t read_u8_time;
-	uint32_t write_u8_time;
-	uint32_t memcpy_time;
-	uint32_t memset_time;
-	uint32_t dma_memcpy_time;
-	uint32_t dma_memset_time;
-	uint32_t dsp_xram_memset_time;
-	uint32_t dsp_yram_memset_time;
-	uint32_t dsp_xyram_memcpy_time;
+} region_t;
 
-	/* In kbytes/second */
-	uint32_t read_C_u8_speed;
-	uint32_t write_C_u8_speed;
-	uint32_t read_u8_speed;
-	uint32_t write_u8_speed;
-	uint32_t memcpy_speed;
-	uint32_t memset_speed;
-	uint32_t dma_memcpy_speed;
-	uint32_t dma_memset_speed;
-	uint32_t dsp_xram_memset_speed;
-	uint32_t dsp_yram_memset_speed;
-	uint32_t dsp_xyram_memcpy_speed;
+/* Some pretty random selection of each region of interest */
+region_t ROM_CF_MMU = { (void*)0x00300000, 2048, 16, READONLY | VIRTUAL };
+region_t ROM_CU_MMU = { (void*)0x00300000, 65536, 1, READONLY | VIRTUAL };
+region_t ROM_CF     = { (void*)0x80000000, 2048, 16, READONLY };
+region_t ROM_CU     = { (void*)0x80000000, 65536, 1, READONLY };
+region_t ROM_NC     = { (void*)0xa0000000, 2048, 16, READONLY };
+region_t RAM_CF_MMU = { (void*)0x08100000, 2048, 16, READONLY };
+region_t RAM_CU_MMU = { (void*)0x08100000, 65536, 1, READONLY };
+region_t RAM_CF     = { (void*)0x8c200000, 2048, 16, 0 };
+region_t RAM_CU     = { (void*)0x8c200000, 65536, 1, 0 };
+region_t RAM_NC     = { (void*)0xac200000, 2048, 16, 0 };
+region_t ILRAM      = {      ilram_buffer, 2048, 64, 0 };
+region_t XRAM       = {       xram_buffer, 2048, 64, DSPXRAM };
+region_t PRAM0      = {      pram0_buffer, 2048, 16, ONLY32BIT };
+
+region_t const *REGIONS[] = {
+    &ROM_CF_MMU, &ROM_CU_MMU, &ROM_CF, &ROM_CU, &ROM_NC,
+    &RAM_CF_MMU, &RAM_CU_MMU, &RAM_CF, &RAM_CU, &RAM_NC,
+    &ILRAM, &XRAM, &PRAM0,
 };
+char const *REGIONS_NAMES[] = {
+    "ROM (cached, MMU)", "ROM (cached linear, MMU)",
+    "ROM (cached, no MMU)", "ROM (cached linear, no MMU)",
+    "ROM (uncached, no MMU)",
+    "RAM (cached, MMU)", "RAM (cached linear, MMU)",
+    "RAM (cached, no MMU)", "RAM (cached linear, no MMU)",
+    "RAM (uncached, no MMU)",
+    "ILRAM", "XRAM", "PRAM0",
+};
+#define REGIONS_COUNT ((int)(sizeof REGIONS / sizeof REGIONS[0]))
 
-static void test(struct results *r, void *address, uint32_t size, int rounds)
+//---
+// Result information
+//---
+
+typedef struct
 {
-	volatile uint8_t *area = address;
-	volatile uint8_t x;
+    int mem_read8, mem_read16, mem_read32;
+    int mem_write8, mem_write16, mem_write32;
+    int dma_memset;
 
-	r->address = address;
-	r->size = size;
-	r->rounds = rounds;
+    union {
+        struct {
+            int mem_dspx_read16, mem_dspx_read32;
+            int mem_dspx_write16, mem_dspx_write32;
+        };
+        struct {
+            int mem_dsps_read16, mem_dsps_read32;
+            int mem_dsps_write16, mem_dsps_write32;
+        };
+    };
 
-	/* Defaults for conditional tests */
-	r->dsp_xram_memset_time = 1;
-	r->dsp_yram_memset_time = 1;
-	r->dsp_xyram_memcpy_time = 1;
+} GPACKED(4) counters_t;
 
-	r->read_C_u8_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-		{
-			for(uint index = 0; index < size; index++)
-				x = area[index];
-		}
-	});
+typedef struct
+{
+    /* In µs, counting all rounds */
+    counters_t time;
+    /* In kB/s overall */
+    counters_t speed;
 
-	r->write_C_u8_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-		{
-			for(uint index = 0; index < size; index++)
-				area[index] = x;
-		}
-	});
+} GPACKED(4) info_t;
 
-	r->read_u8_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-			memory_read(area, size);
-	});
+//---
+// Running tests over a single region
+//---
 
-	r->write_u8_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-			memory_write(area, size);
-	});
+static void benchmark(region_t const *region, info_t *info)
+{
+    /* Initialize all times and rates to -1 */
+    memset(info, 0xff, sizeof *info);
 
-	r->memset_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-			memset(address, 0, size);
-	});
+    int f = region->flags;
 
-	r->memcpy_time = 2 * prof_exec({
-		for(int i = 0; i < rounds; i++)
-			memcpy(address + size / 2, address, size / 2);
-	});
+    if(~f & ONLY32BIT)
+        info->time.mem_read8 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_read8(region->pointer, region->size);
+        });
+    if(~f & ONLY32BIT)
+        info->time.mem_read16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_read16(region->pointer, region->size);
+        });
+    info->time.mem_read32 = prof_exec({
+        for(int i = 0; i < region->rounds; i++)
+            mem_read32(region->pointer, region->size);
+    });
 
-	r->dma_memset_time = prof_exec({
-		for(int i = 0; i < rounds; i++)
-			if(isSH4()) dma_memset(address, 0, size);
-	});
+    if((~f & READONLY) && (~f & ONLY32BIT))
+        info->time.mem_write8 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_write8(region->pointer, region->size);
+        });
+    if((~f & READONLY) && (~f & ONLY32BIT))
+        info->time.mem_write16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_write16(region->pointer, region->size);
+        });
+    if(~f & READONLY)
+        info->time.mem_write32 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_write32(region->pointer, region->size);
+        });
 
-	r->dma_memcpy_time = 2 * prof_exec({
-		for(int i = 0; i < rounds; i++)
-			if(isSH4()) dma_memcpy(address + size / 2, address, size / 2);
-	});
+    if((~f & READONLY) && (~f & VIRTUAL))
+        info->time.dma_memset = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                dma_memset(region->pointer, 0, region->size);
+        });
 
-	if(address == &xram_buffer)
-	{
-		/* Since the buffers are small, repeat 16 times */
-		r->dsp_xram_memset_time = prof_exec({
-			for(int i = 0; i < rounds; i++)
-				if(isSH4()) memory_dsp_xram_memset(address, size);
-		});
-	}
-	if(address == &yram_buffer)
-	{
-		r->dsp_yram_memset_time = prof_exec({
-			for(int i = 0; i < rounds; i++)
-				if(isSH4()) memory_dsp_yram_memset(address, size);
-		});
-	}
-	if(address == &xram_buffer)
-	{
-		void *x = xram_buffer;
-		void *y = yram_buffer;
+    if(f & DSPXRAM) {
+        info->time.mem_dspx_read16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dspx_read16(region->pointer, region->size);
+        });
+        info->time.mem_dspx_read32 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dspx_read32(region->pointer, region->size);
+        });
+        info->time.mem_dspx_write16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dspx_write16(region->pointer, region->size);
+        });
+        info->time.mem_dspx_write32 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dspx_write32(region->pointer, region->size);
+        });
+    }
 
-		/* Since the buffers are small, repeat 16 times */
-		r->dsp_xyram_memcpy_time = prof_exec({
-			for(int i = 0; i < rounds; i++)
-				if(isSH4()) memory_dsp_xyram_memcpy(y, x, size);
-		});
-	}
-	if(address == &yram_buffer)
-	{
-		void *x = xram_buffer;
-		void *y = yram_buffer;
+    if((~f & DSPXRAM) && (~f & ONLY32BIT))
+        info->time.mem_dsps_read16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dsps_read16(region->pointer, region->size);
+        });
+    if(~f & DSPXRAM)
+        info->time.mem_dsps_read32 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dsps_read32(region->pointer, region->size);
+        });
+    if((~f & DSPXRAM) && (~f & ONLY32BIT) && (~f & READONLY))
+        info->time.mem_dsps_write16 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dsps_write16(region->pointer, region->size);
+        });
+    if((~f & DSPXRAM) && (~f & READONLY))
+        info->time.mem_dsps_write32 = prof_exec({
+            for(int i = 0; i < region->rounds; i++)
+                mem_dsps_write32(region->pointer, region->size);
+        });
 
-		r->dsp_xyram_memcpy_time = prof_exec({
-			for(int i = 0; i < rounds; i++)
-				if(isSH4()) memory_dsp_xyram_memcpy(x, y, size);
-		});
-	}
+    /* Cheeky method to read all ints in such a packed struct */
+    int *time   = (int *)&info->time;
+    int *speed  = (int *)&info->speed;
+    int entry_count = sizeof(counters_t) / sizeof(int);
 
-	/* Convert from us/(size bytes) to kb/(1 second) */
-	uint64_t factor = size * 1000 * rounds;
-	r->read_C_u8_speed        = factor / r->read_C_u8_time;
-	r->write_C_u8_speed       = factor / r->write_C_u8_time;
-	r->read_u8_speed          = factor / r->read_u8_time;
-	r->write_u8_speed         = factor / r->write_u8_time;
-	r->memcpy_speed           = factor / r->memcpy_time;
-	r->memset_speed           = factor / r->memset_time;
-	r->dma_memcpy_speed       = factor / r->dma_memcpy_time;
-	r->dma_memset_speed       = factor / r->dma_memset_time;
-	r->dsp_xram_memset_speed  = factor / r->dsp_xram_memset_time;
-	r->dsp_yram_memset_speed  = factor / r->dsp_yram_memset_time;
-	r->dsp_xyram_memcpy_speed = factor / r->dsp_xyram_memcpy_time;
+    /* Conversion from [µs for every size bytes] to [kB for every 1 second] */
+    uint64_t conv = region->size * 1000 * region->rounds;
+
+    for(int i = 0; i < entry_count; i++) {
+        if(time[i] != -1)
+            speed[i] = conv / time[i];
+    }
 }
 
-static void results_line(int row, uint32_t time, uint32_t speed)
+//---
+// Main interface
+//---
+
+void print_speed(int x, int y, int us, int kBps)
 {
-	int y = _(8+6*row, row_y(row));
-	dprint_opt(_(80,260), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
-		"%d us", time);
-	dprint_opt(_(125,370), y, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_TOP,
-		_("%3.1D MB/s", "%3.3D MB/s"), _(speed/100, speed));
+    if(us == -1 && kBps == -1) {
+        dprint_opt(x, y, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_MIDDLE, "-");
+        return;
+    }
+
+    dprint_opt(x, y-2, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_BOTTOM,
+        "%d us", us);
+
+    char const *fmt;
+    if(kBps >= 100000) {
+        fmt = "%.1D M/s";
+        kBps /= 100;
+    }
+    else {
+        fmt = "%.2D M/s";
+        kBps /= 10;
+    }
+    dprint_opt(x, y+1, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP, fmt, kBps);
 }
+#define print_speed(x, y, FIELD) \
+    print_speed(x, y, info[selection].time.FIELD, info[selection].speed.FIELD)
 
 /* gintctl_perf_memory(): Memory primitives and reading/writing speed */
 void gintctl_perf_memory(void)
 {
-	int key = 0;
-	struct results r = { 0 };
+    // TODO: Also test copy speed
+    int key=0, selection=0;
 
-	/* Get the physical VRAM address */
-	void *vram_address = gint_vram;
-	#ifdef FX9860G
-	uint32_t virt_page = (uint32_t)vram_address & 0xfffff000;
-	uint32_t phys_page = 0x80000000 + mmu_translate(virt_page, NULL);
-	vram_address = (void *)phys_page + (vram_address - (void *)virt_page);
-	#endif
+    info_t *info = malloc(REGIONS_COUNT * sizeof *info);
+    memset(info, 0xff, REGIONS_COUNT * sizeof *info);
 
-	while(key != KEY_EXIT)
-	{
-		dclear(C_WHITE);
-		row_title("Memory access speed");
-		font_t const *old_font = dfont(_(&font_mini, dfont_default()));
+    while(key != KEY_EXIT) {
+        dclear(C_WHITE);
+        row_title("Memory read/write speed");
+        dprint_opt(DWIDTH/2, row_y(1), C_BLACK, C_NONE, DTEXT_CENTER,
+            DTEXT_TOP, "[%d/%d] %s", selection+1, REGIONS_COUNT,
+            REGIONS_NAMES[selection]);
+/*        row_print(2, 1, "%p (%d bytes, %d rounds)",
+            REGIONS[selection]->pointer,
+            REGIONS[selection]->size,
+            REGIONS[selection]->rounds); */
+        row_print(2, 1, "%p (%d * %d = %d)", info, REGIONS_COUNT, sizeof *info,
+            REGIONS_COUNT * sizeof *info);
 
-		#ifdef FX9860G
-		/* Due to less space, focus on the non-trivial methods */
-		dprint(1, 14, C_BLACK, "gint memcpy:");
-		dprint(1, 20, C_BLACK, "gint memset:");
-		if(isSH4()) {
-			dprint(1, 26, C_BLACK, "dma_memcpy:");
-			dprint(1, 32, C_BLACK, "dma_memset:");
+        dprint_opt(150, 53, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP,
+            "8-bit");
+        dprint_opt(240, 53, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP,
+            "16-bit");
+        dprint_opt(330, 53, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP,
+            "32-bit");
 
-			if(r.address == &xram_buffer)
-				dprint(1, 38, C_BLACK, "DSP memset:");
-			if(r.address == &yram_buffer)
-				dprint(1, 38, C_BLACK, "DSP memset:");
-			if(r.address == &xram_buffer || r.address == &yram_buffer)
-				dprint(1, 44, C_BLACK, "DSP memcpy:");
-		}
+        dprint(6, 74, C_BLACK, "CPU read:");
+        print_speed(150, 78, mem_read8);
+        print_speed(240, 78, mem_read16);
+        print_speed(330, 78, mem_read32);
 
-		if(!r.address) dprint(1, 8, C_BLACK, "No test yet");
-		else
-		{
-			dprint(1, 8, C_BLACK, "Area: %08X (%d B, %d round%s)",
-				(uint32_t)r.address, r.size, r.rounds, (r.rounds>1)?"s":"");
-			results_line(1, r.memcpy_time,     r.memcpy_speed);
-			results_line(2, r.memset_time,     r.memset_speed);
-			if(isSH4()) {
-				results_line(3, r.dma_memcpy_time, r.dma_memcpy_speed);
-				results_line(4, r.dma_memset_time, r.dma_memset_speed);
-				if(r.address == &xram_buffer)
-					results_line(5, r.dsp_xram_memset_time,
-						r.dsp_xram_memset_speed);
-				if(r.address == &yram_buffer)
-					results_line(5, r.dsp_yram_memset_time,
-						r.dsp_yram_memset_speed);
-				if(r.address==&xram_buffer || r.address==&yram_buffer)
-					results_line(6, r.dsp_xyram_memcpy_time,
-						r.dsp_xyram_memcpy_speed);
-			}
-		}
+        dprint(6, 102, C_BLACK, "CPU write:");
+        print_speed(150, 106, mem_write8);
+        print_speed(240, 106, mem_write16);
+        print_speed(330, 106, mem_write32);
 
-		if(isSH3())
-			dimage(0, 56, &img_opt_perf_memory_sh3);
-		else
-			dimage(0, 56, &img_opt_perf_memory);
-		#endif
+        dprint(6, 130, C_BLACK, "DSP read:");
+        print_speed(240, 134, mem_dsps_read16);
+        print_speed(330, 134, mem_dsps_read32);
 
-		#ifdef FXCG50
-		row_print( 3, 1, "Naive C-loop u8 read:");
-		row_print( 4, 1, "Naive C-loop u8 write:");
-		row_print( 5, 1, "Rolled asm u8 read:");
-		row_print( 6, 1, "Rolled asm u8 write:");
-		row_print( 7, 1, "gint's memcpy():");
-		row_print( 8, 1, "gint's memset():");
-		row_print( 9, 1, "gint's dma_memcpy():");
-		row_print(10, 1, "gint's dma_memset():");
+        dprint(6, 158, C_BLACK, "DSP write:");
+        print_speed(240, 162, mem_dsps_write16);
+        print_speed(330, 162, mem_dsps_write32);
 
-		if(r.address == &xram_buffer)
-			row_print(11, 1, "DSP XRAM memset():");
-		if(r.address == &yram_buffer)
-			row_print(11, 1, "DSP YRAM memset():");
-		if(r.address == &xram_buffer || r.address == &yram_buffer)
-			row_print(12, 1, "DSP XRAM->YRAM memcpy():");
+        dprint(6, 186, C_BLACK, "dma_memset:");
+        print_speed(150, 190, dma_memset);
 
-		if(!r.address) row_print(1, 1, "No test yet");
-		else
-		{
-			row_print(1, 1, "Results for area %08x (%d bytes, %d "
-				"round%s)", (uint32_t)r.address, r.size,
-				r.rounds, (r.rounds > 1) ? "s" : "");
-			results_line(3, r.read_C_u8_time,  r.read_C_u8_speed);
-			results_line(4, r.write_C_u8_time, r.write_C_u8_speed);
-			results_line(5, r.read_u8_time,    r.read_u8_speed);
-			results_line(6, r.write_u8_time,   r.write_u8_speed);
-			results_line(7, r.memcpy_time,     r.memcpy_speed);
-			results_line(8, r.memset_time,     r.memset_speed);
-			results_line(9, r.dma_memcpy_time, r.dma_memcpy_speed);
-			results_line(10,r.dma_memset_time, r.dma_memset_speed);
+        if(selection > 0)
+            dprint(10, row_y(1), C_BLACK, "<");
+        if(selection < REGIONS_COUNT - 1)
+            dprint(DWIDTH-15, row_y(1), C_BLACK, ">");
+        fkey_button(6, "RUN ALL");
+        dupdate();
 
-			if(r.address == &xram_buffer)
-				results_line(11, r.dsp_xram_memset_time,
-					r.dsp_xram_memset_speed);
-			if(r.address == &yram_buffer)
-				results_line(11, r.dsp_yram_memset_time,
-					r.dsp_yram_memset_speed);
-			if(r.address==&xram_buffer || r.address==&yram_buffer)
-				results_line(12, r.dsp_xyram_memcpy_time,
-					r.dsp_xyram_memcpy_speed);
-		}
+        key = getkey().key;
+        if(key == KEY_LEFT && selection > 0)
+            selection--;
+        if(key == KEY_RIGHT && selection < REGIONS_COUNT-1)
+            selection++;
+        if(key == KEY_F6) {
+            for(int i = 0; i < REGIONS_COUNT; i++)
+                benchmark(REGIONS[i], &info[i]);
+        }
+    }
 
-		fkey_button(1, "RAM");
-		fkey_button(2, "ILRAM");
-		fkey_button(3, "XRAM");
-		fkey_button(4, "YRAM");
-		fkey_button(5, "PRAM0");
-		#endif
-
-		dfont(old_font);
-		dupdate();
-		key = getkey().key;
-
-		if(key == KEY_F1) test(&r, vram_address, _(0x400,0x8000), _(32,1));
-		if(isSH4()) {
-			if(key == KEY_F2) test(&r, &ilram_buffer, 0x800, 64);
-			if(key == KEY_F3) test(&r, &xram_buffer, 0x800, 64);
-			if(key == KEY_F4) test(&r, &yram_buffer, 0x800, 64);
-			if(key == KEY_F5) test(&r, pram0, 0x8000, 1);
-		}
-	}
+    free(info);
 }
+
+#endif /* FXCG50 */
