@@ -2,24 +2,28 @@
    being fetched from ROM. The ILRAM is ideal for this task because successive
    instruction accesses take only 1 cycle (assuming no interference, which
    there is none). */
-.section .ilram
+.section .ilram, "ax"
 
 /* Test prologue for COUNT iterations (must be a multiple of 256). Note that
    the prologue has an even number of instructions, which results in the loop
    code being 4-aligned, which is of extreme importance. */
-#define PROLOGUE(COUNT) 		\
-	mov	#(COUNT/256), r0 ;	\
-	shll8	r0 ;			\
-	ldrs	1f ;			\
-	ldre	2f ;			\
-	ldrc	r0 ;			\
+.macro bench SYMBOL, COUNT
+.global _perf_cpu_\SYMBOL
+.align 4
+_perf_cpu_\SYMBOL:
+	mov	#(\COUNT/256), r0
+	shll8	r0
+	ldrs	1f
+	ldre	2f
+	ldrc	r0
 	nop
+.endm
 
-/* Test epilogue */
-#define EPILOGUE()			\
-	rts ;				\
+/* Epilogue */
+.macro end
+	rts
 	nop
-
+.endm
 
 /* [Baseline]
 
@@ -31,13 +35,9 @@
    but helps eliminating noise around tests and bringing cycle counts very
    close to multiples of the number of iterations. */
 
-.global _perf_cpu_empty
-
-.align 4
-_perf_cpu_empty:
-	PROLOGUE(0)
-1: 2:	EPILOGUE()
-
+bench empty, 0
+1: 2:
+end
 
 /* [Loop control]
 
@@ -56,43 +56,27 @@ _perf_cpu_empty:
    next iteration. My guess is that the instruction from the next iteration is
    not fetched yet from the perspective of CPU logic. */
 
-.global _perf_cpu_nop_2048x1
-
 /* nop loop (2048 iterations of 1 nop) -> 2 cycles /i */
-.align 4
-_perf_cpu_nop_2048x1:
-	PROLOGUE(2048)
+bench nop_2048x1, 2048
 1: 2: 	nop
-	EPILOGUE()
-
-.global _perf_cpu_nop_1024x2
+end
 
 /* nop loop (1024 iterations of 2 nop) -> 1 cycle /i */
-.align 4
-_perf_cpu_nop_1024x2:
-	PROLOGUE(1024)
+bench nop_1024x2, 1024
 1:	nop
 2:	nop
-	EPILOGUE()
-
-.global _perf_cpu_nop_512x4
+end
 
 /* nop loop (512 iterations of 4 nop) -> 2 cycles /i */
-.align 4
-_perf_cpu_nop_512x4:
-	PROLOGUE(512)
+bench nop_512x4, 512
 1:	nop
 	nop
 	nop
 2:	nop
-	EPILOGUE()
-
-.global _perf_cpu_nop_256x8
+end
 
 /* nop loop (256 iterations of 8 nop) -> 4 cycles /i */
-.align 4
-_perf_cpu_nop_256x8:
-	PROLOGUE(256)
+bench nop_256x8, 256
 1:	nop
 	nop
 	nop
@@ -101,7 +85,7 @@ _perf_cpu_nop_256x8:
 	nop
 	nop
 2:	nop
-	EPILOGUE()
+end
 
 /* [Parallel execution]
 
@@ -109,35 +93,23 @@ _perf_cpu_nop_256x8:
    instructions of different types, using only instructions that have trivial
    pipelines with no extra cycles. */
 
-.global _perf_cpu_EX_EX
-
 /* EX/EX -> 2 cycles /i */
-.align 4
-_perf_cpu_EX_EX:
-	PROLOGUE(1024)
+bench EX_EX, 1024
 1:	add	#0, r0
 2:	add	#0, r1
-	EPILOGUE()
-
-.global _perf_cpu_MT_MT
+end
 
 /* MT/MT -> 1 cycle /i */
-.align 4
-_perf_cpu_MT_MT:
-	PROLOGUE(1024)
+bench MT_MT, 1024
 1:	mov	r0, r1
 2:	mov	r2, r3
-	EPILOGUE()
-
-.global _perf_cpu_LS_LS
+end
 
 /* LS/LS -> 2 cycles /i */
-.align 4
-_perf_cpu_LS_LS:
-	PROLOGUE(1024)
+bench LS_LS, 1024
 1:	mov.l	@r15, r0
 2:	mov.l	@r15, r1
-	EPILOGUE()
+end
 
 /* [Aligned parallelism]
 
@@ -147,29 +119,21 @@ _perf_cpu_LS_LS:
    does not prevent the next one from forming a parallel pair of its own with
    its successor. */
 
-.global _perf_cpu_align_4
-
 /* 2 pairs of parallel instructions -> 2 cycles /i */
-.align 4
-_perf_cpu_align_4:
-	PROLOGUE(1024)
+bench align_4, 1024
 1:	add	#0, r0
 	mov.l	@r15, r1
 	add	#0, r0
 2:	mov.l	@r15, r1
-	EPILOGUE()
-
-.global _perf_cpu_align_2
+end
 
 /* The add/mov.l pair in the middle is parallelized -> 3 cycles /i */
-.align 4
-_perf_cpu_align_2:
-	PROLOGUE(1024)
+bench align_2, 1024
 1:	add	#0, r0
 	add	#0, r1
 	mov.l	@r15, r0
 2:	mov.l	@r15, r1
-	EPILOGUE()
+end
 
 /* [Complex pipelines]
 
@@ -183,38 +147,26 @@ _perf_cpu_align_2:
    MS stage of the previous mac.w instruction, which causes a 1-cycle stall.
    This assumes that there is no forwarding at the output of the multiplier. */
 
-.global _perf_cpu_pipeline_1
-
 /* nop executes in parallel with first pipeline of mac.w -> 3 cycles /i */
-.align 4
-_perf_cpu_pipeline_1:
-	PROLOGUE(1024)
+bench pipeline_1, 1024
 	mov	r15, r0
 	mov	r15, r1
 
 1:	mac.w	@r0+, @r1+
 2:	nop
-	EPILOGUE()
-
-.global _perf_cpu_pipeline_2
+end
 
 /* Without parallel execution, still 3 cycles per mac.w -> 6 cycles /i */
-.align 4
-_perf_cpu_pipeline_2:
-	PROLOGUE(1024)
+bench pipeline_2, 1024
 	mov	r15, r0
 	mov	r15, r1
 
 1:	mac.w	@r0+, @r1+
 2:	mac.w	@r0+, @r1+
-	EPILOGUE()
-
-.global _perf_cpu_pipeline_3
+end
 
 /* mac.w/(nop;nop;nop) then nop/nop -> 4 cycles /i */
-.align 4
-_perf_cpu_pipeline_3:
-	PROLOGUE(1024)
+bench pipeline_3, 1024
 	mov	r15, r0
 	mov	r15, r1
 
@@ -224,111 +176,98 @@ _perf_cpu_pipeline_3:
 	nop
 	nop
 2:	nop
-	EPILOGUE()
+end
 
 /* [RAW dependencies]
 
    In this section we establish the delay caused by RAW dependencies in
    arithmetic and memory access instructions. */
 
-.global _perf_cpu_raw_EX_EX
-
 /* Forwarding after the ALU is seamless, no delay -> 2 cycles /i */
-.align 4
-_perf_cpu_raw_EX_EX:
-	PROLOGUE(1024)
+bench raw_EX_EX, 1024
 1:	add	#1, r0
 2:	add	#1, r0
-	EPILOGUE()
-
-.global _perf_cpu_raw_LS_LS
+end
 
 /* Value is available immediately for memory... at a *different address* (the
    same addresse would give 4 cycles /i) -> 2 cycles /i */
-.align 4
-_perf_cpu_raw_LS_LS:
-	PROLOGUE(1024)
+bench raw_LS_LS, 1024
 	mov.l	.buffer, r4
 	nop
 
 1:	mov.l	@r4, r0
 2:	mov.l	r0, @(4,r4)
-	EPILOGUE()
-
-.global _perf_cpu_raw_EX_LS
+end
 
 /* Perfect forwarding from ALU to memory access -> 1 cycle /i */
-.align 4
-_perf_cpu_raw_EX_LS:
-	PROLOGUE(1024)
+bench raw_EX_LS, 1024
 	mov.l	.buffer, r4
 	mov	#0, r0
 
 1:	add	#1, r0
 2:	mov.l	r0, @r4
-	EPILOGUE()
-
-.global _perf_cpu_raw_LS_EX
+end
 
 /* 1-cycle stall after loading a register from memory -> 3 cycles /i */
-.align 4
-_perf_cpu_raw_LS_EX:
-	PROLOGUE(1024)
+bench raw_LS_EX, 1024
 1:	mov.l	@r15, r0
 2:	add	#1, r0
-	EPILOGUE()
-
-.global _perf_cpu_raw_LS_MT
+end
 
 /* Same - it's not like you could move to avoid the stall -> 3 cycles /i */
-.align 4
-_perf_cpu_raw_LS_MT:
-	PROLOGUE(1024)
+bench raw_LS_MT, 1024
 1:	mov.l	@r15, r0
 2:	mov	r0, r1
-	EPILOGUE()
+end
 
-.global _perf_cpu_noraw_LS_LS
+/* Efficient as expected -> 1 cycle /i */
+bench raw_EX_MT, 2048
+1:	add	#0, r4
+2:	mov	r4, r5
+end
+
+/* Efficient as expected -> 1 cycle /i */
+bench raw_MT_EX, 2048
+1:	mov	r5, r4
+2:	add	#0, r4
+end
 
 /* Still efficient as long as the addresses are different -> 2 cycles /i */
-.align 4
-_perf_cpu_noraw_LS_LS:
-	PROLOGUE(1024)
+bench noraw_LS_LS, 1024
 	mov.l	.buffer, r4
 	mov	r4, r5
 
 1:	mov.l	@r4, r0
 2:	mov.l	r1, @(4,r5)
-	EPILOGUE()
-
-.global _perf_cpu_noraw_LS_EX
+end
 
 /* Normal superscalar parallelism at work -> 1 cycle /i */
-.align 4
-_perf_cpu_noraw_LS_EX:
-	PROLOGUE(1024)
+bench noraw_LS_EX, 1024
 	mov.l	.buffer, r4
 	nop
 
 1:	mov.l	@r4, r0
 2:	add	#1, r1
-	EPILOGUE()
+end
 
-.global _perf_cpu_raw_EX_LS_addr
+/* TODO  */
+bench raw_MT_LS_addr, 1024
+	mov.l	.buffer, r5
+	nop
+
+1:	mov	r5, r4
+2:	mov.l	r0, @r4
+end
 
 /* There is no forwarding on the address, so similar to loading this actually
    takes much longer than when modifying the operand -> 3 cycles /i */
-.align 4
-_perf_cpu_raw_EX_LS_addr:
-	PROLOGUE(1024)
+bench raw_EX_LS_addr, 1024
 	mov.l	.buffer, r4
 	nop
 
 1:	add	#0, r4
 2:	mov.l	r0, @r4
-	EPILOGUE()
-
-.global _perf_cpu_raw_EX_LS_index
+end
 
 /* Same process for the index -> 3 cycles /i
 
@@ -337,35 +276,25 @@ _perf_cpu_raw_EX_LS_addr:
      EX in r0/LS indexing r0, into r0            -> 4 cycles /i (!)
      MT in r0/LS indexing r0, into rm (m != 0)   -> 1 cycle  /i
      MT in r0/LS indexing r0, into r0            -> 1 cycle  /i */
-.align 4
-_perf_cpu_raw_EX_LS_index:
-	PROLOGUE(1024)
+bench raw_EX_LS_index, 1024
 	mov.l	.buffer, r4
 	mov	#0, r6
 
 1:	mov	r6, r0
 2:	mov.l	@(r0,r4), r0
-	EPILOGUE()
-
-.global _perf_cpu_raw_LS_LS_addr
+end
 
 /* The worst of all; 2-cycle stall to use a loaded address -> 4 cycles /i */
-.align 4
-_perf_cpu_raw_LS_LS_addr:
-	PROLOGUE(1024)
+bench raw_LS_LS_addr, 1024
 	mov.l	.buffer, r4
 	mov.l	r15, @r4
 
 1:	mov.l	@r4, r5
 2:	mov.l	@r5, r6
-	EPILOGUE()
-
-.global _perf_cpu_raw_DSPLS_DSPLS
+end
 
 /* As previously, the addresses must be different -> 2 cycles /i */
-.align 4
-_perf_cpu_raw_DSPLS_DSPLS:
-	PROLOGUE(512)
+bench raw_DSPLS_DSPLS, 512
 	mov.l	.buffer, r4
 	mov	r4, r5
 	add	#2, r5
@@ -373,7 +302,7 @@ _perf_cpu_raw_DSPLS_DSPLS:
 
 1:	movs.w	@r4, x0
 2:	movs.w	x0, @r5
-	EPILOGUE()
+end
 
 /* [Iteration weaving]
 
@@ -382,13 +311,9 @@ _perf_cpu_raw_DSPLS_DSPLS:
    function that darkens a continuous section of VRAM. The initial version
    takes 3 cycles /pixel, whereas the optimized takes 1.25 cycle /pixel. */
 
-.global _perf_cpu_darken_1
-
 /* Darkening RGB565 by (color = (color & 0xf7de) >> 1). This base version does
    two pixels at a time but has pretty complex RAWs -> 6 cycles /i */
-.align 4
-_perf_cpu_darken_1:
-	PROLOGUE(512)
+bench darken_1, 512
 	mov.l	.buffer, r4
 	mov	r4, r5
 	add	#-4, r5
@@ -401,14 +326,10 @@ _perf_cpu_darken_1:
 	shlr	r1
 	/* Stall because of access to r5 as address */
 2:	mov.l	r1, @r5
-	EPILOGUE()
-
-.global _perf_cpu_darken_2
+end
 
 /* Here the change to r5 is moved to eliminate both stalls -> 4 cycles /i */
-.align 4
-_perf_cpu_darken_2:
-	PROLOGUE(512)
+bench darken_2, 512
 	mov.l	.buffer, r4
 	mov	r4, r5
 	add	#-4, r5
@@ -420,17 +341,13 @@ _perf_cpu_darken_2:
 	/* The EX/LS pair below is the only one parallelized */
 	shlr	r1
 2:	mov.l	r1, @r5
-	EPILOGUE()
-
-.global _perf_cpu_darken_3
+end
 
 /* Here iterations are woven together to increase the amount of independent
    data. Each iteration processes twice as much data and uses EX cycles of the
    first longword to do LS work on the second one. Plus r5 is incremented only
    once -> 6 cycles /i */
-.align 4
-_perf_cpu_darken_3:
-	PROLOGUE(256)
+bench darken_3, 256
 	mov.l	.buffer, r4
 	mov	r4, r5
 	add	#-8, r5
@@ -450,16 +367,12 @@ _perf_cpu_darken_3:
 
 	shlr	r3
 2:	mov.l	r3, @(4,r5)
-	EPILOGUE()
-
-.global _perf_cpu_darken_4
+end
 
 /* Finally iterations are opened here to eliminate the long chain of dependency
    from the loads to the stores. Late EX instructions are parallelized with
    loads for the next iteration -> 5 cycles/i */
-.align 4
-_perf_cpu_darken_4:
-	PROLOGUE(256)
+bench darken_4, 256
 	mov.l	.buffer, r4
 	mov	r4, r5
 	add	#-8, r5
@@ -475,45 +388,33 @@ _perf_cpu_darken_4:
 	and	r2, r3
 	shlr	r3
 2:	mov.l	r3, @(4,r5)
-	EPILOGUE()
+end
 
 /* [Advanced dependencies]
 
    This section measures the delay needed to use registers depending on the
    type of instruction which modifies them. */
 
-.global _perf_cpu_double_read
-
 /* No problem here -> 2 cycles /i */
-.align 4
-_perf_cpu_double_read:
-	PROLOGUE(1024)
+bench double_read, 1024
 	mov.l	.buffer, r4
 	nop
 
 1:	mov.l	@r4, r0
 2:	mov.l	@r4, r1
-	EPILOGUE()
-
-.global _perf_cpu_double_incr_read
+end
 
 /* Post-increment feeds into address much faster than ALU -> 2 cycles /i */
-.align 4
-_perf_cpu_double_incr_read:
-	PROLOGUE(1024)
+bench double_incr_read, 1024
 	mov.l	.buffer, r4
 	nop
 
 1:	mov.b	@r4+, r0
 2:	mov.b	@r4+, r0
-	EPILOGUE()
-
-.global _perf_cpu_double_write
+end
 
 /* No delay writing twice, whether with r4/r4 or r4/r5 -> 2 cycles/i */
-.align 4
-_perf_cpu_double_write:
-	PROLOGUE(1024)
+bench double_write, 1024
 	mov.l	.buffer, r4
 	mov.l	@r4, r0
 	mov	r0, r1
@@ -521,19 +422,15 @@ _perf_cpu_double_write:
 
 1:	mov.l	r0, @r4
 2:	mov.l	r1, @r5
-	EPILOGUE()
+end
 
-/* [2D texture copy]
+/* [2D image rendering]
 
-   This section is used to investigate the performance of the 2D texture shader
-   of azur. */
+   This section is used to investigate the performance of Azur's built-in image
+   shader. Most of the core loops must perform at 5-10 cycles per iteration,
+   which is fairly easy to validate here. */
 
-#ifdef FXCG50
-.global _perf_cpu_tex2d
-
-.align 4
-_perf_cpu_tex2d:
-	PROLOGUE(512)
+bench azur_p8_rgb565, 512
 	mov.l	.buffer2, r3
 	mov.l	.buffer, r5
 
@@ -567,8 +464,49 @@ _perf_cpu_tex2d:
 
 	mov.l	@r15+, r8
 	mov.l	@r15+, r10
-	EPILOGUE()
-#endif
+end
+
+bench azur_p8_rgb565a, 512
+	mov.l	.buffer2, r3
+	mov.l	.buffer, r5
+
+	mov.l	r10, @-r15
+	mov	#0, r6
+
+	mov.l	r8, @-r15
+	mov	#0, r10
+
+	mov	r3, r8
+	nop
+
+	/* 2-unrolled 2-stage main loop */
+1:	add	r6, r6
+	mov	r6, r0
+
+	add	r10, r10
+	bt.s	5f
+
+	tst	r10, r10
+	mov.w	@(r0,r8), r0
+
+	mov.w	r0, @(4,r5)
+
+     5: mov.b	@r3+, r6
+	mov	r10, r0
+
+	bt.s	6f
+	add	#4, r5
+
+	mov.w	@(r0,r8), r0
+
+	mov.w	r0, @(2,r5)
+
+     6:	mov.b	@r3+, r10
+2:	tst	r6, r6
+
+	mov.l	@r15+, r8
+	mov.l	@r15+, r10
+end
 
 /* XRAM buffer */
 
@@ -576,11 +514,11 @@ _perf_cpu_tex2d:
 .buffer:
 	.long	_cpu_perf_xram_buffer
 
-#ifdef FXCG50
+/* Secondary buffer in RAM */
+
 .buffer2:
 	.long	_buffer2
 
-.section .data
+.section .data, "aw"
 _buffer2:
 	.zero	2048
-#endif

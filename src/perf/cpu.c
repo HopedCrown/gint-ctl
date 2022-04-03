@@ -15,6 +15,44 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* List of all tests with the macro expansion trick */
+#define ALL_TESTS(MACRO) \
+	MACRO(nop_2048x1,			2048,	"Single nop") \
+	MACRO(nop_1024x2,			1024,	"2 nop") \
+	MACRO(nop_512x4,			512,	"4 nop") \
+	MACRO(nop_256x8,			256,	"8 nop") \
+	MACRO(EX_EX,				1024,	"Normal pair: EX/EX") \
+	MACRO(MT_MT,				1024,	"Normal pair: MT/MT") \
+	MACRO(LS_LS,				1024,	"Normal pair: LS/LS") \
+	MACRO(align_4,				1024,	"Normal-pair: 4-aligned") \
+	MACRO(align_2,				1024,	"Normal pair: 2-aligned") \
+	MACRO(pipeline_1,			1024,	"Pipeline: mac.w/nop") \
+	MACRO(pipeline_2,			1024,	"Pipeline: mac.w/mac.w") \
+	MACRO(pipeline_3,			1024,	"Pipeline: mac.w/nop*5") \
+	MACRO(raw_EX_EX,			1024,	"RAW on data: EX/EX") \
+	MACRO(raw_LS_LS,			1024,	"RAW on data: LS/LS") \
+	MACRO(raw_EX_LS,			1024,	"RAW on data: EX/LS") \
+	MACRO(raw_LS_EX,			1024,	"RAW on data: LS/EX") \
+	MACRO(raw_LS_MT,			1024,	"RAW on data: LS/MT") \
+	MACRO(raw_EX_MT,			2048,	"RAW on data: EX/MT") \
+	MACRO(raw_MT_EX,			2048,	"RAW on data: MT/EX") \
+	MACRO(raw_DSPLS_DSPLS,		512,	"RAW on data: DSPLS/DSPLS") \
+	MACRO(noraw_LS_LS,			1024,	"No dependency: LS/LS") \
+	MACRO(noraw_LS_EX,			1024,	"No dependency: LS/EX") \
+	MACRO(raw_MT_LS_addr,		1024,	"RAW on address: MT/LS") \
+	MACRO(raw_EX_LS_addr,		1024,	"RAW on address: EX/LS") \
+	MACRO(raw_EX_LS_index,		1024,	"RAW on index: EX/LS") \
+	MACRO(raw_LS_LS_addr,		1024,	"RAW on address: LS/LS") \
+	MACRO(darken_1,				512,	"Darken: 32-bit #1") \
+	MACRO(darken_2,				512,	"Darken: 32-bit #2") \
+	MACRO(darken_3,				256,	"Darken: +unrolled") \
+	MACRO(darken_4,				256,	"Darken: +pipelined") \
+	MACRO(double_read,			1024,	"Double read") \
+	MACRO(double_incr_read,		1024,	"Double increment read") \
+	MACRO(double_write,			1024,	"Double write") \
+	MACRO(azur_p8_rgb565,		512,	"Azur: P8_RGB565 loop") \
+	MACRO(azur_p8_rgb565a,		512,	"Azur: P8_RGB565A loop") \
+
 GXRAM uint32_t cpu_perf_xram_buffer[512];
 
 /* Is subtracted from result times if specified; in TMU units (prof.elapsed) */
@@ -68,18 +106,8 @@ uint32_t TMU_baseline(void)
 //---
 
 struct results {
-	int nop_2048x1, nop_1024x2, nop_512x4, nop_256x8;
-	int EX_EX, MT_MT, LS_LS;
-	int align_4, align_2;
-	int pipeline_1, pipeline_2, pipeline_3;
-	int raw_EX_EX, raw_LS_LS, raw_EX_LS, raw_LS_EX, raw_LS_MT;
-	int noraw_LS_LS, noraw_LS_EX;
-	int raw_EX_LS_addr, raw_EX_LS_index, raw_LS_LS_addr, raw_DSPLS_DSPLS;
-	int darken_1, darken_2, darken_3, darken_4;
-	int double_read, double_incr_read, double_write;
-	#ifdef FXCG50
-	int tex2d;
-	#endif
+	#define MACRO_RESULTS(name, count, str) int name;
+	ALL_TESTS(MACRO_RESULTS)
 };
 
 /* Number of Iphi cycles total, and number of iterations */
@@ -87,22 +115,9 @@ static struct results r_cycles, r_iter;
 
 static void table_gen(gtable *t, int row)
 {
+	#define MACRO_STR(name, count, str) str,
 	static char const *names[] = {
-		"Single nop", "2 nop", "4 nop", "8 nop",
-		"EX/EX pair", "MT/MT pair", "LS/LS pair",
-		"4-aligned parallel pair", "2-aligned parallel pair",
-		"mac.w/nop pipeline", "mac.w/mac.w pipeline",
-		  "mac.w/nop*5 pipeline",
-		"RAW dep.: EX/EX", "RAW dep.: LS/LS", "RAW dep.: EX/LS",
-		  "RAW dep.: LS/EX", "RAW dep.: LS/MT",
-		  "No dep.: LS/LS", "No dep.: LS/EX",
-		  "RAW on address: EX/LS", "RAW on index: EX/LS",
-		  "RAW on address: LS/LS",
-		  "RAW dep.: DSP-LS/DSP-LS",
-		"32-bit VRAM darken #1", "32-bit VRAM darken #2",
-		  "Interwoven darken", "Interwoven open darken",
-		"Double read", "Double increment read", "Double write",
-		"Texture2D shader",
+		ALL_TESTS(MACRO_STR)
 	};
 
 	int cycles = ((int *)&r_cycles)[row];
@@ -152,52 +167,12 @@ void gintctl_perf_cpu(void)
 		if(key == KEY_F1) {
 			baseline_ticks = TMU_baseline();
 
-			#define run(name, iter) {								\
+			#define MACRO_RUN(name, iter, str) {					\
 				extern void perf_cpu_ ## name (void);				\
 				r_cycles.name = Iphi_cycles(perf_cpu_ ## name);		\
 				r_iter.name = iter;									\
 			}
-
-			run(nop_2048x1, 2048);
-			run(nop_1024x2, 1024);
-			run(nop_512x4, 512);
-			run(nop_256x8, 256);
-
-			run(EX_EX, 1024);
-			run(MT_MT, 1024);
-			run(LS_LS, 1024);
-
-			run(align_4, 1024);
-			run(align_2, 1024);
-
-			run(pipeline_1, 1024);
-			run(pipeline_2, 1024);
-			run(pipeline_3, 1024);
-
-			run(raw_EX_EX, 1024);
-			run(raw_LS_LS, 1024);
-			run(raw_EX_LS, 1024);
-			run(raw_LS_EX, 1024);
-			run(raw_LS_MT, 1024);
-			run(noraw_LS_LS, 1024);
-			run(noraw_LS_EX, 1024);
-			run(raw_EX_LS_addr, 1024);
-			run(raw_EX_LS_index, 1024);
-			run(raw_LS_LS_addr, 1024);
-			run(raw_DSPLS_DSPLS, 512);
-
-			run(darken_1, 512);
-			run(darken_2, 512);
-			run(darken_3, 256);
-			run(darken_4, 256);
-
-			run(double_read, 1024);
-			run(double_incr_read, 1024);
-			run(double_write, 1024);
-
-			#ifdef FXCG50
-			run(tex2d, 512);
-			#endif
+			ALL_TESTS(MACRO_RUN)
 
 			table->widget.update = 1;
 		}
