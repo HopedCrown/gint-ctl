@@ -21,6 +21,9 @@
 	MACRO(nop_1024x2,			1024,	"2 nop") \
 	MACRO(nop_512x4,			512,	"4 nop") \
 	MACRO(nop_256x8,			256,	"8 nop") \
+	MACRO(nop_1024x2_cpuloop,	1024,	"2 nop (CPU loop)") \
+	MACRO(nop_512x4_cpuloop,	512,	"4 nop (CPU loop)") \
+	MACRO(nop_256x8_cpuloop,	256,	"8 nop (CPU loop)") \
 	MACRO(EX_EX,				1024,	"Normal pair: EX/EX") \
 	MACRO(MT_MT,				1024,	"Normal pair: MT/MT") \
 	MACRO(LS_LS,				1024,	"Normal pair: LS/LS") \
@@ -43,6 +46,8 @@
 	MACRO(raw_EX_LS_addr,		1024,	"RAW on address: EX/LS") \
 	MACRO(raw_EX_LS_index,		1024,	"RAW on index: EX/LS") \
 	MACRO(raw_LS_LS_addr,		1024,	"RAW on address: LS/LS") \
+	MACRO(branch_bra,			1024,	"Branching: bra") \
+	MACRO(branch_bra_cpuloop,	1024,	"Branching: bra (CPU loop)") \
 	MACRO(darken_1,				512,	"Darken: 32-bit #1") \
 	MACRO(darken_2,				512,	"Darken: 32-bit #2") \
 	MACRO(darken_3,				256,	"Darken: +unrolled") \

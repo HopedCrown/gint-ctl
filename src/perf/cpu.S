@@ -25,6 +25,26 @@ _perf_cpu_\SYMBOL:
 	nop
 .endm
 
+/* Same for CPU loops, which are sometimes relevant */
+.macro benchcpu SYMBOL, COUNT
+.global _perf_cpu_\SYMBOL
+.align 4
+_perf_cpu_\SYMBOL:
+	mov	#(\COUNT/256), r0
+	shll8	r0
+.endm
+
+.macro endcpu
+	dt	r0
+	nop
+
+	bf.s	1b
+	nop
+
+	rts
+	nop
+.endm
+
 /* [Baseline]
 
    In this first section, we find an approximate cost of the setup, which
@@ -86,6 +106,32 @@ bench nop_256x8, 256
 	nop
 2:	nop
 end
+
+/* nop loop (1024 iterations of 2 nop) + CPU loop -> ??? cycles /i */
+benchcpu nop_1024x2_cpuloop, 1024
+1:	nop
+	nop
+endcpu
+
+/* nop loop (512 iterations of 4 nop) + CPU loop -> ??? cycles /i */
+benchcpu nop_512x4_cpuloop, 512
+1:	nop
+	nop
+	nop
+	nop
+endcpu
+
+/* nop loop (256 iterations of 8 nop) + CPU loop -> ??? cycles /i */
+benchcpu nop_256x8_cpuloop, 256
+1:	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+2:	nop
+endcpu
 
 /* [Parallel execution]
 
@@ -232,6 +278,17 @@ bench raw_MT_EX, 2048
 2:	add	#0, r4
 end
 
+/* The addresses must be different -> 2 cycles /i */
+bench raw_DSPLS_DSPLS, 512
+	mov.l	.buffer, r4
+	mov	r4, r5
+	add	#2, r5
+	nop
+
+1:	movs.w	@r4, x0
+2:	movs.w	x0, @r5
+end
+
 /* Still efficient as long as the addresses are different -> 2 cycles /i */
 bench noraw_LS_LS, 1024
 	mov.l	.buffer, r4
@@ -250,7 +307,7 @@ bench noraw_LS_EX, 1024
 2:	add	#1, r1
 end
 
-/* TODO  */
+/* Works no problem, MT is very friendly -> 1 cycle /i  */
 bench raw_MT_LS_addr, 1024
 	mov.l	.buffer, r5
 	nop
@@ -270,8 +327,7 @@ bench raw_EX_LS_addr, 1024
 end
 
 /* Same process for the index -> 3 cycles /i
-
-   Also more results:
+   Also more results (maybe loads into r0 are delayed by the next iteration?)
      EX on r0/LS indexing r0, into rm (m != 0)   -> 3 cycles /i
      EX in r0/LS indexing r0, into r0            -> 4 cycles /i (!)
      MT in r0/LS indexing r0, into rm (m != 0)   -> 1 cycle  /i
@@ -293,21 +349,36 @@ bench raw_LS_LS_addr, 1024
 2:	mov.l	@r5, r6
 end
 
-/* As previously, the addresses must be different -> 2 cycles /i */
-bench raw_DSPLS_DSPLS, 512
-	mov.l	.buffer, r4
-	mov	r4, r5
-	add	#2, r5
-	nop
+/* [Branching]
 
-1:	movs.w	@r4, x0
-2:	movs.w	x0, @r5
+   In this section, we investigate the cost of conditional execution and
+   branching, which features both delay slots and pipeline bubbles. */
+
+/* WOW. 18 cycles /i in ILRAM, 12 cycles /i in ROM and RAM. What the heck is
+   instruction prefetching doing with this? */
+bench branch_bra, 1024
+1:	bra	3f
+	nop
+     3: nop
+2:	nop
 end
 
-/* [Iteration weaving]
+.global _perf_cpu_branch_bra_cpuloop
+.align 4
+_perf_cpu_branch_bra_cpuloop:
+	mov	#4, r0
+	shll8	r0
+1:	bra	3f
+	dt	r0
+     3: bf.s	1b
+	nop
+	rts
+	nop
 
-   In this section we analyze how iterations can be woven and opened to improve
-   performance by reducing RAW dependencies. This is illustrated with a
+/* [Loop unrolling]
+
+   In this section we analyze how loops can be unrolled and pipeliend to
+   improve performance by reducing RAW dependencies. This is illustrated with a
    function that darkens a continuous section of VRAM. The initial version
    takes 3 cycles /pixel, whereas the optimized takes 1.25 cycle /pixel. */
 
@@ -343,10 +414,10 @@ bench darken_2, 512
 2:	mov.l	r1, @r5
 end
 
-/* Here iterations are woven together to increase the amount of independent
-   data. Each iteration processes twice as much data and uses EX cycles of the
-   first longword to do LS work on the second one. Plus r5 is incremented only
-   once -> 6 cycles /i */
+/* Here iterations are unrolled to increase the amount of independent data.
+   Each iteration processes twice as much data and uses EX cycles of the first
+   longword to do LS work on the second one. Plus r5 is incremented only once
+   -> 6 cycles /i */
 bench darken_3, 256
 	mov.l	.buffer, r4
 	mov	r4, r5
@@ -369,9 +440,9 @@ bench darken_3, 256
 2:	mov.l	r3, @(4,r5)
 end
 
-/* Finally iterations are opened here to eliminate the long chain of dependency
-   from the loads to the stores. Late EX instructions are parallelized with
-   loads for the next iteration -> 5 cycles/i */
+/* Finally iterations are pipelined here to eliminate the long chain of
+   dependency from the loads to the stores. Late EX instructions are
+   parallelized with loads for the next iteration -> 5 cycles/i */
 bench darken_4, 256
 	mov.l	.buffer, r4
 	mov	r4, r5
