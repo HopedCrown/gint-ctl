@@ -19,7 +19,6 @@ set(SOURCES
   src/menu.c
   src/plot.c
   src/util.c
-  src/gint/bopti.c
   src/gint/cpumem.c
   src/gint/dma.c
   src/gint/drivers.c
@@ -29,6 +28,7 @@ set(SOURCES
   src/gint/gray.c
   src/gint/keyboard.c
   src/gint/kmalloc.c
+  src/gint/image.c
   src/gint/ram.c
   src/gint/rtc.c
   src/gint/spuram.c

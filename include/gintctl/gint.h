@@ -41,8 +41,8 @@ void gintctl_gint_dma(void);
 /* gintctl_gint_rtc(): Configure RTC and check timer speed */
 void gintctl_gint_rtc(void);
 
-/* gintctl_gint_bopti(): Test image rendering */
-void gintctl_gint_bopti(void);
+/* gintctl_gint_image(): Test image rendering */
+void gintctl_gint_image(void);
 
 /* gintctl_gint_topti(): Test text rendering */
 void gintctl_gint_topti(void);

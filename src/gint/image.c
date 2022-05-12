@@ -6,8 +6,8 @@
 #include <gintctl/util.h>
 
 #ifdef FXCG50
-/* gintctl_gint_bopti(): Test image rendering */
-void gintctl_gint_bopti(void)
+/* gintctl_gint_image(): Test image rendering */
+void gintctl_gint_image(void)
 {
 	extern bopti_image_t img_swords;
 	extern bopti_image_t img_potion_17x22, img_potion_18x22;
@@ -75,7 +75,7 @@ static void img(int x, int y, bopti_image_t *img, int sub, int flags)
 }
 #define img(x, y, i) img(x, y, & img_bopti_##i, sub, flags)
 
-void gintctl_gint_bopti(void)
+void gintctl_gint_image(void)
 {
 	extern bopti_image_t img_opt_gint_bopti;
 	extern bopti_image_t img_bopti_1col;
