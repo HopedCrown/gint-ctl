@@ -64,8 +64,8 @@ static void render_option(int x, int y, char const *name, bool enabled)
 	int w, h;
 	dsize(name, NULL, &w, &h);
 
-	if(enabled) drect(x, y, x+w+_(1,2), y+h+_(1,2), C_BLACK);
-	dtext(x+_(1,2), y+_(1,2), (enabled ? C_WHITE : C_BLACK), name);
+	if(enabled) drect(x-_(1,2), y-_(1,2), x+w+_(0,1), y+h+_(0,1), C_BLACK);
+	dtext(x, y, (enabled ? C_WHITE : C_BLACK), name);
 }
 
 static void render_icon(int x, int y, int id)
@@ -100,7 +100,6 @@ static char const *key_name(int key)
 
 static void render(keydev_t *d, key_event_t *last_events, int counter)
 {
-
 	key_event_t ev;
 	dclear(C_WHITE);
 
@@ -132,7 +131,7 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 		if(ev.alpha) render_icon(x2 + _(5,9), y+_(0,1), 4);
 	}
 
-	render_keyboard(d, _(2,15), _(6,21));
+	render_keyboard(d, _(2,10), _(6,21));
 	int tr = d->tr.enabled;
 
 	#ifdef FX9860G
@@ -155,21 +154,25 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	#endif /* FX9860G */
 
 	#ifdef FXCG50
-	dtext(210, 30, C_BLACK, "Shift:");
-	render_option(210, 42, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);
-	render_option(245, 42, "Ins", (tr & KEYDEV_TR_INSTANT_SHIFT) != 0);
-	dtext(210, 56, C_BLACK, "Alpha:");
-	render_option(210, 68, "Del", (tr & KEYDEV_TR_DELAYED_ALPHA) != 0);
-	render_option(245, 68, "Ins", (tr & KEYDEV_TR_INSTANT_ALPHA) != 0);
-	render_option(210, 82, "-Mods", (tr & KEYDEV_TR_DELETE_MODIFIERS) != 0);
-	render_option(210, 96, "-Rels", (tr & KEYDEV_TR_DELETE_RELEASES) != 0);
-	render_option(210, 110, "Reps", (tr & KEYDEV_TR_REPEATS) != 0);
+	dtext(200, 30, C_BLACK, "Shift:");
+	render_icon(245, 30, d->delayed_shift ? 7 : (d->pressed_shift ? 6 : 5));
+	render_option(205, 42, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);
+	render_option(240, 42, "Ins", (tr & KEYDEV_TR_INSTANT_SHIFT) != 0);
 
-	render_icon(252, 30, d->delayed_shift ? 7 : (d->pressed_shift ? 6 : 5));
-	render_icon(251, 56, d->delayed_alpha ? 7 : (d->pressed_alpha ? 6 : 5));
+	dtext(200, 64, C_BLACK, "Alpha:");
+	render_icon(244, 64, d->delayed_alpha ? 7 : (d->pressed_alpha ? 6 : 5));
+	render_option(205, 76, "Del", (tr & KEYDEV_TR_DELAYED_ALPHA) != 0);
+	render_option(240, 76, "Ins", (tr & KEYDEV_TR_INSTANT_ALPHA) != 0);
 
-	dtext(210, 124, C_BLACK, key_name(d->rep_key));
-	dprint(210, 136, C_BLACK, "L:%d", d->events_lost);
+	render_option(200, 94, "DelMods", (tr & KEYDEV_TR_DELETE_MODIFIERS) != 0);
+	render_option(200, 108, "DelRels", (tr & KEYDEV_TR_DELETE_RELEASES) != 0);
+
+	render_option(200, 126, "Reps", (tr & KEYDEV_TR_REPEATS) != 0);
+	dprint(200, 140, C_BLACK, "%s (%d)", key_name(d->rep_key),
+		d->rep_count);
+
+	dprint(200, 158, C_BLACK, "Q:%d/%d", d->queue_next, d->queue_end);
+	dprint(200, 174, C_BLACK, "Lost:%d", d->events_lost);
 	#endif /* FXCG50 */
 }
 
@@ -193,8 +196,9 @@ static int handle_event(keydev_t *d, key_event_t *last_events, int counter)
 	if(ev.key == KEY_F2) tr.enabled ^= KEYDEV_TR_INSTANT_SHIFT;
 	if(ev.key == KEY_F3) tr.enabled ^= KEYDEV_TR_DELAYED_ALPHA;
 	if(ev.key == KEY_F4) tr.enabled ^= KEYDEV_TR_INSTANT_ALPHA;
-	if(ev.key == KEY_F5) tr.enabled ^= KEYDEV_TR_REPEATS;
-	if(ev.key == KEY_F6) tr.enabled ^= KEYDEV_TR_DELETE_MODIFIERS;
+	if(ev.key == KEY_F5) tr.enabled ^= (KEYDEV_TR_DELETE_MODIFIERS |
+	                                    KEYDEV_TR_DELETE_RELEASES);
+	if(ev.key == KEY_F6) tr.enabled ^= KEYDEV_TR_REPEATS;
 
 	keydev_set_transform(d, tr);
 	return 0;
