@@ -6,60 +6,189 @@
 #include <gintctl/util.h>
 
 #ifdef FXCG50
+static void scene_1(void)
+{
+	dclear(0x5555);
+
+	extern image_t img_libimg_sq_even;
+	extern image_t img_libimg_sq_odd;
+	extern image_t img_libimg_even_odd;
+	extern image_t img_libimg_odd_even;
+	extern image_t img_libimg_train;
+
+	image_t const *in[4] = {
+		&img_libimg_sq_even, &img_libimg_sq_odd,
+		&img_libimg_odd_even, &img_libimg_even_odd
+	};
+	image_t *train = &img_libimg_train;
+	image_t *vram = image_create_vram();
+
+	image_fill(vram, 0xffff);
+	image_fill(image_sub(vram, 138, 0, 28, -1), 0xc618);
+
+	/* TODO: Missing test coverage:
+	     image_alloc()
+	     image_copy_palette()
+	     image_clear()
+	     image_copy() with P4 formats
+	     image_set_pixel() */
+
+	for(int i=0, y=8; i<4; i++, y+=52)
+	{
+		/* P8 */
+		if(i <= 1) {
+			image_t *tmp;
+
+	//		img_rotate (in[i], img_at(vram,   8, y),     90);
+	//		img_rotate (in[i], img_at(vram,   8, y+26),   0);
+	//		img_rotate (in[i], img_at(vram,  34, y),    180);
+	//		img_rotate (in[i], img_at(vram,  34, y+26), 270);
+	//		img_upscale(in[i], img_at(vram,  60, y+1),  2);
+
+			if(i == 0) {
+				tmp = image_hflip_alloc(in[i]);
+				image_copy(tmp, image_at(vram, 110, y), false);
+				image_free(tmp);
+
+				tmp = image_vflip_alloc(in[i]);
+				image_copy(tmp, image_at(vram, 110, y+26), false);
+				image_free(tmp);
+			}
+			else {
+				tmp = image_copy_alloc(in[i], in[i]->format);
+				image_hflip(tmp, tmp, true);
+				image_copy(tmp, image_at(vram, 110, y), false);
+				image_free(tmp);
+
+				tmp = image_copy_alloc(in[i], in[i]->format);
+				image_vflip(tmp, tmp, true);
+				image_copy(tmp, image_at(vram, 110, y+26), false);
+				image_free(tmp);
+			}
+
+			image_copy   (in[i], image_at(vram, 140, y+13), false);
+	/*		img_dye    (in[i], img_at(vram, 248, y),    0x25ff);
+			img_dye    (in[i], img_at(vram, 248, y+26), 0xfd04);
+
+			img_t light = img_copy(in[i]);
+			img_t dark  = img_copy(in[i]);
+
+			for(int k=0, x=172; k<=2; k++, x+=26)
+			{
+				img_whiten(light, light);
+				img_darken(dark, dark);
+
+				img_render(light, img_at(vram, x, y));
+				img_render(dark,  img_at(vram, x, y+26));
+			}
+
+			img_destroy(light);
+			img_destroy(dark); */
+		}
+		/* RGB16 */
+		else {
+	//		img_rotate (in[i], img_at(vram,   8, y),     90);
+	//		img_rotate (in[i], img_at(vram,   8, y+26),   0);
+	//		img_rotate (in[i], img_at(vram,  34, y),    180);
+	//		img_rotate (in[i], img_at(vram,  34, y+26), 270);
+	//		img_upscale(in[i], img_at(vram,  60, y+1),  2);
+			image_hflip  (in[i], image_at(vram, 110, y), false);
+			image_vflip  (in[i], image_at(vram, 110, y+26), false);
+			image_copy   (in[i], image_at(vram, 140, y+13), false);
+	/*		img_dye    (in[i], img_at(vram, 248, y),    0x25ff);
+			img_dye    (in[i], img_at(vram, 248, y+26), 0xfd04);
+
+			img_t light = img_copy(in[i]);
+			img_t dark  = img_copy(in[i]);
+
+			for(int k=0, x=172; k<=2; k++, x+=26)
+			{
+				img_whiten(light, light);
+				img_darken(dark, dark);
+
+				img_render(light, img_at(vram, x, y));
+				img_render(dark,  img_at(vram, x, y+26));
+			}
+
+			img_destroy(light);
+			img_destroy(dark); */
+		}
+	}
+
+//	img_t light = img_lighten_create(img_libimg_train);
+//	img_t dark  = img_darken_create(img_libimg_train);
+
+//	img_render(light, img_at(out, 282,       24));
+	image_copy(train, image_at(vram, 282, 56+24), false);
+//	img_render(dark,  img_at(out, 282, 56+56+24));
+
+//	img_destroy(light);
+//	img_destroy(dark);
+
+	image_free(vram);
+}
+
+static void print_linear_map(int x, int y, struct image_linear_map *map)
+{
+	dprint(x, y, C_BLACK, "Input: %dx%d (stride %d)",
+		map->src_w, map->src_h, map->src_stride);
+	dprint(x, y+14, C_BLACK, "Output: %dx%d (stride %d)",
+		map->dst_w, map->dst_h, map->dst_stride);
+	dprint(x, y+28, C_BLACK, "uv initial: %f %f",
+		(double)map->u / 65536, (double)map->v / 65536);
+	dprint(x, y+42, C_BLACK, "uv per x: %f %f",
+		(double)map->dx_u / 65536, (double)map->dx_v / 65536);
+	dprint(x, y+56, C_BLACK, "uv per y: %f %f",
+		(double)map->dy_u / 65536, (double)map->dy_v / 65536);
+}
+
+static void scene_2(void)
+{
+	dclear(C_WHITE);
+
+	extern image_t img_libimg_train;
+	image_t *train = &img_libimg_train;
+	image_t *vram = image_create_vram();
+
+	struct image_linear_map map;
+	int cx1 = train->width * 3 / 4;
+	int cy1 = train->height / 4;
+	int cx2=cx1, cy2=cy1;
+	image_rotate_around_scale(train, 1.4, 1.3*65536, true, &cx2, &cy2, &map);
+
+	int new_format =
+		IMAGE_IS_RGB16(train->format) ? IMAGE_RGB565A : IMAGE_P8_RGB565A;
+	image_t *tmp = image_alloc(map.dst_w, map.dst_h, new_format);
+	image_copy_palette(train, tmp, -1);
+	image_clear(tmp);
+
+	image_linear(train, tmp, &map);
+	image_copy(tmp, image_at(vram, 10, 10), true);
+
+	dprint(4, 116, C_BLACK, "Center: %d %d -> %d %d", cx1, cy1, cx2, cy2);
+	print_linear_map(4, 130, &map);
+	image_free(vram);
+	image_free(tmp);
+}
+
 /* gintctl_gint_image(): Test image rendering */
 void gintctl_gint_image(void)
 {
-	extern bopti_image_t img_swords;
-	extern bopti_image_t img_potion_17x22, img_potion_18x22;
-	extern bopti_image_t img_applejack_31x27, img_applejack_36x25;
-	int key = 0, x, y;
+	int tab=0, key=0;
 
-	while(key != KEY_EXIT)
-	{
-		dclear(C_WHITE);
-		row_title("Image rendering");
+	while(key != KEY_EXIT) {
+		if(tab == 0)
+			scene_1();
+		else if(tab == 1)
+			scene_2();
 
-		x=51, y=25;
-		dtext(x,     y, C_BLACK, "E.E");
-		dtext(x+35,  y, C_BLACK, "E.O");
-		dtext(x+70,  y, C_BLACK, "O.E");
-		dtext(x+105, y, C_BLACK, "O.O");
-
-		x=52, y=40;
-		dtext(10, y+6, C_BLACK, "OxE");
-		dimage(x,     y,   &img_potion_17x22);
-		dimage(x+35,  y+1, &img_potion_17x22);
-		dimage(x+71,  y,   &img_potion_17x22);
-		dimage(x+106, y+1, &img_potion_17x22);
-
-		x=52, y=67;
-		dtext(10, y+6, C_BLACK, "ExE");
-		dimage(x,     y,   &img_potion_18x22);
-		dimage(x+35,  y+1, &img_potion_18x22);
-		dimage(x+71,  y,   &img_potion_18x22);
-		dimage(x+106, y+1, &img_potion_18x22);
-
-		x=44, y=95;
-		dtext(10, y+9, C_BLACK, "OxO");
-		dimage(x,     y,   &img_applejack_31x27);
-		dimage(x+35,  y+1, &img_applejack_31x27);
-		dimage(x+71,  y,   &img_applejack_31x27);
-		dimage(x+106, y+1, &img_applejack_31x27);
-
-		x=40, y=127;
-		dtext(10, y+9, C_BLACK, "ExO");
-		dimage(x,     y,   &img_applejack_36x25);
-		dimage(x+35,  y+1, &img_applejack_36x25);
-		dimage(x+71,  y,   &img_applejack_36x25);
-		dimage(x+106, y+1, &img_applejack_36x25);
-
-		dimage(190, 35, &img_swords);
-
-		dtext(67, 210, C_BLACK,
-			"Some images by Pix3M (deviantart.com/pix3m)");
+		fkey_button(1, "SCENE 1");
+		fkey_button(2, "SCENE 2");
 		dupdate();
 
 		key = getkey().key;
+		if(key == KEY_F1) tab = 0;
+		if(key == KEY_F2) tab = 1;
 	}
 }
 #endif

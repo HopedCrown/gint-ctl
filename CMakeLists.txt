@@ -39,7 +39,6 @@ set(SOURCES
   src/gint/usb.c
   src/libs/bfile.c
   src/libs/justui.c
-  src/libs/libimg.c
   src/libs/openlibm.c
   src/mem/mem.c
   src/perf/cpucache.c
@@ -101,8 +100,6 @@ set(ASSETS_fx
 )
 set(ASSETS_cg
   assets-cg/fonts/font8x9_bold.png
-  assets-cg/img/applejack_31x27.png
-  assets-cg/img/applejack_36x25.png
   assets-cg/img/kbd_events.png
   assets-cg/img/kbd_pressed.png
   assets-cg/img/kbd_released.png
@@ -111,9 +108,6 @@ set(ASSETS_cg
   assets-cg/img/libimg_sq_even.png
   assets-cg/img/libimg_sq_odd.png
   assets-cg/img/libimg_train.png
-  assets-cg/img/potion_17x22.png
-  assets-cg/img/potion_18x22.png
-  assets-cg/img/potion_21x22.png
   assets-cg/img/rtc_arrows.png
   assets-cg/img/rtc_segments.png
   assets-cg/img/swift.png
@@ -129,7 +123,11 @@ target_link_options(gintctl PRIVATE
   -Wl,-Map=map -Wl,--print-memory-usage)
 target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(gintctl
-  LibProf::LibProf LibImg::LibImg JustUI::JustUI Gint::Gint)
+  LibProf::LibProf JustUI::JustUI Gint::Gint)
+
+if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
+  target_link_libraries(gintctl LibImg::LibImg)
+endif()
 
 
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)

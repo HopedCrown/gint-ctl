@@ -2,9 +2,6 @@
   type: bopti-image
   name_regex: (.*).png img_\1
 
-libimg_*.png:
-  type: libimg-image
-
 swift.png:
   profile: p4
 swords.png:
@@ -13,3 +10,14 @@ kbd_pressed.png:
   profile: p4
 kbd_released.png:
   profile: p4
+
+libimg_even_odd.png:
+  profile: rgb565a
+libimg_odd_even.png:
+  profile: rgb565a
+libimg_sq_even.png:
+  profile: p8_rgb565a
+libimg_sq_odd.png:
+  profile: p8_rgb565a
+libimg_train.png:
+  profile: p8_rgb565

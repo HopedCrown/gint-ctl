@@ -5,9 +5,9 @@
 #ifndef _GINTCTL_ASSETS
 #define _GINTCTL_ASSETS
 
-#include <libimg.h>
-
 #ifdef FX9860G
+
+#include <libimg.h>
 
 extern font_t
 	font_hexa,
@@ -61,20 +61,13 @@ extern img_t
 #ifdef FXCG50
 
 extern bopti_image_t
-	img_applejack_31x27,
-	img_applejack_36x25,
 	img_kbd_events,
 	img_kbd_pressed,
 	img_kbd_released,
-	img_potion_17x22,
-	img_potion_18x22,
-	img_potion_21x22,
 	img_rtc_arrows,
 	img_rtc_segments,
 	img_swift,
-	img_swords;
-
-extern img_t
+	img_swords,
 	img_libimg_even_odd,
 	img_libimg_odd_even,
 	img_libimg_sq_even,
