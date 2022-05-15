@@ -26,9 +26,10 @@ set(SOURCES
   src/gint/dsp.s
   src/gint/dump.c
   src/gint/gray.c
+  src/gint/image.c
   src/gint/keyboard.c
   src/gint/kmalloc.c
-  src/gint/image.c
+  src/gint/overclock.c
   src/gint/ram.c
   src/gint/rtc.c
   src/gint/spuram.c

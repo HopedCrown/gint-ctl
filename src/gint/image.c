@@ -156,13 +156,7 @@ static void scene_2(void)
 	int cx2=cx1, cy2=cy1;
 	image_rotate_around_scale(train, 1.4, 1.3*65536, true, &cx2, &cy2, &map);
 
-	int new_format =
-		IMAGE_IS_RGB16(train->format) ? IMAGE_RGB565A : IMAGE_P8_RGB565A;
-	image_t *tmp = image_alloc(map.dst_w, map.dst_h, new_format);
-	image_copy_palette(train, tmp, -1);
-	image_clear(tmp);
-
-	image_linear(train, tmp, &map);
+	image_t *tmp = image_linear_alloc(train, &map);
 	image_copy(tmp, image_at(vram, 10, 10), true);
 
 	dprint(4, 116, C_BLACK, "Center: %d %d -> %d %d", cx1, cy1, cx2, cy2);

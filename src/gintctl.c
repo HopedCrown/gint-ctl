@@ -43,6 +43,9 @@ struct menu menu_gint = {
 	{ "Memory dump",        gintctl_gint_dump, 0 },
 	{ "Drivers and worlds", gintctl_gint_drivers, 0 },
 	{ "TLB management",     gintctl_gint_tlb, 0 },
+	#ifdef FXCG50
+	{ "Overclocking",       gintctl_gint_overclock, MENU_SH4_ONLY },
+	#endif
 	{ "Memory allocation",  gintctl_gint_kmalloc, 0 },
 	{ "Keyboard",           gintctl_gint_keyboard, 0 },
 	{ "Timers",             gintctl_gint_timer, 0 },

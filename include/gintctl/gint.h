@@ -26,6 +26,9 @@ void gintctl_gint_drivers(void);
 /* gintctl_gint_tlb(): TLB miss handler and TLB management */
 void gintctl_gint_tlb(void);
 
+/* gintctl_gint_overclock(): Clock speed detection and setting */
+void gintctl_gint_overclock(void);
+
 /* gintct_gint_keyboard: Real-time keyboard visualization */
 void gintctl_gint_keyboard(void);
 
