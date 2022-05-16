@@ -55,8 +55,6 @@
 	MACRO(double_read,			1024,	"Double read") \
 	MACRO(double_incr_read,		1024,	"Double increment read") \
 	MACRO(double_write,			1024,	"Double write") \
-	MACRO(azur_p8_rgb565,		512,	"Azur: P8_RGB565 loop") \
-	MACRO(azur_p8_rgb565a,		512,	"Azur: P8_RGB565A loop") \
 
 GXRAM uint32_t cpu_perf_xram_buffer[512];
 
