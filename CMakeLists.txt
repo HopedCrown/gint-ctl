@@ -1,13 +1,13 @@
 # gintctl: gint's control application
 
 cmake_minimum_required(VERSION 3.15)
-project(gintctl VERSION 2.2.1 LANGUAGES C ASM)
+project(gintctl VERSION 2.8.0 LANGUAGES C ASM)
 
 include(GenerateG1A)
 include(GenerateG3A)
 include(Fxconv)
 
-find_package(Gint 2.1 REQUIRED)
+find_package(Gint 2.8 REQUIRED)
 find_package(LibProf 2.1 REQUIRED)
 find_package(LibImg 2.1 REQUIRED)
 find_package(JustUI 1.0 REQUIRED)
