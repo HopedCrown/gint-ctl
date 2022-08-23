@@ -6,7 +6,7 @@
 #include <gintctl/util.h>
 
 #define __BSD_VISIBLE 1
-#include <openlibm/openlibm.h>
+#include <openlibm.h>
 
 /* gintctl_libs_openlibm(): OpenLibm floating-point functions */
 void gintctl_libs_openlibm(void)
