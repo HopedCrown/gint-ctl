@@ -206,9 +206,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	menu_init(&menu_perf, top, bottom);
 	menu_init(&menu_libs, top, bottom);
 
-	#ifdef FX9860G
 	gint_setrestart(1);
-	#endif
 
 	/* Enable global getkey() shortcuts */
 	getkey_set_feature_function(getkey_global_shortcuts);
