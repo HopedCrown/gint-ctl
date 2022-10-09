@@ -25,7 +25,7 @@
 #define USB SH7305_USB
 
 /* USB log buffer */
-#define LOG_SIZE _(1024, 4096)
+#define LOG_SIZE _(768, 4096)
 static char log_buffer[LOG_SIZE];
 static int log_pos;
 static int const log_lines = _(8,15);
