@@ -233,13 +233,15 @@ void gintctl_gint_keyboard(void)
 		dupdate();
 
 		/* Redraw at each event if needed */
-		while((ev = keydev_read(d)).type == KEYEV_NONE) sleep();
+		while((ev = keydev_read(d, false, NULL)).type == KEYEV_NONE)
+			sleep();
 
 		last_events[counter] = ev;
 		counter = (counter+1) % 16;
 		if(handle_event(d, last_events, counter)) break;
 
-		while((ev = keydev_read(d)).type != KEYEV_NONE && loop)
+		while((ev = keydev_read(d, false, NULL)).type != KEYEV_NONE
+			&& loop)
 		{
 			last_events[counter] = ev;
 			counter = (counter+1) % 16;
