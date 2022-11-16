@@ -1,5 +1,3 @@
-#define GINT_NEED_VRAM
-
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/gint.h>
@@ -53,6 +51,7 @@ struct menu menu_gint = {
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
 	{ "Real-time clock",    gintctl_gint_rtc, 0 },
 	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
+	{ "Basic rendering",    gintctl_gint_render, 0 },
 	{ "Image rendering",    gintctl_gint_image, 0 },
 	{ "Text rendering",     gintctl_gint_topti, 0 },
 	#ifdef FX9860G

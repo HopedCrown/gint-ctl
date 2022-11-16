@@ -88,8 +88,7 @@ void row_highlight(int row)
 	#endif
 
 	#ifdef FXCG50
-	uint32_t *long_vram = (void *)gint_vram;
-	for(int i = 198 * y1; i < 198 * y2; i++) long_vram[i] = ~long_vram[i];
+	drect(0, y1, DWIDTH - 1, y2 - 1, C_INVERT);
 	#endif
 }
 
