@@ -142,6 +142,20 @@ static bool getkey_global_shortcuts(key_event_t e)
 			getkey_recording = false;
 		}
 	}
+	if(e.shift && e.key == KEY_COMMA) {
+		static int stage = 0;
+		stage = (stage + 1) % 8;
+		int border = stage * _(3, 13);
+		struct dwindow win = {
+			.left = border,
+			.top = border,
+			.right = DWIDTH - border,
+			.bottom = DHEIGHT - border,
+		};
+		dwindow_set((struct dwindow){ 0, 0, DWIDTH, DHEIGHT });
+		dclear(_(C_WHITE, 0x5555));
+		dwindow_set(win);
+	}
 	return false;
 }
 
