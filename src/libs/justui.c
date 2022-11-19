@@ -81,7 +81,7 @@ static void table_gen(gtable *t, int row)
 void gintctl_libs_justui(void)
 {
 	gscreen *scr = gscreen_create2("JustUI Widgets", &img_opt_libs_jui,
-		"JustUI graphical interfaces", "/SCENE;/TREE;;;;");
+		"JustUI graphical interfaces", "/SCENE;/TREE;#INPUT;;;");
 
 	// Sample GUI
 

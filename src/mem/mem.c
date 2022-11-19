@@ -127,7 +127,7 @@ void gintctl_mem(void)
 	jpainted *mem = jpainted_create(paint_mem, &v, _(115,321), _(53,167), tab);
 	jinput *input = jinput_create("Go to:" _(," "), 12, tab);
 
-	jwidget_set_margin(mem, _(0,8), 0, _(0,8), 0);
+	jwidget_set_margin(mem, _(0,6), 0, _(0,6), 0);
 	jwidget_set_margin(input, 0, 0, 0, _(1,4));
 	jwidget_set_stretch(input, 1, 0, false);
 	jwidget_set_visible(input, false);

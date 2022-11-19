@@ -48,8 +48,7 @@ void row_title(char const *format, ...)
 
 	#ifdef FXCG50
 	dtext(ROW_X, 3, C_BLACK, str);
-	uint32_t *long_vram = (void *)gint_vram;
-	for(int i = 0; i < 198 * 16; i++) long_vram[i] = ~long_vram[i];
+	drect(0, 0, DWIDTH-1, 15, C_INVERT);
 	#endif
 }
 
