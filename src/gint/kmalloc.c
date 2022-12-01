@@ -442,10 +442,30 @@ static void draw_integrity(kmalloc_arena_t *arena)
 	#endif /* GINT_KMALLOC_DEBUG */
 }
 
+static char const *arena_names[] = { NULL, "_uram", "_ostk", "_os" };
+
+static kmalloc_arena_t *next_arena(int *current)
+{
+	int n = sizeof arena_names / sizeof arena_names[0];
+	int j = *current;
+	kmalloc_arena_t *arena = NULL;
+
+	do {
+		j = (j + 1 >= n) ? 0 : j + 1;
+		char const *name = arena_names[j];
+		arena = name ? kmalloc_get_arena(name) : NULL;
+	}
+	while(j != *current && !arena);
+
+	*current = j;
+	return arena;
+}
+
 /* gintctl_gint_kmalloc(): Dynamic memory allocator */
 void gintctl_gint_kmalloc(void)
 {
-	kmalloc_arena_t *arena = kmalloc_get_arena("_uram");
+	int current_arena = 0;
+	kmalloc_arena_t *arena = next_arena(&current_arena);
 	int tab=0, key=0;
 
 	/* Data for the manual allocation test */
@@ -510,10 +530,7 @@ void gintctl_gint_kmalloc(void)
 			/* Reset mass test info */
 			mass_test.done = 0;
 
-			if(!strcmp(arena->name, "_os"))
-				arena = kmalloc_get_arena("_uram");
-			else
-				arena = kmalloc_get_arena("_os");
+			arena = next_arena(&current_arena);
 		}
 
 		/* Actions on the manual tab */
