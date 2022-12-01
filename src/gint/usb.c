@@ -275,24 +275,24 @@ static prof_t screenshot_async_prof;
 static void screenshot_async_4(void)
 {
 	prof_leave(screenshot_async_prof);
-	usb_log("Async DMA screenshot: %d us\n", prof_time(screenshot_async_prof));
+	USB_LOG("Async DMA screenshot: %d us\n", prof_time(screenshot_async_prof));
 }
 static void screenshot_async_3(void)
 {
 	int pipe = usb_ff_bulk_output();
-	int rc = usb_commit_async(pipe, GINT_CALL(screenshot_async_4));
-	usb_log("commit_async: %d\n", rc);
+	GUNUSED int rc = usb_commit_async(pipe, GINT_CALL(screenshot_async_4));
+	USB_LOG("commit_async: %d\n", rc);
 }
 static void screenshot_async_2(void)
 {
 	int pipe = usb_ff_bulk_output();
-	int rc = usb_write_async(pipe, gint_vram, _(1024, 396*224*2), 4, true,
-		GINT_CALL(screenshot_async_3));
-	usb_log("write_async 2: %d\n", rc);
+	GUNUSED int rc = usb_write_async(pipe, gint_vram, _(1024, 396*224*2),
+		4, true, GINT_CALL(screenshot_async_3));
+	USB_LOG("write_async 2: %d\n", rc);
 }
 static void screenshot_async(void)
 {
-	usb_log("<TEST: Screenshot (async)>\n");
+	USB_LOG("<TEST: Screenshot (async)>\n");
 	int pipe = usb_ff_bulk_output();
 
 	int data_size = _(1024, 396*224*2);
@@ -304,9 +304,9 @@ static void screenshot_async(void)
 	if(!usb_fxlink_fill_header(&header, "gintctl", "asyncscreen", data_size))
 		return;
 
-	int rc = usb_write_async(pipe, &header, sizeof header, 4, false,
-		GINT_CALL(screenshot_async_2));
-	usb_log("write_async 1: %d\n", rc);
+	GUNUSED int rc = usb_write_async(pipe, &header, sizeof header, 4,
+		false, GINT_CALL(screenshot_async_2));
+	USB_LOG("write_async 1: %d\n", rc);
 }
 
 //---
@@ -405,8 +405,8 @@ void gintctl_gint_usb(void)
 				usb_fxlink_screenshot(true);
 //			});
 
-//			usb_log("Screenshot: %d us\n", time);
-//			usb_log("Spent CPU writing: %d us\n", prof_time(usb_cpu_write_prof));
+//			USB_LOG("Screenshot: %d us\n", time);
+//			USB_LOG("Spent CPU writing: %d us\n", prof_time(usb_cpu_write_prof));
 		}
 		if(key == KEY_2 && usb_is_open()) screenshot_async();
 		if(key == KEY_3 && usb_is_open()) {
@@ -425,7 +425,7 @@ void gintctl_gint_usb(void)
 				usb_write_sync(pipe, gint_vram, _(1024, 396*224*2), 4, true);
 				usb_commit_sync(pipe);
 			});
-			usb_log("DMA screenshot: %d us\n", time);
+			USB_LOG("DMA screenshot: %d us\n", time);
 		}
 	}
 }
