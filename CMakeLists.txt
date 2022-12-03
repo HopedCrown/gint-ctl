@@ -39,6 +39,7 @@ set(SOURCES
   src/gint/tlb.c
   src/gint/topti.c
   src/gint/usb.c
+  src/gint/usbtrace.c
   src/libs/bfile.c
   src/libs/justui.c
   src/libs/openlibm.c

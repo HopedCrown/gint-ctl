@@ -30,15 +30,15 @@ typedef struct {
 	/* Fixed widets */
 	jlabel *title;
 	jfkeys *fkeys;
-	/* Current function bar level */
-	int8_t fkey_level;
 
 } gscreen;
 
 struct gscreen_tab {
-	/* TODO: gscreen: Hide title bar and/or status bar */
+   /* Set whether the title is visible or the fkeys is visible */
 	bool title_visible, fkeys_visible;
-	/* Most recent focused widget one */
+   /* Fkey level associated with the tab */
+   int fkey_level;
+	/* Most recent focused widget in the tab (regains focus when switching) */
 	jwidget *focus;
 };
 
@@ -63,7 +63,7 @@ void gscreen_destroy(gscreen *s);
 // Function bar settings
 //---
 
-/* gscreen_set_fkeys_level(): Select the function key bar */
+/* gscreen_set_fkeys_level(): Override the function key bar */
 void gscreen_set_fkeys_level(gscreen *s, int level);
 
 //---
@@ -85,6 +85,9 @@ void gscreen_set_tab_title_visible(gscreen *s, int tab, bool visible);
 
 /* gscreen_set_tab_fkeys_visible(): Set whether fkeys are shown on a tab */
 void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible);
+
+/* gscreen_set_tab_fkeys_level(): Set fkeys level shown on a tab */
+void gscreen_set_tab_fkeys_level(gscreen *s, int tab, int level);
 
 //---
 // Tab navigation

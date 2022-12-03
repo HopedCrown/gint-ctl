@@ -24,7 +24,6 @@ gscreen *gscreen_create(char const *name, char const *labels)
 	g->scene = s;
 	g->tabs = NULL;
 	g->tab_count = 0;
-	g->fkey_level = 0;
 
 	jlabel *title = name ? jlabel_create(name, s) : NULL;
 	jwidget *stack = jwidget_create(s);
@@ -85,7 +84,7 @@ static jwidget *tab_stack(gscreen *s)
 
 void gscreen_set_fkeys_level(gscreen *s, int level)
 {
-	s->fkey_level = level;
+	jfkeys_set_level(s->fkeys, level);
 }
 
 //---
@@ -98,10 +97,14 @@ void gscreen_add_tab(gscreen *s, void *widget, void *focus)
 	if(!t) return;
 
 	s->tabs = t;
-	s->tabs[s->tab_count].title_visible = (s->title != NULL);
-	s->tabs[s->tab_count].fkeys_visible = (s->fkeys != NULL);
+	s->tabs[s->tab_count].title_visible = true;
+	s->tabs[s->tab_count].fkeys_visible = true;
 	s->tabs[s->tab_count].focus = focus;
+	s->tabs[s->tab_count].fkey_level = 0;
 	s->tab_count++;
+
+	if(s->tab_count == 1)
+		jscene_set_focused_widget(s->scene, focus);
 
 	jwidget_add_child(tab_stack(s), widget);
 	jwidget_set_stretch(widget, 1, 1, false);
@@ -138,6 +141,15 @@ void gscreen_set_tab_fkeys_visible(gscreen *s, int tab, bool visible)
 		jwidget_set_visible(s->fkeys, visible);
 }
 
+void gscreen_set_tab_fkeys_level(gscreen *s, int tab, int level)
+{
+	if(!s->fkeys || tab < 0 || tab >= s->tab_count) return;
+	s->tabs[tab].fkey_level = level;
+
+	if(gscreen_current_tab(s) == tab)
+		jfkeys_set_level(s->fkeys, level);
+}
+
 //---
 // Tab navigation
 //---
@@ -161,8 +173,18 @@ bool gscreen_show_tab(gscreen *s, int tab)
 	stack->update = 1;
 
 	/* Hide or show title and function key bar as needed */
-	jwidget_set_visible(s->title, s->tabs[tab].title_visible);
-	if(s->fkeys) jwidget_set_visible(s->fkeys, s->tabs[tab].fkeys_visible);
+	if(s->title) {
+		jwidget_set_visible(s->title, s->tabs[tab].title_visible);
+	}
+	if(s->fkeys) {
+		if(s->tabs[tab].fkeys_visible) {
+			jfkeys_set_level(s->fkeys, s->tabs[tab].fkey_level);
+			jwidget_set_visible(s->fkeys, true);
+		}
+		else {
+			jwidget_set_visible(s->fkeys, false);
+		}
+	}
 
 	return true;
 }

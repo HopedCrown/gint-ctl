@@ -59,6 +59,9 @@ void gintctl_gint_kmalloc(void);
 /* gintctl_gint_usb(): USB communication */
 void gintctl_gint_usb(void);
 
+/* gintctl_gint_usbtrace(): A detailed USB troubleshooter */
+void gintctl_gint_usbtrace(void);
+
 #ifdef FX9860G
 
 /* gintctl_gint_gray(): Gray engine tuning */

@@ -51,6 +51,9 @@ struct menu menu_gint = {
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
 	{ "Real-time clock",    gintctl_gint_rtc, 0 },
 	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
+	#ifdef FXCG50
+	{ "USB tracer",         gintctl_gint_usbtrace, MENU_SH4_ONLY },
+	#endif
 	{ "Basic rendering",    gintctl_gint_render, 0 },
 	{ "Image rendering",    gintctl_gint_image, 0 },
 	{ "Text rendering",     gintctl_gint_topti, 0 },
