@@ -2,6 +2,7 @@
 #include <gint/keyboard.h>
 #include <gint/timer.h>
 #include <gint/mmu.h>
+#include <string.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
@@ -152,6 +153,47 @@ void show_utlb(int row, int E)
 	dprint_opt(294, y, fg_, "%s", (data.WT ? "WT" : "CB"));
 	dprint_opt(318, y, fg_, "%s", (data.C ? "C" : "-"));
 	dprint_opt(334, y, fg_, "%s", (addr.D || data.D ? "D" : "-"));
+	dprint_opt(350, y, fg_, "%s", (addr.V && data.V ? "V" : "-"));
+}
+
+void show_itlb(int row, int E)
+{
+	if(E == -1)
+	{
+		row_print(row, 2, "ID");
+		row_print(row, 5,  "Virtual");
+		row_print(row, 14, "Physical");
+		row_print(row, 23, "Size");
+		row_print(row, 28, "Mode");
+		row_print(row, 34, "SH");
+		row_print(row, 40, "C");
+		row_print(row, 44, "V");
+		return;
+	}
+
+	itlb_addr_t addr = *itlb_addr(E);
+	itlb_data_t data = *itlb_data(E);
+
+	uint32_t src = addr.VPN << 10;
+	uint32_t dst = data.PPN << 10;
+
+	int valid = (addr.V != 0) && (data.V != 0);
+	int size = (data.SZ1 << 1) | data.SZ0;
+	char const *size_str[] = { "1k", "4k", "64k", "1M" };
+	char const *access_str[] = { "K", "U" };
+
+	uint16_t fg = valid ? C_BLACK : C_RGB(24,24,24);
+	#define fg_ fg, C_NONE, DTEXT_LEFT, DTEXT_TOP
+
+	int y = row_y(row) + 2 * (row > 1);
+
+	dprint_opt( 14, y, fg_, "%d", E);
+	dprint_opt( 38, y, fg_, "%08X", src);
+	dprint_opt(110, y, fg_, "%08X", dst);
+	dprint_opt(182, y, fg_, "%s", size_str[size]);
+	dprint_opt(222, y, fg_, "%s", access_str[data.PR]);
+	dprint_opt(270, y, fg_, "%s", (data.SH ? "SH" : "-"));
+	dprint_opt(318, y, fg_, "%s", (data.C ? "C" : "-"));
 	dprint_opt(350, y, fg_, "%s", (addr.V && data.V ? "V" : "-"));
 }
 #endif
@@ -349,6 +391,21 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 			/* visible */ tlb_scroll, TLB_VIEW);
 	}
 
+	else if(tab == 3)
+	{
+		show_itlb(1, -1);
+		for(int E = 0; E < 4; E++)
+			show_itlb(E+2, E);
+
+		#ifdef FX9860G
+		dhline(6, C_BLACK);
+		#endif
+
+		#ifdef FXCG50
+		dline(12, 34, 363, 34, C_BLACK);
+		#endif
+	}
+
 	#ifdef FX9860G
 	dfont(old_font);
 
@@ -360,6 +417,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	fkey_menu(1, "ROM");
 	fkey_menu(2, "INFO");
 	fkey_menu(3, "TLB");
+	fkey_menu(4, "ITLB");
 	fkey_action(5, "LOAD");
 	fkey_action(6, "TIMER");
 	#endif
@@ -372,6 +430,14 @@ static int generate_tlb_miss(volatile void *arg)
 	return TIMER_STOP;
 }
 
+static int test_function(int x, int y)
+{
+	return 0;
+}
+
+GALIGNED(4) char test_storage[256];
+int (*test)(int x, int y) = (void *)test_storage;
+
 /* gintctl_gint_tlb(): TLB miss handler and TLB management */
 void gintctl_gint_tlb(void)
 {
@@ -381,6 +447,9 @@ void gintctl_gint_tlb(void)
 	uint8_t pages[PAGE_COUNT];
 	uint32_t next_miss = 0xffffffff;
 	int tlb_scroll = 0;
+
+	memcpy(test_storage, test_function, sizeof test_storage);
+	__asm__("ocbp @%0":: "r"(test_storage));
 
 	while(key != KEY_EXIT)
 	{
@@ -396,6 +465,12 @@ void gintctl_gint_tlb(void)
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
 		if(key == KEY_F3) tab = 2;
+		if(key == KEY_F4) tab = 3;
+
+		if(tab == 3 && key == KEY_TAN)
+		{
+			(*test)(0, 0);
+		}
 
 		if(tab == 2 && key == KEY_UP)
 		{

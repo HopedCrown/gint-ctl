@@ -1,6 +1,7 @@
 # Build directories
 build-fx/
 build-cg/
+build-cg-push/
 
 # Targets
 gintctl.g1a
