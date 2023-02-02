@@ -106,16 +106,22 @@ static bool getkey_recording = false;
 
 static void getkey_record_video_frame(int onscreen)
 {
-		#ifdef FX9860G
-		if(dgray_enabled())
-			usb_fxlink_videocapture_gray(true);
-		else
-			usb_fxlink_videocapture(onscreen);
-		#endif
+	/* Auto stop when closing USB connection */
+	if(!usb_is_open()) {
+		dupdate_set_hook(GINT_CALL_NULL);
+		return;
+	}
 
-		#ifdef FXCG50
+	#ifdef FX9860G
+	if(dgray_enabled())
+		usb_fxlink_videocapture_gray(true);
+	else
 		usb_fxlink_videocapture(onscreen);
-		#endif
+	#endif
+
+	#ifdef FXCG50
+	usb_fxlink_videocapture(onscreen);
+	#endif
 }
 
 static bool getkey_global_shortcuts(key_event_t e)
