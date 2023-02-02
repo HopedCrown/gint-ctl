@@ -220,13 +220,13 @@ static void usbtrace_trace(char const *message)
     t->D1FIFOSEL = USB.D1FIFOSEL.word;
     t->D1FIFOCTR = USB.D1FIFOCTR.word;
     t->INTENB0 = USB.INTENB0.word;
-    t->BRDYENB = USB.BRDYENB.word;
-    t->NRDYENB = USB.NRDYENB.word;
-    t->BEMPENB = USB.BEMPENB.word;
+    t->BRDYENB = USB.BRDYENB;
+    t->NRDYENB = USB.NRDYENB;
+    t->BEMPENB = USB.BEMPENB;
     t->INTSTS0 = USB.INTSTS0.word;
-    t->BRDYSTS = USB.BRDYSTS.word;
-    t->NRDYSTS = USB.NRDYSTS.word;
-    t->BEMPSTS = USB.BEMPSTS.word;
+    t->BRDYSTS = USB.BRDYSTS;
+    t->NRDYSTS = USB.NRDYSTS;
+    t->BEMPSTS = USB.BEMPSTS;
     t->PIPESEL = USB.PIPESEL.word;
     t->PIPECFG = USB.PIPECFG.word;
 

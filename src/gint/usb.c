@@ -100,23 +100,23 @@ static void draw_registers(GUNUSED int scroll)
 	reg( 1, "BUSWAIT",   USB.BUSWAIT);
 	reg( 2, "SYSSTS",    USB.SYSSTS);
 	reg( 3, "DVSTCTR",   USB.DVSTCTR);
-	reg( 4, "TESTMODE",  USB.TESTMODE);
-	reg( 5, "CFIFOSEL",  USB.CFIFOSEL);
-	reg( 6, "CFIFOCTR",  USB.CFIFOCTR);
+	reg( 4, "CFIFOSEL",  USB.CFIFOSEL);
+	reg( 5, "CFIFOCTR",  USB.CFIFOCTR);
+	reg( 6, "INTENB0",   USB.INTENB0);
 	reg( 7, "D0FIFOSEL", USB.D0FIFOSEL);
 	reg( 8, "D0FIFOCTR", USB.D0FIFOCTR);
-	reg( 9, "D1FIFOSEL", USB.D1FIFOSEL);
-	reg(10, "D1FIFOCTR", USB.D1FIFOCTR);
-	reg(11, "INTENB0",   USB.INTENB0);
-	reg(12, "BRDYENB",   USB.BRDYENB);
-	reg(13, "NRDYENB",   USB.NRDYENB);
-	reg(14, "BEMPENB",   USB.BEMPENB);
-	reg(15, "SOFCFG",    USB.SOFCFG);
-	reg(16, "INTSTS0",   USB.INTSTS0);
-	reg(17, "BRDYSTS",   USB.BRDYSTS);
-	reg(18, "NRDYSTS",   USB.NRDYSTS);
-	reg(19, "BEMPSTS",   USB.BEMPSTS);
-	reg(20, "FRMNUM",    USB.FRMNUM);
+	reg( 9, "INTSTS0",   USB.INTSTS0);
+	reg(10, "D1FIFOSEL", USB.D1FIFOSEL);
+	reg(11, "D1FIFOCTR", USB.D1FIFOCTR);
+	reg(12, "INTENB1",   USB.INTENB1);
+	val(13, "BRDYENB",   USB.BRDYENB);
+	val(14, "BRDYSTS",   USB.BRDYSTS);
+	reg(15, "INTSTS1",   USB.INTSTS1);
+	val(16, "NRDYENB",   USB.NRDYENB);
+	val(17, "NRDYSTS",   USB.NRDYSTS);
+	reg(18, "FRMNUM",    USB.FRMNUM);
+	val(19, "BEMPENB",   USB.BEMPENB);
+	val(20, "BEMPSTS",   USB.BEMPSTS);
 	reg(21, "UFRMNUM",   USB.UFRMNUM);
 	reg(22, "USBADDR",   USB.USBADDR);
 	reg(23, "USBREQ",    USB.USBREQ);
@@ -132,8 +132,8 @@ static void draw_registers(GUNUSED int scroll)
 	reg(33, "PIPEMAXP",  USB.PIPEMAXP);
 	reg(34, "PIPEPERI",  USB.PIPEPERI);
 	reg(35, "PIPE1CTR",  USB.PIPECTR[0]);
-	reg(36, "PIPE1TRE",  USB.PIPE1TRE);
-	reg(37, "PIPE1TRN",  USB.PIPE1TRN);
+
+	reg(37, "SOFCFG",    USB.SOFCFG);
 	reg(38, "UPONCR",    SH7305_USB_UPONCR);
 	val(39, "REG_C2",    USB.REG_C2);
 	val(40, "MSELCRA",   *MSELCRA);
@@ -252,6 +252,13 @@ static void draw_pipes(void)
 	{
 		row_print(i+5,  1, "PIPE%dCTR:", i+1);
 		row_print(i+5, 10, "%04x", USB.PIPECTR[i].word);
+	}
+
+	for(int i = 0; i < 5; i++) {
+		row_print(5+i, 16, "PIPE%dTRE:", i+1);
+		row_print(5+i, 25, "%04X", USB.PIPETR[i].TRE.word);
+		row_print(5+i, 31, "PIPE%dTRN:", i+1);
+		row_print(5+i, 40, "%04X", USB.PIPETR[i].TRN.word);
 	}
 #endif
 }
