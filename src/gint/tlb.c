@@ -269,6 +269,59 @@ void show_utlb(int row, int E)
 
 	dfont(old_font);
 }
+
+void show_itlb(int row, int E)
+{
+	extern font_t font_mini;
+	font_t const *old_font = dfont(&font_mini);
+	int y = (row - 1) * 6 + 2 * (row > 1);
+
+	if(isSH3())
+	{
+		dprint(1, y, C_BLACK, "No ITLB (SH3)");
+		return;
+	}
+
+	if(E == -1)
+	{
+		dprint(  1, y, C_BLACK, "ID");
+		dprint( 12, y, C_BLACK, "Virtual");
+		dprint( 47, y, C_BLACK, "Physical");
+		dprint( 82, y, C_BLACK, "Len");
+		dprint( 97, y, C_BLACK, "Pr");
+		dprint(108, y, C_BLACK, "C");
+		dprint(116, y, C_BLACK, "SH");
+
+		dfont(old_font);
+		return;
+	}
+
+	char const *size_str[] = { "1k", "4k", "64k", "1M" };
+	char const *access_str[] = { "K", "U" };
+
+	itlb_addr_t addr = *itlb_addr(E);
+	itlb_data_t data = *itlb_data(E);
+
+	uint32_t src = addr.VPN << 10;
+	uint32_t dst = data.PPN << 10;
+
+	int valid = (addr.V != 0) && (data.V != 0);
+	int size = (data.SZ1 << 1) | data.SZ0;
+
+	dprint( 1, y, C_BLACK, "%d", E);
+
+	if(addr.V && data.V)
+	{
+		dprint( 12, y, C_BLACK, "%08X", src);
+		dprint( 47, y, C_BLACK, "%08X", dst);
+		dprint( 82, y, C_BLACK, "%s", size_str[size]);
+		dprint( 97, y, C_BLACK, "%s", access_str[data.PR]);
+		dprint(108, y, C_BLACK, "%c", (data.C ? 'C' : '-'));
+		dprint(116, y, C_BLACK, "%s", (data.SH ? "SH" : "--"));
+	}
+
+	dfont(old_font);
+}
 #endif
 
 static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
@@ -278,7 +331,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	int rom_pages = (rom_size + (1 << 12)-1) >> 12;
 
 	#ifdef FX9860G
-	if(tab != 2)
+	if(tab != 2 && tab != 3)
 	#endif
 	row_title(_("TLB management", "TLB miss handler and TLB management"));
 
