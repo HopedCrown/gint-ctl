@@ -164,6 +164,12 @@ static void scene_2(void)
 	image_free(tmp);
 }
 
+static void scene_3(void)
+{
+	extern image_t img_swift;
+	dimage(0, 0, &img_swift);
+}
+
 /* gintctl_gint_image(): Test image rendering */
 void gintctl_gint_image(void)
 {
@@ -174,14 +180,18 @@ void gintctl_gint_image(void)
 			scene_1();
 		else if(tab == 1)
 			scene_2();
+		else if(tab == 2)
+			scene_3();
 
 		fkey_button(1, "SCENE 1");
 		fkey_button(2, "SCENE 2");
+		fkey_button(3, "SCENE 3");
 		dupdate();
 
 		key = getkey().key;
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
+		if(key == KEY_F3) tab = 2;
 	}
 }
 #endif
