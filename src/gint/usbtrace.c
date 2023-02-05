@@ -265,7 +265,7 @@ static void execute_tracer(void)
         case COMMAND_WRITE_ASYNC_TEXT_HEADER:{
             usb_fxlink_header_t h;
             usb_fxlink_fill_header(&h, "fxlink", "text", text_size);
-            usb_write_async(usb_ff_bulk_output(), &h, sizeof h, 1, false,
+            usb_write_async(usb_ff_bulk_output(), &h, sizeof h, false,
                 GINT_CALL_NULL);
             break;}
 
@@ -277,27 +277,27 @@ static void execute_tracer(void)
             sh.width = htole32(DWIDTH);
             sh.height = htole32(DHEIGHT);
             sh.pixel_format = htole32(USB_FXLINK_IMAGE_RGB565);
-            usb_write_async(usb_ff_bulk_output(), &h, sizeof h, 4, false,
+            usb_write_async(usb_ff_bulk_output(), &h, sizeof h, false,
                 GINT_CALL_NULL);
-            usb_write_async(usb_ff_bulk_output(), &sh, sizeof sh, 4, false,
+            usb_write_async(usb_ff_bulk_output(), &sh, sizeof sh, false,
                 GINT_CALL_NULL);
             break;}
 
         case COMMAND_WRITE_ASYNC_SHORT_TEXT:
             sprintf(text, text_fmt, ++text_count);
-            usb_write_async(usb_ff_bulk_output(), text, text_size, 1, false,
+            usb_write_async(usb_ff_bulk_output(), text, text_size, false,
                 GINT_CALL_NULL);
             break;
 
         case COMMAND_WRITE_ASYNC_VRAM:
-            usb_write_async(usb_ff_bulk_output(), image, image_size, 4, false,
+            usb_write_async(usb_ff_bulk_output(), image, image_size, false,
                 GINT_CALL_NULL);
             break;
 
         case COMMAND_WRITE_SYNC_TEXT_HEADER:{
             usb_fxlink_header_t h;
             usb_fxlink_fill_header(&h, "fxlink", "text", text_size);
-            usb_write_sync(usb_ff_bulk_output(), &h, sizeof h, 1, false);
+            usb_write_sync(usb_ff_bulk_output(), &h, sizeof h, false);
             break;}
 
         case COMMAND_WRITE_SYNC_IMAGE_HEADER:{
@@ -308,17 +308,17 @@ static void execute_tracer(void)
             sh.width = htole32(DWIDTH);
             sh.height = htole32(DHEIGHT);
             sh.pixel_format = htole32(USB_FXLINK_IMAGE_RGB565);
-            usb_write_sync(usb_ff_bulk_output(), &h, sizeof h, 4, false);
-            usb_write_sync(usb_ff_bulk_output(), &sh, sizeof sh, 4, false);
+            usb_write_sync(usb_ff_bulk_output(), &h, sizeof h, false);
+            usb_write_sync(usb_ff_bulk_output(), &sh, sizeof sh, false);
             break;}
 
         case COMMAND_WRITE_SYNC_SHORT_TEXT:
             sprintf(text, text_fmt, ++text_count);
-            usb_write_sync(usb_ff_bulk_output(), text, text_size, 1, false);
+            usb_write_sync(usb_ff_bulk_output(), text, text_size, false);
             break;
 
         case COMMAND_WRITE_SYNC_VRAM:
-            usb_write_sync(usb_ff_bulk_output(), image, image_size, 4, false);
+            usb_write_sync(usb_ff_bulk_output(), image, image_size, false);
             break;
 
         case COMMAND_COMMIT_ASYNC:

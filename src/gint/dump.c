@@ -94,8 +94,8 @@ static void do_dump_usb(int region)
 	usb_fxlink_fill_header(&header, "gintctl", "dump", size);
 
 	int pipe = usb_ff_bulk_output();
-	usb_write_sync(pipe, &header, sizeof header, 4, false);
-	usb_write_sync(pipe, (void *)regs[region].start, size, 4, false);
+	usb_write_sync(pipe, &header, sizeof header, false);
+	usb_write_sync(pipe, (void *)regs[region].start, size, false);
 	usb_commit_sync(pipe);
 
 	/* Close the USB link if it wasn't open before */
