@@ -13,6 +13,7 @@
 #include <gint/defs/util.h>
 #include <gint/bfile.h>
 #include <gint/gint.h>
+#include <gint/config.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
@@ -75,28 +76,52 @@ static void save_logger(void)
 // Rendering functions
 //---
 
-static void val(int order, char const *name, uint32_t value,GUNUSED int scroll)
+static bool xy(int order, int scroll, int *x, int *y)
 {
-	#ifdef FX9860G
-	order -= 2 * scroll;
-	if(order < 0 || order > 15) return;
-	int y = 6 * (order / 2) + 8;
-	int x = 3 + 64 * (order % 2);
-	#endif
+	/* Item per line, total lines */
+	int ipl = _(2, 3);
+	int lines = _(8, 15);
 
-	#ifdef FXCG50
-	int y = 12 * (order / 3) + 20;
-	int x = 6 + 128 * (order % 3);
-	#endif
+	*x = *y = 0;
+	order -= ipl * scroll;
+	if(order < 0 || order >= ipl * lines)
+		return false;
 
-	dprint(x, y, C_BLACK, "%s", name);
-	dprint(x+_(40,88), y, C_BLACK, "%04X", value);
+	*x = _(3,  6) + _(64, 128) * (order % ipl);
+	*y = _(8, 20) + _( 6,  12) * (order / ipl);
+	return true;
+}
+
+static void val(int order, char const *name, uint32_t value, int scroll)
+{
+	int x, y;
+	if(xy(order, scroll, &x, &y)) {
+		dtext(x, y, C_BLACK, name);
+		dprint(x+_(40,88), y, C_BLACK, "%04X", value);
+	}
+}
+
+static void txt(int order, char const *str, int scroll)
+{
+	int x, y;
+	if(xy(order, scroll, &x, &y))
+		dtext(x, y, C_BLACK, str);
 }
 
 /* Automatically insert ".word" for most registers */
 #define reg(order, name, value) val(order, name, value.word)
 /* Force casts to uint32_t for pointers */
 #define val(order, name, value) val(order, name, (uint32_t)value, scroll)
+/* Normal text */
+#define TXT(STR) do { \
+	order = (order % _(2,3)) ? (order - (order % _(2,3)) + _(2,3)) : order; \
+	txt(order, STR, scroll); \
+	order += _(2,3); \
+} while(0)
+#define VAL(STR, VALUE) do { \
+	(val)(order, STR, (uint32_t)VALUE, scroll); \
+	order++; \
+} while(0)
 
 static void draw_registers(GUNUSED int scroll)
 {
@@ -154,12 +179,12 @@ static void draw_registers(GUNUSED int scroll)
 	#endif
 
 	#ifdef FXCG50
-	dprint(row_x(1), 188, C_BLACK, "USBCLKCR:%08X  MSTPCR2:%08X  %d",
-		SH7305_CPG.USBCLKCR.lword, SH7305_POWER.MSTPCR2.lword, log_pos);
+	dprint(row_x(1), 188, C_BLACK, "USBCLKCR:%08X  MSTPCR2:%08X",
+		SH7305_CPG.USBCLKCR.lword, SH7305_POWER.MSTPCR2.lword);
 	#endif
 }
 
-static void draw_context(void)
+static void draw_context(int scroll)
 {
 	usb_state_t *s = NULL;
 	for(int i = 0; i < gint_driver_count(); i++) {
@@ -167,25 +192,68 @@ static void draw_context(void)
 	}
 	if(!s) return;
 
-	GUNUSED int scroll = 0;
-	val( 0, "SYSCFG",    s->SYSCFG);
-	val( 1, "DVSTCTR",   s->DVSTCTR);
-	val( 2, "TESTMODE",  s->TESTMODE);
-	val( 3, "REG_C2",    s->REG_C2);
-	val( 4, "CFIFOSEL",  s->CFIFOSEL);
-	val( 5, "D0FIFOSEL", s->D0FIFOSEL);
-	val( 6, "D1FIFOSEL", s->D1FIFOSEL);
-	val( 7, "INTENB0",   s->INTENB0);
-	val( 8, "BRDYENB",   s->BRDYENB);
-	val( 9, "NRDYENB",   s->NRDYENB);
-	val(10, "BEMPENB",   s->BEMPENB);
-	val(11, "SOFCFG",    s->SOFCFG);
-	val(12, "DCPCFG",    s->DCPCFG);
-	val(13, "DCPMAXP",   s->DCPMAXP);
-	val(14, "DCPCTR",    s->DCPCTR);
+	int order = 0;
 
-	// uint16_t PIPECFG[9], PIPEBUF[9], PIPEMAXP[9], PIPEPERI[9];
-	// uint16_t PIPEnCTR[9], PIPEnTRE[5], PIPEnTRN[5];
+	TXT("Module management:");
+	VAL("SYSCFG",    s->SYSCFG);
+	VAL("BUSWAIT",   s->BUSWAIT);
+	VAL("DVSTCTR",   s->DVSTCTR);
+	VAL("SOFCFG",    s->SOFCFG);
+	VAL("TESTMODE",  s->TESTMODE);
+	VAL("REG_C2",    s->REG_C2);
+
+	TXT("Interrupt control:");
+	VAL("INTENB0",   s->INTENB0);
+	VAL("INTENB1",   s->INTENB1);
+	order += 1;
+	VAL("BRDYENB",   s->BRDYENB);
+	VAL("NRDYENB",   s->NRDYENB);
+	VAL("BEMPENB",   s->BEMPENB);
+
+	TXT("DCP configuration:");
+	VAL("DCPCFG",    s->DCPCFG);
+	VAL("DCPMAXP",   s->DCPMAXP);
+	VAL("DCPCTR",    s->DCPCTR);
+
+#ifdef GINT_USB_DEBUG
+	TXT("Debug (module):");
+	VAL("SYSSTS",    s->SYSSTS);
+	VAL("FRMNUM",    s->FRMNUM);
+	VAL("UFRMNUM",   s->UFRMNUM);
+	VAL("INTSTS0",   s->INTSTS0);
+	VAL("INTSTS1",   s->INTSTS1);
+	order += 1;
+	VAL("BRDYSTS",   s->BRDYSTS);
+	VAL("NRDYSTS",   s->NRDYSTS);
+	VAL("BEMPSTS",   s->BEMPSTS);
+	VAL("USBADDR",   s->USBADDR);
+	VAL("USBREQ",    s->USBREQ);
+	VAL("USBVAL",    s->USBVAL);
+	VAL("USBINDX",   s->USBINDX);
+	VAL("USBLENG",   s->USBLENG);
+
+	TXT("Debug (FIFOs):");
+	VAL("CFIFOSEL",  s->CFIFOSEL);
+	VAL("D0FIFOSEL", s->D0FIFOSEL);
+	VAL("D1FIFOSEL", s->D1FIFOSEL);
+	VAL("CFIFOCTR",  s->CFIFOCTR);
+	VAL("D0FIFOCTR", s->D0FIFOCTR);
+	VAL("D1FIFOCTR", s->D1FIFOCTR);
+
+	TXT("Debug (pipes):");
+	VAL("PIPESEL",   s->PIPESEL);
+	order += 2;
+	for(int i = 0; i < 9; i++) {
+		char str[16];
+
+		sprintf(str, "PIPE%dCFG", i+1);
+		VAL(str, s->PIPECFG[i]);
+		sprintf(str, "PIPE%dCTR", i+1);
+		VAL(str, s->PIPEnCTR[i]);
+		sprintf(str, "PIPE%dBUF", i+1);
+		VAL(str, s->PIPEBUF[i]);
+	}
+#endif
 }
 
 static int draw_log(int offset)
@@ -255,18 +323,21 @@ static void draw_pipes(void)
 	row_print(4, 16, "D1FIFOSEL:");
 	row_print(4, 26, "%04x", USB.D1FIFOSEL.word);
 
+	int PIPESEL = USB.PIPESEL.word;
+
 	for(int i = 0; i < 9; i++)
 	{
-		row_print(i+5,  1, "PIPE%dCTR:", i+1);
-		row_print(i+5, 10, "%04x", USB.PIPECTR[i].word);
+		USB.PIPESEL.word = i+1;
+
+		row_print(i+5,  1, "PIPE%dCFG:", i+1);
+		row_print(i+5, 10, "%04x", USB.PIPECFG.word);
+		row_print(i+5, 16, "PIPE%dCTR:", i+1);
+		row_print(i+5, 25, "%04x", USB.PIPECTR[i].word);
+		row_print(i+5, 31, "PIPE%dBUF:", i+1);
+		row_print(i+5, 40, "%04x", USB.PIPEBUF.word);
 	}
 
-	for(int i = 0; i < 5; i++) {
-		row_print(5+i, 16, "PIPE%dTRE:", i+1);
-		row_print(5+i, 25, "%04X", USB.PIPETR[i].TRE.word);
-		row_print(5+i, 31, "PIPE%dTRN:", i+1);
-		row_print(5+i, 40, "%04X", USB.PIPETR[i].TRN.word);
-	}
+	USB.PIPESEL.word = PIPESEL;
 #endif
 }
 
@@ -386,7 +457,7 @@ void gintctl_gint_usb(void)
 {
 	int key=0, tab=0;
 	int open = usb_is_open();
-	GUNUSED int scroll0=0, scroll2=0, maxscroll2=0;
+	GUNUSED int scroll0=0, scroll1=0, scroll2=0, maxscroll2=0;
 
 	struct alignment_write_data awd = { 0 };
 
@@ -407,7 +478,7 @@ void gintctl_gint_usb(void)
 		font_t const *old_font = dfont(_(&font_mini, dfont_default()));
 
 		if(tab == 0) draw_registers(scroll0);
-		if(tab == 1) draw_context();
+		if(tab == 1) draw_context(scroll1);
 		if(tab == 2) maxscroll2 = draw_log(scroll2);
 		if(tab == 3) draw_pipes();
 		if(tab == 4) draw_tests(&awd);
@@ -462,6 +533,9 @@ void gintctl_gint_usb(void)
 		if(tab == 0 && key == KEY_UP && scroll0 > 0) scroll0--;
 		if(tab == 0 && key == KEY_DOWN && scroll0 < 15) scroll0++;
 		#endif
+
+		if(tab == 1 && key == KEY_UP && scroll1 > 0) scroll1--;
+		if(tab == 1 && key == KEY_DOWN && scroll1 < _(0,13)) scroll1++;
 
 		if(tab == 2 && key == KEY_UP)
 			scroll2 = max(scroll2 - scroll_speed, 0);
