@@ -7,6 +7,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
+#include <gint/keyboard.h>
 
 //---
 //	Platform disambiguation functions
@@ -19,6 +20,16 @@
 #ifdef FXCG50
 #define _(fx,cg) cg
 #endif
+
+//---
+// Application-specific getkey() with extra hooks
+//---
+
+/* Set to break out of gintctl_getkey_opt() */
+extern int volatile gintctl_interrupt;
+
+key_event_t gintctl_getkey_opt(int options);
+key_event_t gintctl_getkey(void);
 
 //---
 //	Row manipulation functions
@@ -84,13 +95,5 @@ void fkey_button(int position, char const *text);
 void fkey_menu(int position, char const *text);
 
 #endif /* FXCG50 */
-
-//---
-//	Screenshot saving
-//---
-
-/* screen_mono(): Take a screenshot of the mono VRAM
-   @path  File path (will be overwritten) */
-void screen_mono(uint16_t const *filepath);
 
 #endif /* GINTCTL_UTIL */

@@ -29,10 +29,11 @@
 
 /* USB log buffer */
 #define LOG_SIZE _(768, 4096)
-static char log_buffer[LOG_SIZE];
-static int log_pos;
+static char log_buffer[LOG_SIZE] = { 0 };
+static int log_pos = 0;
 static int const log_lines = _(8,15);
 static int volatile log_interrupt = 0;
+static int volatile *global_interrupt_flag = NULL;
 
 struct alignment_write_data {
 	uint32_t al4_shbuf[4];
@@ -48,6 +49,8 @@ static void reset_logger(void)
 static void usb_logger(char const *format, va_list args)
 {
 	/* Interrupt getkey() so that the log can be printed */
+	if(global_interrupt_flag)
+		*global_interrupt_flag = 1;
 	log_interrupt = 1;
 	if(log_pos >= LOG_SIZE) return;
 
@@ -461,8 +464,8 @@ void gintctl_gint_usb(void)
 
 	struct alignment_write_data awd = { 0 };
 
-	reset_logger();
 	usb_set_log(usb_logger);
+	global_interrupt_flag = &gintctl_interrupt;
 	srand(0xc0ffee);
 
 	while(key != KEY_EXIT)
@@ -485,7 +488,7 @@ void gintctl_gint_usb(void)
 
 		#ifdef FXCG50
 		if(tab == 2)
-			row_title("USB logs (SHIFT+7 to save to file)");
+			row_title("USB logs (SHIFT+7: Save to file, SHIFT+8: Clear)");
 		else
 			row_title("USB 2.0 function module and communication");
 		fkey_menu(1, "REGS");
@@ -499,12 +502,11 @@ void gintctl_gint_usb(void)
 		dfont(old_font);
 		dupdate();
 
-		key_event_t ev;
-		ev = getkey_opt(GETKEY_DEFAULT, &log_interrupt);
+		key_event_t ev = gintctl_getkey();
 		key = ev.key;
 
 		/* Scroll down log automatically at the cost of a redraw */
-		if(log_interrupt == 1 && tab == 2)
+		if(log_interrupt && tab == 2)
 			scroll2 = draw_log(0);
 
 		log_interrupt = 0;
@@ -543,6 +545,8 @@ void gintctl_gint_usb(void)
 			scroll2 = min(scroll2 + scroll_speed, maxscroll2);
 		if(tab == 2 && ev.shift && key == KEY_7)
 			gint_world_switch(GINT_CALL(save_logger));
+		if(tab == 2 && ev.shift && key == KEY_8)
+			reset_logger();
 
 		if(tab == 4 && key == KEY_1 && usb_is_open()) {
 //			extern prof_t usb_cpu_write_prof;
@@ -577,4 +581,6 @@ void gintctl_gint_usb(void)
 		if(tab == 4 && key == KEY_5 && usb_is_open())
 			alignment_write_tests(&awd);
 	}
+
+	global_interrupt_flag = NULL;
 }

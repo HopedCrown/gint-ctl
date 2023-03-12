@@ -168,6 +168,42 @@ static bool getkey_global_shortcuts(key_event_t e)
 	return false;
 }
 
+int volatile gintctl_interrupt = 0;
+
+static void gintctl_fxlink_notification(void)
+{
+	/* Hack: use bit #31 to indicate an internal interrupt */
+	gintctl_interrupt |= (1 << 31);
+}
+
+key_event_t gintctl_getkey_opt(int options)
+{
+	usb_fxlink_header_t header;
+
+	while(1) {
+		key_event_t ev = getkey_opt(options, &gintctl_interrupt);
+
+		while(usb_fxlink_handle_messages(&header)) {
+			USB_LOG("[gintctl] dropping %.16s.%.16s\n",
+				header.application, header.type);
+			usb_fxlink_drop_transaction();
+			USB_LOG("[gintctl] done dropping\n");
+		}
+
+		/* Keep waiting only if we were interrupted *and* the interrupt only
+		   set bit #31 */
+		if(ev.type != KEYEV_NONE || ((gintctl_interrupt << 1) != 0)) {
+			gintctl_interrupt = 0;
+			return ev;
+		}
+	}
+}
+
+key_event_t gintctl_getkey(void)
+{
+	return gintctl_getkey_opt(GETKEY_DEFAULT);
+}
+
 //---
 //	Main application
 //---
@@ -246,6 +282,11 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	dfont(&font_uf5x7);
 	#endif
 
+	/* Get notified when fxlink messages arrive through USB */
+	usb_fxlink_set_notifier(gintctl_fxlink_notification);
+
+	/* Enable keyboard options globally because we're going to interrupt
+	   getkey_opt() to answer USB requests synchronously */
 	keydev_transform_t tr = keydev_transform(keydev_std());
 	tr.enabled |= KEYDEV_TR_DELAYED_SHIFT | KEYDEV_TR_INSTANT_SHIFT;
 	tr.enabled |= KEYDEV_TR_DELAYED_ALPHA | KEYDEV_TR_INSTANT_ALPHA;
@@ -260,7 +301,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 		draw(menu);
 		dupdate();
 
-		ev = getkey();
+		ev = gintctl_getkey();
 		key = ev.key;
 
 		if(key == KEY_F1)

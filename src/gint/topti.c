@@ -41,6 +41,5 @@ void gintctl_gint_topti(void)
 		if(key == KEY_RIGHT && x <=  DWIDTH)  x++;
 		if(key == KEY_UP    && y >= -DHEIGHT) y--;
 		if(key == KEY_DOWN  && y <=  DHEIGHT) y++;
-		if(key == KEY_F6) screen_mono(u"\\\\fls0\\topti.bin");
 	}
 }

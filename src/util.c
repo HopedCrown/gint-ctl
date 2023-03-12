@@ -212,25 +212,3 @@ void fkey_menu(int position, char const *text)
 }
 
 #endif /* FXCG50 */
-
-//---
-//	Screenshot saving
-//---
-
-void switch_screen_mono(uint16_t const *path)
-{
-	int size = 1024;
-
-	BFile_Remove(path);
-	BFile_Create(path, BFile_File, &size);
-
-	int fd = BFile_Open(path, BFile_WriteOnly);
-	BFile_Write(fd, gint_vram, 1024);
-	BFile_Close(fd);
-}
-
-/* screen_mono(): Take a screenshot of the mono VRAM */
-void screen_mono(uint16_t const *filepath)
-{
-	gint_world_switch(GINT_CALL(switch_screen_mono, filepath));
-}
