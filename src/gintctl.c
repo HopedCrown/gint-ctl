@@ -182,13 +182,8 @@ key_event_t gintctl_getkey_opt(int options)
 
 	while(1) {
 		key_event_t ev = getkey_opt(options, &gintctl_interrupt);
-
-		while(usb_fxlink_handle_messages(&header)) {
-			USB_LOG("[gintctl] dropping %.16s.%.16s\n",
-				header.application, header.type);
-			usb_fxlink_drop_transaction();
-			USB_LOG("[gintctl] done dropping\n");
-		}
+		while(usb_fxlink_handle_messages(&header))
+			gintctl_handle_usb_command(&header);
 
 		/* Keep waiting only if we were interrupted *and* the interrupt only
 		   set bit #31 */

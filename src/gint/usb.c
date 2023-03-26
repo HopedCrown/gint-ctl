@@ -582,5 +582,6 @@ void gintctl_gint_usb(void)
 			alignment_write_tests(&awd);
 	}
 
+	usb_set_log(NULL);
 	global_interrupt_flag = NULL;
 }

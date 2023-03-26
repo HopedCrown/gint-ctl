@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <gint/keyboard.h>
+#include <gint/usb-ff-bulk.h>
 
 //---
 //	Platform disambiguation functions
@@ -93,6 +94,12 @@ void fkey_button(int position, char const *text);
 
 /* fkey_menu(): A rectangular F-key with the bottom right corner removed */
 void fkey_menu(int position, char const *text);
+
+//---
+// USB commands
+//---
+
+void gintctl_handle_usb_command(usb_fxlink_header_t const *header);
 
 #endif /* FXCG50 */
 

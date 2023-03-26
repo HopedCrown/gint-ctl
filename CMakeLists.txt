@@ -18,6 +18,7 @@ set(SOURCES
   src/gintctl.c
   src/menu.c
   src/plot.c
+  src/usb_commands.c
   src/util.c
   src/gint/cpumem.c
   src/gint/dma.c
