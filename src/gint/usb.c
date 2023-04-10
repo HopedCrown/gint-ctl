@@ -214,11 +214,12 @@ static void draw_context(int scroll)
 	VAL("BEMPENB",   s->BEMPENB);
 
 	TXT("DCP configuration:");
-	VAL("DCPCFG",    s->DCPCFG);
 	VAL("DCPMAXP",   s->DCPMAXP);
-	VAL("DCPCTR",    s->DCPCTR);
 
 #ifdef GINT_USB_DEBUG
+	VAL("DCPCFG",    s->DCPCFG);
+	VAL("DCPCTR",    s->DCPCTR);
+
 	TXT("Debug (module):");
 	VAL("SYSSTS",    s->SYSSTS);
 	VAL("FRMNUM",    s->FRMNUM);
