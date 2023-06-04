@@ -46,6 +46,9 @@
 	MACRO(raw_EX_LS_addr,		1024,	"RAW on address: EX/LS") \
 	MACRO(raw_EX_LS_index,		1024,	"RAW on index: EX/LS") \
 	MACRO(raw_LS_LS_addr,		1024,	"RAW on address: LS/LS") \
+	MACRO(mul_single_32,		1024,	"Pipeline: mul.l/mul.l") \
+	MACRO(mul_single_32_sts,	1024,	"Pipeline: mul.l/sts") \
+	MACRO(mul_single_32_sts_EX,	1024,	"Pipeline: mul.l/sts/EX") \
 	MACRO(branch_bra,			1024,	"Branching: bra") \
 	MACRO(branch_bra_cpuloop,	1024,	"Branching: bra (CPU loop)") \
 	MACRO(darken_1,				512,	"Darken: 32-bit #1") \

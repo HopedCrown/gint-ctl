@@ -349,6 +349,32 @@ bench raw_LS_LS_addr, 1024
 2:	mov.l	@r5, r6
 end
 
+/* [Multiplication]
+
+   This section investigates pipeline delays in the multiplier. */
+
+/* mul.l occupies the multiplier for 2 cycles -> 2 cycles /i */
+bench mul_single_32, 1024
+1:	mul.l	r4, r5
+2:	nop
+end
+
+/* The computed value can be retrieved on cycle #2 -> 2 cycles /i */
+bench mul_single_32_sts, 1024
+1:	mul.l	r4, r5
+2:	sts	macl, r0
+end
+
+/* However it takes an incredibly long time to actually arrive, requiring 2
+   tempo cycles, even more than a memory load! -> 5 cycles /i */
+bench mul_single_32_sts_EX, 1024
+1:	mul.l	r4, r5
+	nop
+
+	sts	macl, r0
+2:	add	#1, r0
+end
+
 /* [Branching]
 
    In this section, we investigate the cost of conditional execution and
