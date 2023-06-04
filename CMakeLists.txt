@@ -26,6 +26,8 @@ set(SOURCES
   src/gint/dsp.c
   src/gint/dsp.s
   src/gint/dump.c
+  src/gint/gdb.S
+  src/gint/gdb.c
   src/gint/gray.c
   src/gint/image.c
   src/gint/keyboard.c

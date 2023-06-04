@@ -71,4 +71,7 @@ void gintctl_gint_gray(void);
 void gintctl_gint_grayrender(void);
 
 
+/* gintctl_gint_gdb(): GDB remote serial protocol */
+void gintctl_gint_gdb(void);
+
 #endif /* GINTCTL_GINT */
