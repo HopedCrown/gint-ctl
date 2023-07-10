@@ -22,14 +22,14 @@ static struct region const regs[] = {
 	#ifdef FX9860G
 	{ "ROM",    0x80000000, 0x807fffff, 8 },
 	{ "RAM",    0x88000000, 0x88040000, 1 },
-	{ "RS",     0xfd800000, 0xfd8007ff, 1 },
+	{ "RS",     0xfd800000, 0xfd803fff, 1 },
 	#endif
 
 	#ifdef FXCG50
 	{ "ROM",    0x80000000, 0x81ffffff, 32 },
 	{ "RAM_88", 0x88000000, 0x881fffff, 2 },
 	{ "RAM_8C", 0x8c000000, 0x8c7fffff, 8 },
-	{ "RS",     0xfd800000, 0xfd8007ff, 1 },
+	{ "RS",     0xfd800000, 0xfd803fff, 1 },
 	#endif
 };
 

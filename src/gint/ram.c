@@ -1,5 +1,6 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/cpu.h>
 
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
@@ -98,29 +99,39 @@ static void explore_region(struct region *r)
 {
 	uint8_t volatile *mem = (void *)r->mem;
 	r->size = 0;
+	r->reason = 0;
+
+	cpu_atomic_start();
 
 	while(r->size < (16 << 20))
 	{
 		int x = r->use_lword
 			? writable_lword(mem + r->size)
 			: writable(mem + r->size);
-
-		r->reason = 1;
-		if(!x) return;
+		if(!x)
+		{
+			r->reason = 1;
+			break;
+		}
 
 		if(r->size > 0)
 		{
 			int y = r->use_lword
 				? same_location_lword(mem, mem+r->size)
 				: same_location(mem, mem+r->size);
-			r->reason = 2;
-			if(y) return;
+			if(y)
+			{
+				r->reason = 2;
+				break;
+			}
 		}
 
 		r->size += r->step_size;
 	}
 
-	r->reason = 3;
+	if(r->reason == 0)
+		r->reason = 3;
+	cpu_atomic_end();
 }
 
 /* Detailed 0xe50[01]xxxx search
@@ -219,7 +230,7 @@ void gintctl_gint_ram(void)
 		{ "PRAM1", 0xfe300000, true,    32, /**/ 0, 0 },
 		{ "XRAM1", 0xfe340000, true,    32, /**/ 0, 0 },
 		{ "YRAM1", 0xfe380000, true,    32, /**/ 0, 0 },
-		{ "X_P2",  0xa5007000, false,    4, /**/ 0, 0 },
+		{ "RSRAM", 0xfd800000, false,    4, /**/ 0, 0 },
 		{ "URAM",  0xa55f0000, false,    4, /**/ 0, 0 },
 		{ "RAM",   0xac000000, false, 1024, /**/ 0, 0 },
 		{ NULL },
