@@ -442,7 +442,9 @@ static void draw_integrity(kmalloc_arena_t *arena)
 	#endif /* GINT_KMALLOC_DEBUG */
 }
 
-static char const *arena_names[] = { NULL, "_uram", "_ostk", "_os" };
+static char const *arena_names[] = {
+	NULL, "_uram", "_ostk", "_os", "pram0",
+};
 
 static kmalloc_arena_t *next_arena(int *current)
 {
@@ -467,6 +469,17 @@ void gintctl_gint_kmalloc(void)
 	int current_arena = 0;
 	kmalloc_arena_t *arena = next_arena(&current_arena);
 	int tab=0, key=0;
+
+	kmalloc_arena_t arena_pram0 = { 0 };
+	if(isSH4())
+	{
+		arena_pram0.name = "pram0";
+		arena_pram0.is_default = false;
+		arena_pram0.start = (void *)0xfe200000;
+		arena_pram0.end = arena_pram0.start + (1 << 16);
+		kmalloc_init_arena(&arena_pram0, true);
+		kmalloc_add_arena(&arena_pram0);
+	}
 
 	/* Data for the manual allocation test */
 	void *m_ptr[MANUAL_COUNT];
@@ -575,5 +588,7 @@ void gintctl_gint_kmalloc(void)
 		if(tab == 3 && key == KEY_EXE) run_mass(&mass_test, arena->name);
 	}
 
+	if(isSH4())
+		kmalloc_remove_arena(&arena_pram0);
 	m_clear(m_ptr, m_size);
 }
