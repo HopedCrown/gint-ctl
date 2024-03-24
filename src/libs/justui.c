@@ -77,6 +77,14 @@ static void table_gen(gtable *t, int row)
 	gtable_provide(t, c1, c2, c3);
 }
 
+static uint32_t keymap_function(int key, bool shift, bool alpha)
+{
+	if(key == KEY_7 && shift)
+		return '@';
+	else
+		return keymap_translate(key, shift, alpha);
+}
+
 /* gintctl_libs_justui(): Just User Interfaces */
 void gintctl_libs_justui(void)
 {
@@ -113,6 +121,7 @@ void gintctl_libs_justui(void)
 	jinput *input = jinput_create("Prompt:" _(," "), 12, tab1);
 	jwidget_set_stretch(input, 1, 0, false);
 	jinput_set_font(input, _(&font_uf5x7, dfont_default()));
+	jinput_set_keymap_function(input, keymap_function);
 
 	// Widget tree visualisation
 
@@ -163,10 +172,6 @@ void gintctl_libs_justui(void)
 
 		if(key == KEY_F1) gscreen_show_tab(scr, 0);
 		if(key == KEY_F2) gscreen_show_tab(scr, 1);
-
-		#ifdef FX9860G
-		if(key == KEY_F6) screen_mono(u"\\\\fls0\\justui.bin");
-		#endif
 	}
 
 	gscreen_destroy(scr);
