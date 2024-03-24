@@ -11,7 +11,7 @@
 #include <libprof.h>
 #include <stdio.h>
 
-#ifdef FXCG50
+#if GINT_HW_CG && GINT_RENDER_RGB
 
 #define CPG SH7305_CPG
 #define BSC SH7305_BSC

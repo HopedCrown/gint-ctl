@@ -4,7 +4,7 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
-#ifdef FXCG50
+#if GINT_HW_CG && GINT_RENDER_RGB
 
 extern void dsp_ldrc(void);
 extern int dsp_padd(int x, int y);

@@ -16,7 +16,7 @@ void timer_print(int x, int y, char const *name, uint32_t TCOR, uint32_t TCNT,
 	int dy = _(8,14);
 	dprint(x, y, C_BLACK, "%s:", name);
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	dprint(x, y+dy,   C_BLACK, "TCOR");
 	dprint(x, y+2*dy, C_BLACK, "TCNT");
 	#endif
@@ -46,7 +46,7 @@ void etmu_print(int x, int y, char const *name, etmu_t *etmu)
 }
 
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 static int x[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 static int y[] = { 0, 16, 32, 0, 16, 32, 0, 16, 32 };
 #else
@@ -100,7 +100,7 @@ void gintctl_gint_timer(void)
 	int key=0, tid=0;
 	GUNUSED int timeout=1;
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	int tab = 1;
 	#endif
 
@@ -108,7 +108,7 @@ void gintctl_gint_timer(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(tab == 1) show_tmu();
 		if(tab == 2) show_etmu_1();
 		if(tab == 3) show_etmu_2();
@@ -123,7 +123,7 @@ void gintctl_gint_timer(void)
 		dfont(old_font);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Timer status");
 
 		show_tmu();
@@ -151,7 +151,7 @@ void gintctl_gint_timer(void)
 			if(free == tid) timer_start(tid);
 		}
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		/* On F4, F5 and F6, switch tabs */
 		if(key == KEY_F4) tab = 1;
 		if(key == KEY_F5) tab = 2;

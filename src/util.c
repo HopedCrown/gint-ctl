@@ -1,6 +1,7 @@
 #include <gint/display.h>
 #include <gint/gint.h>
 #include <gint/bfile.h>
+#include <gint/config.h>
 
 #include <gintctl/util.h>
 
@@ -18,23 +19,23 @@
 //	Row manipulation functions
 //---
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 #define ROW_X      1
 #define ROW_W      6
 #define ROW_Y      0
 #define ROW_YPAD   0
 #define ROW_H      8
 #define ROW_COUNT  8
-#endif /* FX9860G */
+#endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 #define ROW_X      6
 #define ROW_W      8
 #define ROW_Y      20
 #define ROW_YPAD   2
 #define ROW_H      14
 #define ROW_COUNT  14
-#endif /* FXCG50 */
+#endif
 
 /* row_title(): Render the main title */
 void row_title(char const *format, ...)
@@ -42,11 +43,9 @@ void row_title(char const *format, ...)
 	char str[80];
 	shortprint(str, format);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dtext(1, 0, C_BLACK, str);
-	#endif
-
-	#ifdef FXCG50
+	#elif GINT_RENDER_RGB
 	dtext(ROW_X, 3, C_BLACK, str);
 	drect(0, 0, DWIDTH-1, 15, C_INVERT);
 	#endif
@@ -82,11 +81,9 @@ void row_highlight(int row)
 	int y1 = ROW_Y + ROW_H * (row - 1);
 	int y2 = y1 + ROW_H;
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	drect(0, y1, 125, y2 - 1, C_INVERT);
-	#endif
-
-	#ifdef FXCG50
+	#elif GINT_RENDER_RGB
 	drect(0, y1, DWIDTH - 1, y2 - 1, C_INVERT);
 	#endif
 }
@@ -94,11 +91,9 @@ void row_highlight(int row)
 /* row_right(): Print at the last column of a row */
 void row_right(int row, char const *character)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_print(row, 21, character);
-	#endif
-
-	#ifdef FXCG50
+	#elif GINT_RENDER_RGB
 	dtext(370, ROW_Y + ROW_H * (row - 1) + ROW_YPAD, C_BLACK, character);
 	#endif
 }
@@ -160,7 +155,7 @@ void scrollbar_px(int view_top, int view_bottom, int range_min, int range_max,
 //	Other drawing utilities
 //---
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 
 /* fkey_action(): A black-on-white F-key */
 void fkey_action(int position, char const *text)

@@ -14,7 +14,7 @@
 
 void show_dma(int x, int y, GUNUSED int channel, sh7305_dma_channel_t *dma)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	int dx=60, dy=8;
 	dprint(x, y,      "SAR:");
 	dprint(x, y+1*dy, "DAR:");
@@ -26,7 +26,7 @@ void show_dma(int x, int y, GUNUSED int channel, sh7305_dma_channel_t *dma)
 	dprint(x+dx, y+3*dy, "%08X", dma->CHCR);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	int dx=45, dy=14;
 	dprint(x,    y,      "DMA%d:", channel);
 	dprint(x,    y+1*dy, "SAR");
@@ -64,7 +64,7 @@ void gintctl_gint_dma(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		show_dma(1, 0, channel, addr[channel]);
 		dprint(1, 32, "Channel     DMA%d", channel);
 		dprint(1, 40, "Interrupts  %s", interrupts ? "Yes" : "No");
@@ -75,7 +75,7 @@ void gintctl_gint_dma(void)
 		dimage(0, 56, &img_opt_gint_dma);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Direct Memory Access status");
 
 		show_dma(6,   24, 0, addr[0]);

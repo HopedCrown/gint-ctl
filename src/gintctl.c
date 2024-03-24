@@ -5,10 +5,8 @@
 #include <gint/hardware.h>
 #include <gint/usb.h>
 #include <gint/usb-ff-bulk.h>
-
-#ifdef FX9860G
+#include <gint/config.h>
 #include <gint/gray.h>
-#endif
 
 #include <gintctl/util.h>
 #include <gintctl/menu.h>
@@ -34,14 +32,14 @@ struct menu menu_gint = {
 
 	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
-	#ifdef FXCG50
+	#if GINT_HW_CG && GINT_RENDER_RGB
 	{ "DSP processors",     gintctl_gint_dsp, 0 },
 	#endif
 	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
 	{ "Memory dump",        gintctl_gint_dump, 0 },
 	{ "Drivers and worlds", gintctl_gint_drivers, 0 },
 	{ "TLB management",     gintctl_gint_tlb, 0 },
-	#ifdef FXCG50
+	#if GINT_HW_CG && GINT_RENDER_RGB
 	{ "Overclocking",       gintctl_gint_overclock, MENU_SH4_ONLY },
 	#endif
 	{ "Memory allocation",  gintctl_gint_kmalloc, 0 },
@@ -51,14 +49,16 @@ struct menu menu_gint = {
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
 	{ "Real-time clock",    gintctl_gint_rtc, 0 },
 	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
-	#ifdef FXCG50
+	#if GINT_HW_CG && GINT_RENDER_RGB
 	{ "USB tracer",         gintctl_gint_usbtrace, MENU_SH4_ONLY },
 	#endif
 	{ "Basic rendering",    gintctl_gint_render, 0 },
 	{ "Image rendering",    gintctl_gint_image, 0 },
 	{ "Text rendering",     gintctl_gint_topti, 0 },
-	#ifdef FX9860G
+	#if GINT_HW_FX
 	{ "Gray engine",        gintctl_gint_gray, 0 },
+	#endif
+	#if GINT_RENDER_MONO
 	{ "Gray rendering",     gintctl_gint_grayrender, 0 },
 	#endif
 	{ NULL, NULL, 0 },
@@ -73,7 +73,7 @@ struct menu menu_perf = {
 	{ _("CPU parallelism", "Superscalar and pipeline parallelism"),
 	                         gintctl_perf_cpu, 0 },
 	{ "Interrupt stress",    gintctl_perf_interrupts, 0 },
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	{ "Memory read/write speed",
 	                         gintctl_perf_memory, 0 },
 	#endif
@@ -206,7 +206,7 @@ key_event_t gintctl_getkey(void)
 /* gintctl_main(): Show the main tab */
 void gintctl_main(void)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_title("gint %s %07x", GINT_VERSION, GINT_HASH);
 
 	row_print(3, 1, "F2:gint tests");
@@ -214,9 +214,9 @@ void gintctl_main(void)
 	row_print(5, 1, "F4:Libraries");
 	row_print(6, 1, "F5:MPU registers");
 	row_print(7, 1, "F6:Memory map/dump");
-	#endif /* FX9860G */
+	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_title("gint %s (@%07x) for fx-CG 50", GINT_VERSION, GINT_HASH);
 	row_print(1,1, "F2: gint features and driver tests");
 	row_print(2,1, "F3: Performance benchmarks");
@@ -227,7 +227,7 @@ void gintctl_main(void)
 	row_print(7,1, "This add-in is running a unikernel called gint by");
 	row_print(8,1, "Lephe'. Information about the project is available");
 	row_print(9,1, "on planet-casio.com.");
-	#endif /* FXCG50 */
+	#endif
 }
 
 static void draw(struct menu *menu)
@@ -237,11 +237,11 @@ static void draw(struct menu *menu)
 	if(menu) menu_show(menu);
 	else gintctl_main();
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dimage(0, 56, &img_opt_main);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	fkey_action(1, "INFO");
 	fkey_menu(2, "GINT");
 	fkey_menu(3, "PERF");
@@ -272,7 +272,7 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 	/* Enable fixed-point formatters */
 	__printf_enable_fixed();
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	/* Use the Unicode font uf5x7 on fx-9860G */
 	dfont(&font_uf5x7);
 	#endif

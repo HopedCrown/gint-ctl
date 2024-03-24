@@ -1,10 +1,11 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/config.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 static void scene_1(void)
 {
 	dclear(0x5555);
@@ -196,7 +197,7 @@ void gintctl_gint_image(void)
 }
 #endif
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 static void img(int x, int y, bopti_image_t *img, int sub, int flags)
 {
 	int ix = 0;

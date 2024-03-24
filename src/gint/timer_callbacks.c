@@ -53,7 +53,7 @@ void gintctl_gint_timer_callbacks(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_title("Timer callbacks");
 
 		row_print(3, 1, "F1:Simple callback");
@@ -68,7 +68,7 @@ void gintctl_gint_timer_callbacks(void)
 		dprint(86, 56, C_BLACK, "Done:%d", tests);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Interrupt management in timer callbacks");
 
 		row_print(1, 1,

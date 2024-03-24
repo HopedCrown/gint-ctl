@@ -1,12 +1,13 @@
-#ifdef FX9860G
-
 #include <gint/gray.h>
 #include <gint/keyboard.h>
 #include <gint/hardware.h>
+#include <gint/config.h>
 #include <gintctl/gint.h>
 
 #include <string.h>
 #include <stdio.h>
+
+#if GINT_HW_FX
 
 /* gintctl_gint_gray(): Gray engine tuning */
 void gintctl_gint_gray(void)
@@ -83,6 +84,10 @@ void gintctl_gint_gray(void)
 	dgray(DGRAY_OFF);
 }
 
+#endif
+
+#if GINT_RENDER_MONO
+
 /* gintctl_gint_grayrender(): Gray rendering functions */
 void gintctl_gint_grayrender(void)
 {
@@ -154,4 +159,4 @@ void gintctl_gint_grayrender(void)
 	dgray(DGRAY_OFF);
 }
 
-#endif /* FX9860G */
+#endif

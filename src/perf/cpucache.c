@@ -44,7 +44,7 @@ uint32_t test_cpucache_rounds(uint8_t const *buf, size_t len, int rounds)
 	return PLL_cycles / freq->Iphi_div;
 }
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 static void tick_formatter(char *str, size_t size, int32_t v)
 {
 	if(v == 0) snprintf(str, size, "0");
@@ -72,12 +72,34 @@ void gintctl_perf_cpucache(void)
 		.data_y = y_time,
 		.data_len = SAMPLES,
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		.area = {
 			.x = 0, .y = 18,
 			.w = 128, .h = 44,
 		},
 		.color = C_BLACK,
+		.grid = {
+			.level = PLOT_MAINGRID,
+			.primary_color = C_BLACK,
+			.dotted = 1,
+		},
+		#endif
+
+		#if GINT_RENDER_RGB
+		.area = {
+			.x = 24, .y = 51,
+			.w = 340, .h = 120,
+		},
+		.color = C_RED,
+		.grid = {
+			.level = PLOT_FULLGRID,
+			.primary_color = C_RGB(20, 20, 20),
+			.secondary_color = C_RGB(28, 28, 28),
+			.dotted = 1,
+		},
+		#endif
+
+		#if GINT_HW_FX
 		.ticks_x = {
 			.multiples = 250,
 			.subtick_divisions = 4,
@@ -88,35 +110,24 @@ void gintctl_perf_cpucache(void)
 			.subtick_divisions = 2,
 			.formatter = tick_formatter,
 		},
-		.grid = {
-			.level = PLOT_MAINGRID,
-			.primary_color = C_BLACK,
-			.dotted = 1,
-		},
 		#endif
 
-		#ifdef FXCG50
-		.area = {
-			.x = 24, .y = 51,
-			.w = 340, .h = 120,
-		},
-		.color = C_RED,
+		#if GINT_HW_CG
 		.ticks_x = {
 			.multiples = CACHE_MAX / 16,
 			.subtick_divisions = 4,
+			#if GINT_RENDER_MONO
+			.formatter = tick_formatter,
+			#endif
 		},
 		.ticks_y = {
 			.multiples = 125000,
 			.subtick_divisions = 2,
-		},
-		.grid = {
-			.level = PLOT_FULLGRID,
-			.primary_color = C_RGB(20, 20, 20),
-			.secondary_color = C_RGB(28, 28, 28),
-			.dotted = 1,
+			#if GINT_RENDER_MONO
+			.formatter = tick_formatter,
+			#endif
 		},
 		#endif
-
 	};
 
 	int y_min = -1;
@@ -136,7 +147,7 @@ void gintctl_perf_cpucache(void)
 		dclear(C_WHITE);
 		row_title(_("CPU and cache", "CPU speed and cache size"));
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_print(2, 1, "4096 nop: %d Iϕ", nop4096);
 		extern font_t font_hexa;
 		font_t const *old = dfont(&font_hexa);
@@ -144,7 +155,7 @@ void gintctl_perf_cpucache(void)
 		dfont(old);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_print(1, 1, "Time for 4096 nop (with overhead): %d Iphi",
 			nop4096);
 		row_print(2, 1, "Time needed to read a buffer multiple times:");

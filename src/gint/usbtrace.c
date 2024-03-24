@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 
 #define USB SH7305_USB
 

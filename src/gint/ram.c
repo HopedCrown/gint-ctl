@@ -154,7 +154,7 @@ static void e500_search(int e500_pages[32])
 	}
 }
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 static void show_region(int row, struct region *r)
 {
 	/* Out-of-bounds rows */
@@ -189,7 +189,7 @@ static void show_region(int row, struct region *r)
 }
 #endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 static void show_region(int y, struct region *r)
 {
 	char const *reasons[] = {
@@ -254,7 +254,7 @@ void gintctl_gint_ram(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(tab == 0) {
 			show_region(1, NULL);
 			dhline(6, C_BLACK);
@@ -269,7 +269,7 @@ void gintctl_gint_ram(void)
 		}
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("On-chip memory discovery");
 
 		if(tab == 0) {
@@ -323,7 +323,7 @@ void gintctl_gint_ram(void)
 			explore_region(&r[11]);
 		}
 
-		#ifdef FX9860G
+		#ifdef GINT_RENDER_MONO
 		int scroll_max = region_count - 8;
 		if(tab == 0 && key == KEY_UP)
 		{

@@ -11,7 +11,7 @@
 #define PAGE_MAPPED  0x02
 #define TLB_VIEW_MAX (64 - TLB_VIEW)
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 #define PAGE_COUNT 0x200
 #define SQUARE_WIDTH 8
 #define SQUARE_HEIGHT 8
@@ -36,7 +36,7 @@ static void draw_rom_cell(int x, int y, int status)
 }
 #endif
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 #define PAGE_COUNT 0x80
 #define SQUARE_WIDTH 5
 #define SQUARE_HEIGHT 5
@@ -110,7 +110,7 @@ static void explore_pages(uint8_t *pages, uint32_t *next_miss)
 	}
 }
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 void show_utlb(int row, int E)
 {
 	if(E == -1)
@@ -198,7 +198,7 @@ void show_itlb(int row, int E)
 }
 #endif
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 void show_utlb(int row, int E)
 {
 	extern font_t font_mini;
@@ -305,7 +305,6 @@ void show_itlb(int row, int E)
 	uint32_t src = addr.VPN << 10;
 	uint32_t dst = data.PPN << 10;
 
-	int valid = (addr.V != 0) && (data.V != 0);
 	int size = (data.SZ1 << 1) | data.SZ0;
 
 	dprint( 1, y, C_BLACK, "%d", E);
@@ -330,19 +329,19 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 	uint32_t rom_size = (uint32_t)&srom;
 	int rom_pages = (rom_size + (1 << 12)-1) >> 12;
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	if(tab != 2 && tab != 3)
 	#endif
 	row_title(_("TLB management", "TLB miss handler and TLB management"));
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	extern font_t font_mini;
 	font_t const *old_font = dfont(&font_mini);
 	#endif
 
 	if(tab == 0)
 	{
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_print(1, 1, "Size of ROM sections: %08X (%d pages of 4k)",
 			rom_size, rom_pages);
 		#endif
@@ -360,7 +359,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 				_(11,36) + rom_cell_y(p), pages[p]);
 		}
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		if(next_miss != 0xffffffff)
 		{
 			uint p = (next_miss - 0x00300000) >> 12;
@@ -392,7 +391,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		dprint(_(72,212), _(22,50), C_BLACK,
 			_("Mapped", "Currently mapped"));
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		draw_rom_cell(18, 64, -1);
 		dprint(30, 64, C_BLACK, "Next page to load");
 
@@ -410,7 +409,7 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 			"data before the intended TLB miss occurs.");
 		#endif
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		dprint(1, 30, C_BLACK, "Size of ROM text: %X (%d pages)",
 			rom_size, rom_pages);
 
@@ -430,11 +429,11 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		for(int i = 0; i < TLB_VIEW; i++)
 			show_utlb(i+2, tlb_scroll+i);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		dhline(6, C_BLACK);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		dline(12, 34, 363, 34, C_BLACK);
 		#endif
 
@@ -450,23 +449,23 @@ static void draw(int tab, uint8_t *pages, uint32_t next_miss, int tlb_scroll)
 		for(int E = 0; E < 4; E++)
 			show_itlb(E+2, E);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		dhline(6, C_BLACK);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		dline(12, 34, 363, 34, C_BLACK);
 		#endif
 	}
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dfont(old_font);
 
 	extern bopti_image_t img_opt_gint_tlb;
 	dimage(0, 56, &img_opt_gint_tlb);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	fkey_menu(1, "ROM");
 	fkey_menu(2, "INFO");
 	fkey_menu(3, "TLB");
@@ -485,6 +484,8 @@ static int generate_tlb_miss(volatile void *arg)
 
 static int test_function(int x, int y)
 {
+	(void)x;
+	(void)y;
 	return 0;
 }
 

@@ -20,7 +20,7 @@ static void draw_info(kmalloc_arena_t *arena)
 {
 	int expected_os_heap_kB = _(48, 128);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dimage(0, 56, &img_opt_gint_kmalloc);
 	row_title("Heap allocators");
 	font_t const *old_font = dfont(&font_mini);
@@ -43,7 +43,7 @@ static void draw_info(kmalloc_arena_t *arena)
 	dfont(old_font);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "Arena details:");
 	fkey_action(6, "ARENA");
 
@@ -105,7 +105,7 @@ static void m_clear(void *ptr[MANUAL_COUNT], uint16_t size[MANUAL_COUNT])
 static void draw_manual(void *ptr[MANUAL_COUNT], uint16_t size[MANUAL_COUNT],
 	int cursor)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_title("Manual allocation");
 	font_t const *old_font = dfont(&font_mini);
 	#endif
@@ -130,14 +130,14 @@ static void draw_manual(void *ptr[MANUAL_COUNT], uint16_t size[MANUAL_COUNT],
 	for(int c = 0; c < 6; c++) dprint(_(88,275), _(15+6*c,row_y(c+2)), C_BLACK,
 		"%c: %d", 'A'+c, m_classes[c]);
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "Manual allocation test:");
 	dprint(265, row_y(1), C_BLACK, "Allocate:");
 	dprint(265, row_y(8), C_BLACK, "Free:");
 	dprint(275, row_y(9), C_BLACK, "AC/ON");
 	#endif
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dprint(88, 9, C_BLACK, "ON: 0");
 	dfont(old_font);
 	#endif
@@ -181,14 +181,14 @@ static void run_fill(char const *arena, uint8_t classes[FILL_CLASSES])
 
 static void draw_fill(uint8_t classes[FILL_CLASSES])
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_title("Heap filler");
 	#endif
 
 	font_t const *old_font = dfont(_(&font_mini, dfont_default()));
 	int total = 0;
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "Blocks allocated to fill, by size:");
 	#endif
 
@@ -237,7 +237,7 @@ struct mass_test
 
 static void draw_mass(struct mass_test *test)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_title("Random operations");
 	font_t const *old_font = dfont(&font_mini);
 	dprint(1, 9, C_BLACK, "Filled %d (all blocks < %d)",
@@ -254,7 +254,7 @@ static void draw_mass(struct mass_test *test)
 	dfont(old_font);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	if(!test->done)
 	{
 		row_print(1, 1, "Mass allocation in a small space");
@@ -349,7 +349,7 @@ static void draw_stats(kmalloc_arena_t *arena)
 	struct kmalloc_stats *s = &arena->stats;
 	kmalloc_gint_stats_t *S = kmalloc_get_gint_stats(arena);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_title("Statistics");
 	font_t const *old_font = dfont(&font_mini);
 
@@ -374,7 +374,7 @@ static void draw_stats(kmalloc_arena_t *arena)
 	dfont(old_font);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "General arena statistics:");
 	row_print(2, 2, "Live blocks: %d (peak: %d)",
 		s->live_blocks, s->peak_live_blocks);
@@ -497,7 +497,7 @@ void gintctl_gint_kmalloc(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		dimage(0, 56, &img_opt_gint_kmalloc);
 		font_t const *old_font = dfont(&font_mini);
 		dprint_opt(DWIDTH-2, 54, C_BLACK, C_NONE, DTEXT_RIGHT, DTEXT_BOTTOM,
@@ -512,7 +512,7 @@ void gintctl_gint_kmalloc(void)
 		if(tab == 4) draw_stats(arena);
 		draw_integrity(arena);
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Integrity and stress tests for heap allocators");
 		fkey_menu(1, "INFO");
 		fkey_menu(2, "MANUAL");

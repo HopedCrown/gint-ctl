@@ -45,7 +45,7 @@ void gintctl_perf_interrupts(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_title("Interrupt stress");
 
 		if(time_spent == 0)
@@ -60,7 +60,7 @@ void gintctl_perf_interrupts(void)
 		}
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Interrupt handling stress test");
 
 		if(time_spent == 0)

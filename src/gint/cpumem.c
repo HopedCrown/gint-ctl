@@ -2,6 +2,7 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
 #include <gint/mmu.h>
+#include <gint/config.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
@@ -15,23 +16,21 @@ extern uint32_t cpu_getVBR(void);
 extern uint32_t
 	brom, srom,			/* Limits of ROM mappings */
 	sdata,  rdata,			/* User's data section */
-	sbss, rbss;			/* User's BSS section */
-#ifdef FX9860G
-extern uint32_t sgmapped;		/* Permanently mapped functions */
-#endif
+	sbss, rbss,			/* User's BSS section */
+	sgmapped;			/* Permanently mapped functions */
 
 
 /* MPU type and processor version */
 void show_mpucpu(void)
 {
 	char const *mpu_names[] = {
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		"Unknown",
 		"SH-3 SH7337",
 		"SH-4A SH7305",
 		"SH-3 SH7355",
 		"SH-4A SH7724",
-		#else
+		#elif GINT_RENDER_RGB
 		"Unknown MPU product",
 		"SH-3-based SH7337",
 		"SH-4A-based SH7305",
@@ -83,7 +82,7 @@ void show_mpucpu(void)
 	__asm__("stc sr,  %0" : "=r"(SR));
 	__asm__("mov r15, %0" : "=r"(r15));
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	extern font_t font_mini;
 	font_t const *old_font = dfont(&font_mini);
 
@@ -110,7 +109,7 @@ void show_mpucpu(void)
 	dfont(old_font);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "Calculator model: %s", str_calc);
 	row_print(3, 1, "MPU: %s", str_mpu);
 	row_print(4, 1, " Status Register: %08x", SR);
@@ -127,7 +126,7 @@ void show_mpucpu(void)
 /* Memory */
 static void show_memory(void)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	extern font_t font_mini;
 	font_t const *old_font = dfont(&font_mini);
 	print_prefix(28, 10,   "brom", "%08X", &brom);
@@ -147,7 +146,7 @@ static void show_memory(void)
 	dfont(old_font);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	uint32_t base_ram  = 0x88000000;
 	if(gint[HWCALC] == HWCALC_FXCG50) base_ram = 0x8c000000;
 
@@ -219,13 +218,13 @@ void gintctl_gint_cpumem(void)
 		if(tab == 0) show_mpucpu();
 		if(tab == 1) show_memory();
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_title("CPU and memory");
 		extern bopti_image_t img_opt_gint_cpumem;
 		dimage(0, 56, &img_opt_gint_cpumem);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Processor and memory");
 		fkey_menu(1, "MPU/CPU");
 		fkey_menu(2, "MEMORY");

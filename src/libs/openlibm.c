@@ -22,7 +22,7 @@ void gintctl_libs_openlibm(void)
 
 	dclear(C_WHITE);
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_title("OpenLibm floating-point functions");
 	row_print(1, 1, "Basic sine curve:");
 

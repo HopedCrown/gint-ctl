@@ -5,6 +5,8 @@
 #ifndef GINTCTL_GINT
 #define GINTCTL_GINT
 
+#include <gint/config.h>
+
 /* gintctl_gint_cpumem(): Detected CPU and memory configuration */
 void gintctl_gint_cpumem(void);
 
@@ -62,14 +64,11 @@ void gintctl_gint_usb(void);
 /* gintctl_gint_usbtrace(): A detailed USB troubleshooter */
 void gintctl_gint_usbtrace(void);
 
-#ifdef FX9860G
-
 /* gintctl_gint_gray(): Gray engine tuning */
 void gintctl_gint_gray(void);
 
 /* gintctl_gint_grayrender(): Gray rendering functions */
 void gintctl_gint_grayrender(void);
 
-#endif /* FX9860G */
 
 #endif /* GINTCTL_GINT */

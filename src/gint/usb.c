@@ -174,14 +174,14 @@ static void draw_registers(GUNUSED int scroll)
 	val(40, "MSELCRA",   *MSELCRA);
 	val(41, "MSELCRB",   *MSELCRB);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	if(scroll >= 14) dprint(3, 50 - 6 * (scroll - 14), C_BLACK,
 		"USBCLKCR:%08X", SH7305_CPG.USBCLKCR.lword);
 	if(scroll >= 15) dprint(3, 50 - 6 * (scroll - 15), C_BLACK,
 		"MSTPCR2: %08X", SH7305_POWER.MSTPCR2.lword);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	dprint(row_x(1), 188, C_BLACK, "USBCLKCR:%08X  MSTPCR2:%08X",
 		SH7305_CPG.USBCLKCR.lword, SH7305_POWER.MSTPCR2.lword);
 	#endif
@@ -301,7 +301,7 @@ static int draw_log(int offset)
 
 static void draw_pipes(void)
 {
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 	char const *PID[4] = { "NAK", "BUF", "STALL0", "STALL1" };
 	char const *BSTS[2] = { "Disabled", "Enabled" };
 	char const *FRDY[2] = { "NotReady", "Ready" };
@@ -347,7 +347,7 @@ static void draw_pipes(void)
 
 static void draw_tests(GUNUSED struct alignment_write_data *data)
 {
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 	dprint(1,  8, C_BLACK, "1: Screenshot");
 	dprint(1, 14, C_BLACK, "2: Async screenshot");
 	dprint(1, 20, C_BLACK, "3: Send text");
@@ -355,7 +355,7 @@ static void draw_tests(GUNUSED struct alignment_write_data *data)
 	dprint(1, 32, C_BLACK, "5: FIFO alignm. test");
 #endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 	row_print(1, 1, "[1]: Take screenshot (fxlink API)");
 	row_print(2, 1, "[2]: Take screenshot (asynchronous)");
 	row_print(3, 1, "[3]: Send some text (fxlink API)");
@@ -473,7 +473,7 @@ void gintctl_gint_usb(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_title("USB 2.0 communication");
 		dsubimage(0, 56, &img_opt_gint_usb, 0, open * 9, 128, 9, DIMAGE_NONE);
 		if(tab == 0) scrollbar_px(8, 52, 0, 22, scroll0, 8);
@@ -487,7 +487,7 @@ void gintctl_gint_usb(void)
 		if(tab == 3) draw_pipes();
 		if(tab == 4) draw_tests(&awd);
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		if(tab == 2)
 			row_title("USB logs (SHIFT+7: Save to file, SHIFT+8: Clear)");
 		else
@@ -532,7 +532,7 @@ void gintctl_gint_usb(void)
 		if(keydown(KEY_SHIFT)) scroll_speed = 4;
 		if(keydown(KEY_ALPHA)) scroll_speed = 16;
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(tab == 0 && key == KEY_UP && scroll0 > 0) scroll0--;
 		if(tab == 0 && key == KEY_DOWN && scroll0 < 15) scroll0++;
 		#endif

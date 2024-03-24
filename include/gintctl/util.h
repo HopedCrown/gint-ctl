@@ -9,17 +9,16 @@
 #include <stdint.h>
 #include <gint/keyboard.h>
 #include <gint/usb-ff-bulk.h>
+#include <gint/config.h>
 
 //---
 //	Platform disambiguation functions
 //---
 
-#ifdef FX9860G
-#define _(fx,cg) fx
-#endif
-
-#ifdef FXCG50
-#define _(fx,cg) cg
+#if GINT_HW_FX || GINT_FX9860G_G3A
+# define _(fx,cg) fx
+#else
+# define _(fx,cg) cg
 #endif
 
 //---
@@ -84,7 +83,7 @@ void scrollbar_px(int view_top, int view_bottom, int range_min, int range_max,
 //	F-key rendering
 //---
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 
 /* fkey_action(): A black-on-white F-key */
 void fkey_action(int position, char const *text);
@@ -95,12 +94,12 @@ void fkey_button(int position, char const *text);
 /* fkey_menu(): A rectangular F-key with the bottom right corner removed */
 void fkey_menu(int position, char const *text);
 
+#endif /* FXCG50 */
+
 //---
 // USB commands
 //---
 
 void gintctl_handle_usb_command(usb_fxlink_header_t const *header);
-
-#endif /* FXCG50 */
 
 #endif /* GINTCTL_UTIL */

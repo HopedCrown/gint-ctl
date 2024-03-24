@@ -47,12 +47,12 @@ struct gscreen_tab {
    function bar. To show a title/function bar on some tabs but not all, create
    one here and use gscreen_set_tab_{title,fkeys}_visible(). */
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 gscreen *gscreen_create(char const *title, bopti_image_t const *fkeys);
 #define gscreen_create2(short, img, long, fkeys) gscreen_create(short, img)
 #endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 gscreen *gscreen_create(char const *title, char const *fkeys);
 #define gscreen_create2(short, img, long, fkeys) gscreen_create(long, fkeys)
 #endif

@@ -39,7 +39,7 @@ void gintctl_perf_libprof(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_print(1, 1, "Measures time for");
 		row_print(2, 1, "10ms sleep +1us each");
 		row_print(3, 1, "time, and empty code.");
@@ -52,9 +52,9 @@ void gintctl_perf_libprof(void)
 
 		extern bopti_image_t img_opt_perf_libprof;
 		dimage(0, 56, &img_opt_perf_libprof);
-		#endif /* FX9860G */
+		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("libprof basics");
 		row_print(1, 1, "This program shows the execution time "
 			"measured");
@@ -71,7 +71,7 @@ void gintctl_perf_libprof(void)
 		}
 
 		fkey_button(1, "START");
-		#endif /* FXCG50 */
+		#endif
 
 		dupdate();
 		key = getkey().key;

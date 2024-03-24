@@ -8,10 +8,10 @@
 
 #include <stdlib.h>
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 gscreen *gscreen_create(char const *name, bopti_image_t const *img)
 #endif
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 gscreen *gscreen_create(char const *name, char const *labels)
 #endif
 {
@@ -46,17 +46,17 @@ gscreen *gscreen_create(char const *name, char const *labels)
 		jlabel_set_font(title, _(&font_title, dfont_default()));
 		jwidget_set_stretch(title, 1, 0, false);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		jwidget_set_padding(title, 1, 1, 0, 1);
 		jwidget_set_margin(title, 0, 0, 1, 0);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		jwidget_set_padding(title, 3, 6, 3, 6);
 		#endif
 	}
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	jwidget_set_padding(stack, 1, 3, 1, 3);
 	#endif
 

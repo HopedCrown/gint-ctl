@@ -20,7 +20,7 @@
 
 static void draw_list(int offset, int maximum)
 {
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 2, "Id");
 	row_print(1, 5, "Name");
 	row_print(1, 13, "Size");
@@ -97,7 +97,7 @@ static void draw_state(gint_world_t world, int i)
 	{
 		dma_state_t const *s = world[i];
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		for(int i = 0; i < 6; i++) {
 			dprint(1, 1+6*i, C_BLACK, "%d: %08X->%08X %08X",
 				i, s->ch[i].SAR, s->ch[i].DAR, s->ch[i].CHCR);
@@ -105,7 +105,7 @@ static void draw_state(gint_world_t world, int i)
 		dprint(1, 43, C_BLACK, "OR: %08X", s->OR);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		for(int i = 0; i < 6; i++) {
 			int y=3+5*(i/3), x=1+16*(i%3);
 			row_print(y,   x,   "%d:", i);
@@ -125,7 +125,7 @@ static void draw_state(gint_world_t world, int i)
 	{
 		intc_state_t const *s = world[i];
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		for(int i = 0; i < 12; i++) {
 			dprint(1+32*(i%4),1+6*(i/4), C_BLACK, "%c:%04X", 'A'+i, s->IPR[i]);
 		}
@@ -134,7 +134,7 @@ static void draw_state(gint_world_t world, int i)
 		}
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		for(int i = 0; i < 12; i++) {
 			row_print(3+i/4, 1+11*(i%4), "IPR%c:", 'A'+i);
 			row_print(3+i/4, 6+11*(i%4), "%04X", s->IPR[i]);
@@ -170,14 +170,14 @@ static void draw_state(gint_world_t world, int i)
 	{
 		spu_state_t const *s = world[i];
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		dprint(1,  1, C_BLACK, "PBANKC0: %08X", s->PBANKC0);
 		dprint(1,  7, C_BLACK, "PBANKC1: %08X", s->PBANKC1);
 		dprint(1, 13, C_BLACK, "XBANKC0: %08X", s->XBANKC0);
 		dprint(1, 19, C_BLACK, "XBANKC1: %08X", s->XBANKC1);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_print(3,1, "PBANKC0: %08X  PBANKC1: %08X", s->PBANKC0, s->PBANKC1);
 		row_print(4,1, "XBANKC0: %08X  XBANKC1: %08X", s->XBANKC0, s->XBANKC1);
 		#endif
@@ -196,14 +196,14 @@ static void draw_state(gint_world_t world, int i)
 		tmu_state_t const *s = world[i];
 
 		for(int k = 0; k < 9; k++) {
-			#ifdef FX9860G
+			#if GINT_RENDER_MONO
 			if(k < 3) dprint(1, 6*k, C_BLACK, "TMU%d: CNT:%08X TCR:%04X %s",
 				k, s->t[k].TCNT, s->t[k].TCR, (s->TSTR & (1<<k) ? "STR" : ""));
 			else dprint(1, 6*k, C_BLACK, "E%d: TCNT:%08X TCR:%02X TSTR:%02X",
 				k-3, s->t[k].TCNT, s->t[k].TCR, s->t[k].TSTR);
 			#endif
 
-			#ifdef FXCG50
+			#if GINT_RENDER_RGB
 			row_print(k+3, 1, "%sTMU%d:", (k<3 ? "" : "E"), (k<3 ? k : k-3));
 			if(k < 3) row_print(k+3, 8, "%08X/%08X  TCR:%04X",
 				s->t[k].TCNT, s->t[k].TCOR, s->t[k].TCR);
@@ -234,7 +234,7 @@ struct switch_stats {
 
 static void draw_manual(struct switch_stats *stats)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_print(2, 1, "World switches: %d", stats->world_switch_count);
 	row_print(3, 1, "Return-to-menu: %d", stats->return_to_menu_count);
 	// row_print(4, 1, "Switch time: %d µs", stats->world_switch_time);
@@ -243,7 +243,7 @@ static void draw_manual(struct switch_stats *stats)
 	row_print(7, 1, "[3]: Measure perf");
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_print(1, 1, "World switches performed: %d",
 		stats->world_switch_count);
 	row_print(2, 1, "Return-to-menu performed: %d",
@@ -269,12 +269,12 @@ void gintctl_gint_drivers(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(tab == 0 || tab == 3) row_print(1, 1, "Drivers and worlds");
 		dimage(0, 56, &img_opt_gint_drivers);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Drivers and world switches");
 		fkey_menu(1, "DRIVERS");
 		fkey_menu(2, "OS");

@@ -2,10 +2,12 @@
 build-fx/
 build-cg/
 build-cg-push/
+build-fxg3a/
 
 # Targets
 gintctl.g1a
 gintctl.g3a
+gintctl-fx.g3a
 
 # Development files
 *.sublime-*

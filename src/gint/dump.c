@@ -19,13 +19,11 @@ struct region {
 };
 
 static struct region const regs[] = {
-	#ifdef FX9860G
+	#if GINT_HW_FX
 	{ "ROM",    0x80000000, 0x807fffff, 8 },
 	{ "RAM",    0x88000000, 0x88040000, 1 },
 	{ "RS",     0xfd800000, 0xfd803fff, 1 },
-	#endif
-
-	#ifdef FXCG50
+	#elif GINT_HW_CG
 	{ "ROM",    0x80000000, 0x81ffffff, 32 },
 	{ "RAM_88", 0x88000000, 0x881fffff, 2 },
 	{ "RAM_8C", 0x8c000000, 0x8c7fffff, 8 },
@@ -116,7 +114,7 @@ void gintctl_gint_dump(void)
 
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_print(1, 1, "Memory dump");
 
 		row_print(3, 1, "Region:  %s", regs[region].name);
@@ -131,7 +129,7 @@ void gintctl_gint_dump(void)
 		if(retcode < 0)  dprint(77, 56, C_BLACK, "E%d",retcode);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Memory dump to filesystem");
 
 		row_print(1, 1, "Region:");

@@ -5,7 +5,9 @@
 #ifndef _GINTCTL_ASSETS
 #define _GINTCTL_ASSETS
 
-#ifdef FX9860G
+#include <gint/config.h>
+
+#if GINT_RENDER_MONO
 
 #include <libimg.h>
 
@@ -56,9 +58,9 @@ extern bopti_image_t
 extern img_t
 	img_libimg_swords;
 
-#endif /* FX9860G */
+#endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 
 extern bopti_image_t
 	img_kbd_events,
@@ -74,6 +76,6 @@ extern bopti_image_t
 	img_libimg_sq_odd,
 	img_libimg_train;
 
-#endif /* FXCG50 */
+#endif
 
 #endif /* _GINTCTL_ASSETS */

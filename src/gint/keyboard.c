@@ -9,7 +9,7 @@
 
 static void position(int row, int col, int *x, int *y, int *w, int *h)
 {
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	*x = 1 + (5 + (row>=5)) * col;
 	*y = 1 + 4 * row + (row >= 1) + (row >= 3);
 	*w = 4;
@@ -23,7 +23,7 @@ static void position(int row, int col, int *x, int *y, int *w, int *h)
 	}
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	if(row == 0) *y=2, *x=7+29*col, *w=16, *h=16;
 	if(row >= 5) *y=108+23*(row-5), *x=2+35*col, *w=30, *h=17;
 	if(row >= 1 && row <= 4)
@@ -103,13 +103,13 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	key_event_t ev;
 	dclear(C_WHITE);
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_title("Keyboard state visualizer");
 	int y0=190, dy=14, maxev=12;
 	int x1=290, x2=350;
 	#endif
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	row_print(1, 1, "Keyboard state");
 	dimage(0, 56, &img_opt_gint_keyboard);
 	int y0=47, dy=7, maxev=6;
@@ -134,7 +134,7 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	render_keyboard(d, _(2,10), _(6,21));
 	int tr = d->tr.enabled;
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	dtext(35, 10, C_BLACK, "Shift:");
 	render_option(35, 16, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);
 	render_option(47, 16, "Ins", (tr & KEYDEV_TR_INSTANT_SHIFT) != 0);
@@ -153,7 +153,7 @@ static void render(keydev_t *d, key_event_t *last_events, int counter)
 	dfont(old_font);
 	#endif /* FX9860G */
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	dtext(200, 30, C_BLACK, "Shift:");
 	render_icon(245, 30, d->delayed_shift ? 7 : (d->pressed_shift ? 6 : 5));
 	render_option(205, 42, "Del", (tr & KEYDEV_TR_DELAYED_SHIFT) != 0);

@@ -143,4 +143,7 @@ elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCG50)
   add_custom_command(TARGET gintctl POST_BUILD
     COMMAND echo -n "g3a file size: "
     COMMAND stat -c %s "${CMAKE_CURRENT_SOURCE_DIR}/gintctl.g3a")
+elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G_G3A)
+  generate_g3a(TARGET gintctl OUTPUT "gintctl-fx.g3a"
+    NAME "" ICONS assets-cg/icon-uns.png assets-cg/icon-sel.png)
 endif()

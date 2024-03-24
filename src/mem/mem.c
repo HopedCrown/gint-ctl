@@ -96,14 +96,14 @@ static void paint_mem(int x, int y, struct view *v)
 	{
 		GUNUSED int status = line(mem, header, bytes, ascii, 8);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		font_t const *old_font = dfont(&font_hexa);
 		dtext(x,      y + 6*i, C_BLACK, v->ascii ? ascii : header);
 		dtext(x + 40, y + 6*i, C_BLACK, bytes);
 		dfont(old_font);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		dtext(x,      y + 12*i, C_BLACK, header);
 		dtext(x + 85, y + 12*i, status ? C_RED : C_BLACK, bytes);
 
@@ -182,7 +182,7 @@ void gintctl_mem(void)
 			gscreen_focus(s, input);
 		}
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(key == KEY_F2 && !input_focus)
 		{
 			v.ascii = !v.ascii;

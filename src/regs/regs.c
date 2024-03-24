@@ -13,6 +13,7 @@ void gintctl_regs(void)
 	dclear(C_WHITE);
 	row_title("Register browser");
 
+#if GINT_HW_FX
 	if(isSH3())
 	{
 		#define IPR(X) (*SH7705_INTC._.IPR##X).word
@@ -27,6 +28,7 @@ void gintctl_regs(void)
 		#undef IPR
 	}
 	else
+#endif
 	{
 		#define IPR(X) SH7305_INTC._->IPR##X.word
 		row_print(2,1, "A:%04x B:%04x C:%04x", IPR(A), IPR(B), IPR(C));

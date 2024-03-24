@@ -18,7 +18,7 @@
 
 extern bopti_image_t img_rtc_segments;
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 char const *days[7] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
@@ -33,7 +33,7 @@ static int x0=20, y0=8, dx=13;
 static int yd=36, eyd=12;
 #endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 char const *days[7] = {
 	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 	"Saturday"
@@ -80,14 +80,14 @@ static void draw_time(rtc_time_t *time, int edit_field)
 		int x = x0 + (2 * dx + cw) * edit_field - 1;
 		int y = y0 - 1;
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		drect(x, y, x + 2*dx - 1, y + sh+1, C_INVERT);
 
 		row_print(6, 1, "EXE:  Set time");
 		row_print(7, 1, "EXIT: Cancel");
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		for(int a = y - 1; a <= y + sh + 2; a++)
 		for(int b = x - 1; b <= x + 2*dx - 2; b++)
 		{
@@ -134,14 +134,14 @@ static void draw_date(rtc_time_t *time, int edit_field)
 		for(int i = 0; i < edit_field; i++)
 			x += w[i] + space_width + 2;
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		drect(xd+x-1, y-1, xd+x+w[edit_field], y+h, C_INVERT);
 
 		row_print(6, 1, "EXE:  Set date");
 		row_print(7, 1, "EXIT: Cancel");
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		for(int a = y-2; a <= y+h; a++)
 		for(int b = xd+x-2; b <= xd+x+w[edit_field]+1; b++)
 		{
@@ -167,12 +167,12 @@ static void draw_rtc(rtc_time_t *time)
 	draw_time(time, -1);
 	draw_date(time, -1);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	extern bopti_image_t img_opt_gint_rtc;
 	dsubimage(0, 56, &img_opt_gint_rtc, 0, 0, 128, 8, DIMAGE_NONE);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_title("Real-Time Clock");
 	fkey_menu(1, "RTC");
 	fkey_menu(2, "TIMER");
@@ -191,7 +191,7 @@ static void draw_speed(rtc_time_t *time, uint32_t elapsed)
 {
 	dclear(C_WHITE);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	extern bopti_image_t img_opt_gint_rtc;
 	row_print(1, 1, "Speed of RTC vs TMU");
 	dsubimage(0, 56, &img_opt_gint_rtc, 0, 9, 128, 8, DIMAGE_NONE);
@@ -200,7 +200,7 @@ static void draw_speed(rtc_time_t *time, uint32_t elapsed)
 	row_print(4, 1, "TMU time: %d us", elapsed);
 	#endif
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	row_title("Speed comparison of RTC and timers");
 	fkey_menu(1, "RTC");
 	fkey_menu(2, "TIMER");
@@ -335,7 +335,7 @@ static void edit_time(void)
 	{
 		dclear(C_WHITE);
 		draw_time(&time, edit_field);
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		draw_date(&time, -1);
 		row_title("Real-Time Clock");
 		#endif
@@ -403,13 +403,13 @@ static void edit_date(void)
 	while(key != KEY_EXE && key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		draw_time(&time, -1);
 		row_title("Real-Time Clock");
 		#endif
 		draw_date(&time, edit_field);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		extern bopti_image_t img_opt_gint_rtc;
 		if(edit_field == 0)
 			dsubimage(0, 56, &img_opt_gint_rtc, 0, option_tab*9+18,
@@ -419,7 +419,7 @@ static void edit_date(void)
 				128, 8, DIMAGE_NONE);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		char const *fkey_days[] = {
 			"SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT"
 		};

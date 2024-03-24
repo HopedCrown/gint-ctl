@@ -40,7 +40,7 @@ static void restore(volatile uint32_t *area, uint32_t *save, int pages)
 	}
 }
 
-#ifdef FX9860G
+#if GINT_RENDER_MONO
 static void render_header(int y, GUNUSED int bank_count)
 {
 	y = 9 + 6*y;
@@ -88,7 +88,7 @@ static void render_bank(int y, char const *name, volatile uint32_t *bank,
 }
 #endif
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 static void render_header(int y, int bank_count)
 {
 	dtext(row_x(2),  row_y(y), C_BLACK, "Area:");
@@ -168,7 +168,7 @@ void gintctl_gint_spuram(void)
 
 	int switch_key = _(KEY_F6, KEY_F1);
 
-	#ifdef FX9860G
+	#if GINT_RENDER_MONO
 	int tab = 0;
 	#endif
 
@@ -176,7 +176,7 @@ void gintctl_gint_spuram(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_title("SPU memory banking");
 
 		extern font_t font_hexa;
@@ -210,7 +210,7 @@ void gintctl_gint_spuram(void)
 			(tab == 1 ? 128 : 107), 8, DIMAGE_NONE);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("SPU memory: PRAM0, XRAM0, YRAM0, YRAM");
 		row_print(1, 1, "Pages layout in memory (offsets in kiB):");
 
@@ -258,7 +258,7 @@ void gintctl_gint_spuram(void)
 			SPU.XBANKC1 ^= (1 << cur_page);
 		}
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
 		#endif

@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 
 //---
 // Functions for read/write access patterns
@@ -405,4 +405,4 @@ void gintctl_perf_memory(void)
     free(info);
 }
 
-#endif /* FXCG50 */
+#endif

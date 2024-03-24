@@ -30,7 +30,7 @@ static void run_test(struct elapsed *time)
 		drect(0, 0, _(127,395), _(63,223), C_WHITE);
 	});
 
-	#ifdef FXCG50
+	#if GINT_RENDER_RGB
 	extern bopti_image_t img_swift;
 	time->fs_r5g6b5 = prof_exec({
 		dimage(0, 0, &img_swift);
@@ -58,7 +58,7 @@ void gintctl_perf_render(void)
 	{
 		dclear(C_WHITE);
 
-		#ifdef FX9860G
+		#if GINT_RENDER_MONO
 		row_print(1, 1, "Rendering functions");
 
 		if(test)
@@ -74,7 +74,7 @@ void gintctl_perf_render(void)
 		dimage(0, 56, &img_opt_perf_render);
 		#endif
 
-		#ifdef FXCG50
+		#if GINT_RENDER_RGB
 		row_title("Rendering functions");
 		row_print(1, 1, "This program measures the execution time of");
 		row_print(2, 1, "common drawing functions.");
