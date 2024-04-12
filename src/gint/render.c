@@ -1,6 +1,8 @@
 #define __BSD_VISIBLE 1
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gint/config.h>
+#include <gint/video.h>
 #include <gintctl/util.h>
 #include <math.h>
 
@@ -29,7 +31,7 @@ void gintctl_gint_render(void)
 	dclear(C_WHITE);
 	drect_border(1, 1, DWIDTH-2, DHEIGHT-2, C_NONE, 1, C_BLACK);
 
-#ifdef FXCG50
+#if GINT_RENDER_RGB
 	drect_border(3, 3, DWIDTH-4, DHEIGHT-4, C_NONE, 1, C_BLACK);
 #endif
 
@@ -79,6 +81,12 @@ void gintctl_gint_render(void)
 	dcircle(x4+w1/2, y3, r, fill2, C_NONE);
 
 	dupdate();
+
+#if GINT_HW_CG
+	extern image_t gint_gdb_icons_rgb565;
+	video_update(0, 0, &gint_gdb_icons_rgb565, 0);
+#endif
+
 	if(getkey().key == KEY_EXIT)
 		return;
 }

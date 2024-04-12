@@ -77,6 +77,7 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_cpumem.png
   assets-fx/img/opt_gint_dma.png
   assets-fx/img/opt_gint_drivers.png
+  assets-fx/img/opt_gint_gdb.png
   assets-fx/img/opt_gint_gray.png
   assets-fx/img/opt_gint_keyboard.png
   assets-fx/img/opt_gint_kmalloc.png
@@ -124,7 +125,7 @@ fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
 
 add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})
 target_compile_options(gintctl PRIVATE
-  -Wall -Wextra -Os)
+  -Wall -Wextra -Os -g)
 target_link_options(gintctl PRIVATE
   -Wl,-Map=map -Wl,--print-memory-usage)
 target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")

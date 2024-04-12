@@ -61,7 +61,7 @@ struct menu menu_gint = {
 	#if GINT_RENDER_MONO
 	{ "Gray rendering",     gintctl_gint_grayrender, 0 },
 	#endif
-	{ "GDB",                gintctl_gint_gdb, 0},
+	{ "GDB",                gintctl_gint_gdb, MENU_SH4_ONLY },
 	{ NULL, NULL, 0 },
 }};
 
