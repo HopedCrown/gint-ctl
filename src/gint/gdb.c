@@ -8,6 +8,7 @@
 #include <gintctl/assets.h>
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+#include <stdio.h>
 
 #ifdef FXCG50
 static void val(int y, const char *name, uint32_t value)
@@ -31,12 +32,18 @@ extern int (*gint_exc_catcher)(uint32_t code);
 
 int gintctl_gint_gdb_bank1_test(void);
 
+void gintctl_gdb_dbgprint(void)
+{
+	fprintf(stderr, "debug=%d\n", 73);
+}
+
 void gintctl_gint_gdb(void)
 {
 	int key = 0;
 	int ret = -1;
 
 	gdb_start_on_exception();
+	gdb_redirect_streams(false, true);
 
 	while (key != KEY_EXIT) {
 		dclear(C_WHITE);
@@ -45,10 +52,10 @@ void gintctl_gint_gdb(void)
 #if GINT_RENDER_MONO
 		dimage(0, 56, &img_opt_gint_gdb);
 #elif GINT_RENDER_RGB
-		fkey_action(6, "START");
+		fkey_action(6, "TRAP");
 		fkey_action(5, "PANICR");
 		fkey_action(4, "PANICW");
-		fkey_action(3, "STOP");
+		fkey_action(3, "I/O");
 		fkey_action(1, "BANK 1");
 #endif
 
@@ -85,14 +92,13 @@ void gintctl_gint_gdb(void)
 
 		volatile uint32_t* miss = (void*)0x41414140;
 		if (key == KEY_F6) {
-			ret = gdb_start();
-			gdb_main(NULL);
+			__asm__("trapa #42");
 		} else if (key == KEY_F5) {
 			ret = *miss;
 		} else if (key == KEY_F4) {
 			*miss = 0x1337;
 		} else if (key == KEY_F3) {
-			__asm__("trapa #42");
+			fprintf(stderr, "debug=%d\n", 42);
 		} else if (key == KEY_F1) {
 			ret = gintctl_gint_gdb_bank1_test();
 		}
