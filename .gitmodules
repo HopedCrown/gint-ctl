@@ -1,0 +1,3 @@
+[submodule "submodules/rectpack"]
+	path = submodules/rectpack
+	url = https://github.com/secnot/rectpack.git

@@ -7,9 +7,76 @@
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
-static void position(int row, int col, int *x, int *y, int *w, int *h)
+struct keybgrect {
+	/* Background rectangle */
+	u8 x, y, w, h;
+};
+struct keysprite {
+	/* Coordinates within final rendered image */
+	u8 x, y;
+	/* Size of rectangle */
+	u8 w, h;
+	/* Position of label sprite in spritesheet (height 32 pixels) */
+	u8 sx;
+	u8 sy: 5;
+	/* Unused */
+	u8 _: 3;
+	/* lw, lh: Size of label sprite in spritesheet */
+	/* lx, ly: Offset of key to label */
+	u8 lw: 5;
+	u8 ly: 3;
+	u8 lh: 4;
+	u8 lx: 4;
+	/* Keycode */
+	u8 code;
+};
+_Static_assert(sizeof(struct keysprite) == 9);
+
+struct kbdmodel {
+	image_t *label_sheet;
+	i16 bg_count;
+	i16 key_count;
+	struct keybgrect *bgs;
+	struct keysprite *keys;
+};
+
+#if GINT_HW_CG
+  extern struct kbdmodel const img_kbd_sprite_cg;
+  #define KBD_SPRITE img_kbd_sprite_cg
+#elif GINT_HW_CP
+  extern struct kbdmodel const img_kbd_sprite_cp;
+  #define KBD_SPRITE img_kbd_sprite_cp
+#endif
+
+#if GINT_RENDER_RGB
+static void render_keyboard(keydev_t *d, int x0, int y0)
 {
-	#if GINT_RENDER_MONO
+	int BG = C_RGB(26, 26, 26);
+
+	for(int i = 0; i < KBD_SPRITE.bg_count; i++) {
+		struct keybgrect *r = &KBD_SPRITE.bgs[i];
+		drect(x0+r->x, y0+r->y, x0+r->x + r->w-1, y0+r->y + r->h-1, BG);
+	}
+
+	for(int i = 0; i < KBD_SPRITE.key_count; i++) {
+		struct keysprite *k = &KBD_SPRITE.keys[i];
+		int bg = BG, fg = C_BLACK;
+
+		if(keydev_keydown(d, k->code))
+			bg = C_BLACK, fg = C_WHITE;
+
+		drect(x0+k->x, y0+k->y, x0+k->x + k->w-1, y0+k->y + k->h-1, bg);
+		dsubimage_p4_dye(x0 + k->x + k->lx, y0 + k->y + k->ly,
+		                 KBD_SPRITE.label_sheet,
+		                 k->sx, k->sy, k->lw, k->lh,
+		                 DIMAGE_NONE, fg);
+	}
+}
+#endif
+
+#if GINT_RENDER_MONO
+void position(int row, int col, int *x, int *y, int *w, int *h)
+{
 	*x = 1 + (5 + (row>=5)) * col;
 	*y = 1 + 4 * row + (row >= 1) + (row >= 3);
 	*w = 4;
@@ -21,20 +88,6 @@ static void position(int row, int col, int *x, int *y, int *w, int *h)
 		*y += 1 + (row == 1) - 3 * (col == 5);
 		*w = 3;
 	}
-	#endif
-
-	#if GINT_RENDER_RGB
-	if(row == 0) *y=2, *x=7+29*col, *w=16, *h=16;
-	if(row >= 5) *y=108+23*(row-5), *x=2+35*col, *w=30, *h=17;
-	if(row >= 1 && row <= 4)
-	{
-		*y=28+18*(row-1), *x=2+29*col, *w=25, *h=18;
-		if(row == 1 && col == 4) *x=127, *y=37, *w=12, *h=12;
-		if(row == 1 && col == 5) *x=140, *y=24, *w=12, *h=12;
-		if(row == 2 && col == 4) *x=140, *y=50, *w=12, *h=12;
-		if(row == 2 && col == 5) *x=153, *y=37, *w=12, *h=12;
-	}
-	#endif
 }
 
 static void render_keyboard(keydev_t *d, int x0, int y0)
@@ -58,6 +111,7 @@ static void render_keyboard(keydev_t *d, int x0, int y0)
 		}
 	}
 }
+#endif
 
 static void render_option(int x, int y, char const *name, bool enabled)
 {
@@ -240,8 +294,7 @@ void gintctl_gint_keyboard(void)
 		counter = (counter+1) % 16;
 		if(handle_event(d, last_events, counter)) break;
 
-		while((ev = keydev_read(d, false, NULL)).type != KEYEV_NONE
-			&& loop)
+		while((ev = keydev_read(d, false, NULL)).type != KEYEV_NONE && loop)
 		{
 			last_events[counter] = ev;
 			counter = (counter+1) % 16;

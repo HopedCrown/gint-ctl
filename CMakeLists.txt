@@ -106,11 +106,9 @@ set(ASSETS_fx
   assets-fx/img/rtc_segments.png
   assets-fx/img/tlb_cells.png
 )
-set(ASSETS_cg
+set(ASSETS_RGB
   assets-cg/fonts/font8x9_bold.png
   assets-cg/img/kbd_events.png
-  assets-cg/img/kbd_pressed.png
-  assets-cg/img/kbd_released.png
   assets-cg/img/libimg_even_odd.png
   assets-cg/img/libimg_odd_even.png
   assets-cg/img/libimg_sq_even.png
@@ -121,7 +119,11 @@ set(ASSETS_cg
   assets-cg/img/swift.png
   assets-cg/img/swords.png
 )
+set(ASSETS_cg
+  ${ASSETS_RGB}
+  assets-cg/img/kbd_sprite_cg.png)
 
+fxconv_declare_converters(assets-cg/converters.py)
 fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
 
 add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})

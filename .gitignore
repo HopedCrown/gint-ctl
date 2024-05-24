@@ -11,3 +11,6 @@ gintctl-fx.g3a
 
 # Development files
 *.sublime-*
+
+# Python cache
+__pycache__

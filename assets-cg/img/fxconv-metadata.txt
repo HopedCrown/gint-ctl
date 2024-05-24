@@ -10,6 +10,9 @@ kbd_pressed.png:
   profile: p4
 kbd_released.png:
   profile: p4
+kbd_sprite_cg.png:
+  custom-type: kbd-sprite
+  keycodes: cg
 
 libimg_even_odd.png:
   profile: rgb565a
