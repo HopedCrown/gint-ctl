@@ -31,9 +31,8 @@ static void run_test(struct elapsed *time)
 	});
 
 	#if GINT_RENDER_RGB
-	extern bopti_image_t img_swift;
 	time->fs_r5g6b5 = prof_exec({
-		dimage(0, 0, &img_swift);
+		// TODO: Generate a full-screen P4_RGB565 image and render it
 	});
 	#endif
 }
@@ -86,7 +85,7 @@ void gintctl_perf_render(void)
 		row_print(8,  2, "drect() 32x32 (even position):");
 		row_print(9,  2, "drect() 32x32 (odd position):");
 		row_print(10, 2, "drect() 396x224:");
-		row_print(11, 2, "dimage() 396x224 (p4):");
+//		row_print(11, 2, "dimage() 396x224 (p4):");
 
 		if(test)
 		{
@@ -95,7 +94,7 @@ void gintctl_perf_render(void)
 			row_print(8,  35, "%s", printtime(time.rect1));
 			row_print(9,  35, "%s", printtime(time.rect2));
 			row_print(10, 35, "%s", printtime(time.rect3));
-			row_print(11, 35, "%s", printtime(time.fs_r5g6b5));
+//			row_print(11, 35, "%s", printtime(time.fs_r5g6b5));
 		}
 
 		fkey_button(1, "START");

@@ -116,7 +116,6 @@ set(ASSETS_RGB
   assets-cg/img/libimg_train.png
   assets-cg/img/rtc_arrows.png
   assets-cg/img/rtc_segments.png
-  assets-cg/img/swift.png
   assets-cg/img/swords.png
 )
 set(ASSETS_cg

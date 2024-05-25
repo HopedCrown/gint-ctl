@@ -4,6 +4,7 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+#include <stdlib.h>
 
 #if GINT_RENDER_RGB
 static void scene_1(void)
@@ -165,16 +166,49 @@ static void scene_2(void)
 	image_free(tmp);
 }
 
-static void scene_3(void)
+static void scene_3(image_t **img_ptr, u16 *palette)
 {
-	extern image_t img_swift;
-	dimage(0, 0, &img_swift);
+	image_t *img = *img_ptr;
+	if(!img) {
+		img = image_alloc(DWIDTH, DHEIGHT, IMAGE_P4_RGB565);
+		if(!img)
+			return;
+		image_set_palette(img, palette, 16, false);
+		*img_ptr = img;
+
+		/* Generate a cool looking image pattern */
+		for(int i = 0; i < 16; i++) {
+			int top = rand() & 31;
+			int bot = rand() & top;
+			int which = rand() % 3;
+			if(which == 0)
+				palette[i] = C_RGB(top, bot, bot);
+			else if(which == 1)
+				palette[i] = C_RGB(bot, top, bot);
+			else
+				palette[i] = C_RGB(bot, bot, top);
+		}
+
+		for(int y = 0; y < DHEIGHT; y++) {
+			for(int x = 0; x < DWIDTH; x++) {
+				int c1 = x ^ y;
+				int c2 = (x >> 5) ^ (x >> 1) ^ (x >> 6);
+				int c3 = (y >> 1) ^ (y >> 4) ^ (y >> 5);
+				int c = c1 ^ c2 ^ c3;
+				image_set_pixel(img, x, y, c & 15);
+			}
+		}
+	}
+
+	dimage(0, 0, img);
 }
 
 /* gintctl_gint_image(): Test image rendering */
 void gintctl_gint_image(void)
 {
 	int tab=0, key=0;
+	image_t *img_pattern = NULL;
+	u16 img_pattern_palette[16];
 
 	while(key != KEY_EXIT) {
 		if(tab == 0)
@@ -182,7 +216,7 @@ void gintctl_gint_image(void)
 		else if(tab == 1)
 			scene_2();
 		else if(tab == 2)
-			scene_3();
+			scene_3(&img_pattern, img_pattern_palette);
 
 		fkey_button(1, "SCENE 1");
 		fkey_button(2, "SCENE 2");
@@ -194,6 +228,8 @@ void gintctl_gint_image(void)
 		if(key == KEY_F2) tab = 1;
 		if(key == KEY_F3) tab = 2;
 	}
+
+	image_free(img_pattern);
 }
 #endif
 
