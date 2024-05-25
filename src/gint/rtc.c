@@ -47,13 +47,59 @@ static int x0=89, y0=58, dx=32;
 static int yd=121, eyd=121;
 #endif
 
+#if GINT_RENDER_RGB
+static void draw_segment_vertical(int x, int y, bool flip)
+{
+	if(flip) {
+		dline(x, y+2, x, y+17, C_BLACK);
+		x++;
+	}
+	dline(x, y+1, x, y+18, C_BLACK);
+	x++;
+	dline(x, y, x, y+19, C_BLACK);
+	x++;
+	dline(x, y+1, x, y+18, C_BLACK);
+	x++;
+	if(!flip)
+		dline(x, y+2, x, y+17, C_BLACK);
+}
+static void draw_segment_horizontal(int x, int y)
+{
+	dline(x+1, y, x+22, y, C_BLACK);
+	y++;
+	dline(x, y, x+23, y, C_BLACK);
+	y++;
+	dline(x+1, y, x+22, y, C_BLACK);
+	y++;
+	dline(x+2, y, x+21, y, C_BLACK);
+}
+static void draw_segment(int x, int y, int digit)
+{
+	static u8 const seg[10] = {
+		0x5f, 0x0c, 0x76, 0x7c, 0x2d, 0x79, 0x7b, 0x1c, 0x7f, 0x7d,
+	};
+	u8 pattern = seg[digit];
+
+	if(pattern & 0x01)
+		draw_segment_vertical(x, y+2, false);
+	if(pattern & 0x02)
+		draw_segment_vertical(x, y+23, false);
+	if(pattern & 0x04)
+		draw_segment_vertical(x+24, y+2, true);
+	if(pattern & 0x08)
+		draw_segment_vertical(x+24, y+23, true);
+
+	if(pattern & 0x10)
+		draw_segment_horizontal(x+2, y);
+	if(pattern & 0x20)
+		draw_segment_horizontal(x+2, y+21);
+	if(pattern & 0x40)
+		draw_segment_horizontal(x+2, y+42);
+}
+#endif
+
 static void draw_time(rtc_time_t *time, int edit_field)
 {
-	/* Height of characters */
-	int sh = img_rtc_segments.height;
-	/* Width of colon separator */
-	int cw = img_rtc_segments.width - 10 * dx;
-
 	int digits[6] = {
 		time->hours / 10,
 		time->hours % 10,
@@ -63,15 +109,31 @@ static void draw_time(rtc_time_t *time, int edit_field)
 		time->seconds % 10,
 	};
 
+	/* Height of characters */
+	int sh = _(img_rtc_segments.height, 46);
+	/* Width of colon separator */
+	int cw = _(img_rtc_segments.width - 10 * dx, 11);
+
 	for(int i=0, x=x0; i < 6; i++)
 	{
+#if GINT_RENDER_MONO
 		dsubimage(x, y0, &img_rtc_segments, dx*digits[i], 0, dx, sh,
 			DIMAGE_NONE);
+#elif GINT_RENDER_RGB
+		draw_segment(x, y0, digits[i]);
+#endif
 
 		x += dx;
 
 		if(i != 1 && i != 3) continue;
+#if GINT_RENDER_MONO
 		dsubimage(x, y0, &img_rtc_segments, 10*dx,0,cw,sh, DIMAGE_NONE);
+#elif GINT_RENDER_RGB
+		drect(x+2, y0+11, x+4, y0+15, C_BLACK);
+		drect(x+1, y0+12, x+5, y0+14, C_BLACK);
+		drect(x+2, y0+30, x+4, y0+34, C_BLACK);
+		drect(x+1, y0+31, x+5, y0+33, C_BLACK);
+#endif
 		x += cw;
 	}
 
@@ -174,74 +236,11 @@ static void draw_rtc(rtc_time_t *time)
 
 	#if GINT_RENDER_RGB
 	row_title("Real-Time Clock");
-	fkey_menu(1, "RTC");
-	fkey_menu(2, "TIMER");
 	fkey_action(5, "DATE");
 	fkey_action(6, "TIME");
 	#endif
 
 	dupdate();
-}
-
-//---
-//	Speed comparison of RTC and timers
-//---
-
-static void draw_speed(rtc_time_t *time, uint32_t elapsed)
-{
-	dclear(C_WHITE);
-
-	#if GINT_RENDER_MONO
-	extern bopti_image_t img_opt_gint_rtc;
-	row_print(1, 1, "Speed of RTC vs TMU");
-	dsubimage(0, 56, &img_opt_gint_rtc, 0, 9, 128, 8, DIMAGE_NONE);
-
-	row_print(3, 1, "RTC time: 1/16 s");
-	row_print(4, 1, "TMU time: %d us", elapsed);
-	#endif
-
-	#if GINT_RENDER_RGB
-	row_title("Speed comparison of RTC and timers");
-	fkey_menu(1, "RTC");
-	fkey_menu(2, "TIMER");
-
-	row_print(1, 1, "Run the RTC for 1/16 second.");
-	row_print(2, 1, "Time elapsed seen by libprof: %d us", elapsed);
-	#endif
-
-	dprint_opt(DWIDTH-2, DHEIGHT-1, C_BLACK, C_NONE, DTEXT_RIGHT,
-		DTEXT_BOTTOM, "%s %d, %02d:%02d", months[time->month],
-		time->month_day, time->hours, time->minutes);
-	dupdate();
-}
-
-static prof_t prof;
-
-static int speed_callback(int volatile *flag)
-{
-	if(*flag == 0)
-	{
-		prof_enter(prof);
-		*flag = 1;
-		return TIMER_CONTINUE;
-	}
-	else
-	{
-		prof_leave(prof);
-		*flag = 2;
-		return TIMER_STOP;
-	}
-}
-
-static uint32_t test_speed(void)
-{
-	int volatile flag = 0;
-	prof = prof_make();
-
-	rtc_periodic_enable(RTC_16Hz, GINT_CALL(speed_callback, &flag));
-
-	while(flag != 2) sleep();
-	return prof_time(prof);
 }
 
 //---
@@ -412,10 +411,10 @@ static void edit_date(void)
 		#if GINT_RENDER_MONO
 		extern bopti_image_t img_opt_gint_rtc;
 		if(edit_field == 0)
-			dsubimage(0, 56, &img_opt_gint_rtc, 0, option_tab*9+18,
+			dsubimage(0, 56, &img_opt_gint_rtc, 0, option_tab*9+9,
 				128, 8, DIMAGE_NONE);
 		if(edit_field == 1)
-			dsubimage(0, 56, &img_opt_gint_rtc, 0, option_tab*9+36,
+			dsubimage(0, 56, &img_opt_gint_rtc, 0, option_tab*9+27,
 				128, 8, DIMAGE_NONE);
 		#endif
 
@@ -555,9 +554,6 @@ void gintctl_gint_rtc(void)
 	rtc_time_t time;
 
 	int run_loop = 1;
-	int tab = 1;
-
-	uint32_t elapsed = test_speed();
 	volatile int frame_needed = 1;
 
 	rtc_periodic_enable(RTC_1Hz, GINT_CALL_SET(&frame_needed));
@@ -567,8 +563,7 @@ void gintctl_gint_rtc(void)
 		if(frame_needed)
 		{
 			rtc_get_time(&time);
-			if(tab == 1) draw_rtc(&time);
-			if(tab == 2) draw_speed(&time, elapsed);
+			draw_rtc(&time);
 			frame_needed = 0;
 		}
 
@@ -580,10 +575,8 @@ void gintctl_gint_rtc(void)
 
 			if(ev.key == KEY_EXIT) run_loop = 0;
 			else if(ev.key == KEY_MENU) gint_osmenu();
-			else if(ev.key == KEY_F1) tab = 1;
-			else if(ev.key == KEY_F2) tab = 2;
-			else if(ev.key == KEY_F5 && tab == 1) edit_date();
-			else if(ev.key == KEY_F6 && tab == 1) edit_time();
+			else if(ev.key == KEY_F5) edit_date();
+			else if(ev.key == KEY_F6) edit_time();
 			else action = 0;
 
 			if(action) frame_needed = 1;

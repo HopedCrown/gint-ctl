@@ -1,11 +1,44 @@
 #include <gint/keyboard.h>
 #include <gint/display.h>
 #include <gint/timer.h>
+#include <gint/rtc.h>
+#include <gint/cpu.h>
 
 #include <gintctl/util.h>
 #include <gintctl/perf.h>
 
 #include <libprof.h>
+
+static prof_t prof;
+
+static int speed_callback(int volatile *flag)
+{
+	if(*flag == 0)
+	{
+		prof_enter(prof);
+		*flag = 1;
+		return TIMER_CONTINUE;
+	}
+	else
+	{
+		prof_leave(prof);
+		*flag = 2;
+		return TIMER_STOP;
+	}
+}
+
+/* Waits for one RTC 16Hz period */
+static uint32_t run_rtc(void)
+{
+	int volatile flag = 0;
+	prof = prof_make();
+
+	rtc_periodic_enable(RTC_16Hz, GINT_CALL(speed_callback, &flag));
+
+	while(flag != 2) sleep();
+	return prof_time(prof);
+}
+
 
 /* Waits some time and returns the libprof output in microseconds */
 static uint32_t run_sleep(int us)
@@ -34,6 +67,7 @@ void gintctl_perf_libprof(void)
 
 	uint32_t sleep_delay = 0;
 	uint32_t empty = 0;
+	uint32_t rtc_16Hz = 0;
 
 	while(key != KEY_EXIT)
 	{
@@ -48,6 +82,7 @@ void gintctl_perf_libprof(void)
 		{
 			row_print(5, 1, "Sleep: %.3D ms", sleep_delay);
 			row_print(6, 1, "Empty: %d us", empty);
+			row_print(7, 1, "RTC 16 Hz: %d us", rtc_16Hz);
 		}
 
 		extern bopti_image_t img_opt_perf_libprof;
@@ -68,6 +103,7 @@ void gintctl_perf_libprof(void)
 			row_print(7, 1, "Sleep: %.3D ms", sleep_delay);
 			row_print(8, 1, "Empty: %d us", empty);
 			row_print(9, 1, "Tests: %d", test);
+			row_print(10, 1, "RTC 16 Hz: %d us", rtc_16Hz);
 		}
 
 		fkey_button(1, "START");
@@ -80,6 +116,7 @@ void gintctl_perf_libprof(void)
 		{
 			sleep_delay = run_sleep(delay);
 			empty = run_empty();
+			rtc_16Hz = run_rtc();
 
 			delay++;
 			test++;
