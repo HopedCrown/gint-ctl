@@ -122,9 +122,9 @@ fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
 
 add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})
 target_compile_options(gintctl PRIVATE
-  -Wall -Wextra -Os -g -Wno-error=implicit-function-declaration)
+  -Wall -Wextra -Os -g -flto -Wno-error=implicit-function-declaration)
 target_link_options(gintctl PRIVATE
-  -Wl,-Map=map -Wl,--print-memory-usage)
+  -flto -Wl,-Map=map -Wl,--print-memory-usage)
 target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(gintctl
   LibProf::LibProf JustUI::JustUI Gint::Gint)
