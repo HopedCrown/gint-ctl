@@ -9,7 +9,6 @@ include(Fxconv)
 
 find_package(Gint 2.8 REQUIRED)
 find_package(LibProf 2.1 REQUIRED)
-find_package(LibImg 2.1 REQUIRED)
 find_package(JustUI 1.0 REQUIRED)
 
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
@@ -20,6 +19,7 @@ set(SOURCES
   src/plot.c
   src/usb_commands.c
   src/util.c
+  src/gint/bfile.c
   src/gint/cpumem.c
   src/gint/dma.c
   src/gint/drivers.c
@@ -44,9 +44,6 @@ set(SOURCES
   src/gint/topti.c
   src/gint/usb.c
   src/gint/usbtrace.c
-  src/libs/bfile.c
-  src/libs/justui.c
-  src/libs/openlibm.c
   src/mem/mem.c
   src/perf/cpucache.c
   src/perf/cpucache.S
@@ -74,6 +71,7 @@ set(ASSETS_fx
   assets-fx/img/kbd_released.png
   assets-fx/img/libimg_swords.png
   assets-fx/img/opt_dump.png
+  assets-fx/img/opt_gint_bfile.png
   assets-fx/img/opt_gint_bopti.png
   assets-fx/img/opt_gint_cpumem.png
   assets-fx/img/opt_gint_dma.png
@@ -89,8 +87,6 @@ set(ASSETS_fx
   assets-fx/img/opt_gint_timers.png
   assets-fx/img/opt_gint_tlb.png
   assets-fx/img/opt_gint_usb.png
-  assets-fx/img/opt_libs_bfile.png
-  assets-fx/img/opt_libs_jui.png
   assets-fx/img/opt_main.png
   assets-fx/img/opt_mem.png
   assets-fx/img/opt_perf_cpu.png
@@ -132,11 +128,6 @@ target_link_options(gintctl PRIVATE
 target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(gintctl
   LibProf::LibProf JustUI::JustUI Gint::Gint)
-
-if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
-  target_link_libraries(gintctl LibImg::LibImg)
-endif()
-
 
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
   generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"

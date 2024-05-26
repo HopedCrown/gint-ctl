@@ -73,8 +73,10 @@ void gintctl_gint_gray(void);
 /* gintctl_gint_grayrender(): Gray rendering functions */
 void gintctl_gint_grayrender(void);
 
-
 /* gintctl_gint_gdb(): GDB remote serial protocol */
 void gintctl_gint_gdb(void);
+
+/* gintctl_gint_bfile(): Foundations of the filesystem access system */
+void gintctl_gint_bfile(void);
 
 #endif /* GINTCTL_GINT */

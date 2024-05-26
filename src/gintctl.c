@@ -14,7 +14,6 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
-#include <gintctl/libs.h>
 #include <gintctl/mem.h>
 
 #include <libprof.h>
@@ -38,6 +37,9 @@ struct menu menu_gint = {
 	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
 	{ "Memory dump",        gintctl_gint_dump, 0 },
 	{ "Drivers and worlds", gintctl_gint_drivers, 0 },
+	#if !GINT_HW_CP
+	{ "BFile filesystem",   gintctl_gint_bfile, 0 },
+	#endif
 	{ "TLB management",     gintctl_gint_tlb, 0 },
 	#if GINT_HW_CG && GINT_RENDER_RGB
 	{ "Overclocking",       gintctl_gint_overclock, MENU_SH4_ONLY },
@@ -83,19 +85,6 @@ struct menu menu_perf = {
 
 	/* TODO: Comparison with MonochromeLib */
 
-	{ NULL, NULL, 0 },
-}};
-
-/* External libraries */
-struct menu menu_libs = {
-	_("Libraries", "External and standard libraries"), .entries = {
-
-	{ "libm: " _("OpenLibm", "OpenLibm floating-point functions"),
-		gintctl_libs_openlibm, 0 },
-	{ "JustUI widgets",
-		gintctl_libs_justui, 0 },
-	{ "BFile filesystem",
-		gintctl_libs_bfile, 0 },
 	{ NULL, NULL, 0 },
 }};
 
@@ -213,7 +202,6 @@ void gintctl_main(void)
 
 	row_print(3, 1, "F2:gint tests");
 	row_print(4, 1, "F3:Performance");
-	row_print(5, 1, "F4:Libraries");
 	row_print(6, 1, "F5:MPU registers");
 	row_print(7, 1, "F6:Memory map/dump");
 	#endif
@@ -222,7 +210,6 @@ void gintctl_main(void)
 	row_title("gint %s (@%07x) for fx-CG 50", GINT_VERSION, GINT_HASH);
 	row_print(1,1, "F2: gint features and driver tests");
 	row_print(2,1, "F3: Performance benchmarks");
-	row_print(3,1, "F4: External libraries");
 	row_print(4,1, "F5: MPU register browser");
 	row_print(5,1, "F6: Hexadecimal memory browser");
 
@@ -247,19 +234,17 @@ static void draw(struct menu *menu)
 	fkey_action(1, "INFO");
 	fkey_menu(2, "GINT");
 	fkey_menu(3, "PERF");
-	fkey_menu(4, "LIBS");
 	fkey_button(5, "REGS");
 	fkey_button(6, "MEMORY");
 	#endif
 }
 
-int main(GUNUSED int isappli, GUNUSED int optnum)
+int main(void)
 {
 	/* Initialize menu metadata */
 	int top = _(1, 0), bottom = 1;
 	menu_init(&menu_gint, top, bottom);
 	menu_init(&menu_perf, top, bottom);
-	menu_init(&menu_libs, top, bottom);
 
 	gint_setrestart(1);
 
@@ -307,8 +292,6 @@ int main(GUNUSED int isappli, GUNUSED int optnum)
 			menu = &menu_gint;
 		if(key == KEY_F3)
 			menu = &menu_perf;
-		if(key == KEY_F4)
-			menu = &menu_libs;
 		if(key == KEY_F5)
 			gintctl_regs();
 		if(key == KEY_F6)

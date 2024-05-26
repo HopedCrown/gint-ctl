@@ -3,7 +3,7 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
 
-#include <gintctl/libs.h>
+#include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Names and file informations */
+/* Names and file information */
 static char **test_names = NULL;
 static struct BFile_FileInfo *test_infos = NULL;
 
@@ -73,7 +73,7 @@ static void table_gen(gtable *t, int row)
 	gtable_provide(t, c1, c2);
 }
 
-void gintctl_libs_bfile(void)
+void gintctl_gint_bfile(void)
 {
 	gtable *table = gtable_create(2, table_gen, NULL, NULL);
 	gtable_set_rows(table, 0);
@@ -82,7 +82,7 @@ void gintctl_libs_bfile(void)
 	gtable_set_font(table, _(&font_mini, dfont_default()));
 	jwidget_set_margin(table, 0, 2, 1, 2);
 
-	gscreen *scr = gscreen_create2("BFile filesystem", &img_opt_libs_bfile,
+	gscreen *scr = gscreen_create2("BFile filesystem", &img_opt_gint_bfile,
 		"BFile access to storage memory", "@LIST;;;;;");
 	gscreen_add_tabs(scr, table, table);
 	jscene_set_focused_widget(scr->scene, table);
