@@ -7,6 +7,7 @@
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
+#if GINT_RENDER_RGB
 struct keybgrect {
 	/* Background rectangle */
 	u8 x, y, w, h;
@@ -48,7 +49,6 @@ struct kbdmodel {
   #define KBD_SPRITE img_kbd_sprite_cp
 #endif
 
-#if GINT_RENDER_RGB
 static void render_keyboard(keydev_t *d, int x0, int y0)
 {
 	int BG = C_RGB(26, 26, 26);
