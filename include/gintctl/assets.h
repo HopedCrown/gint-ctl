@@ -9,8 +9,6 @@
 
 #if GINT_RENDER_MONO
 
-#include <libimg.h>
-
 extern font_t
 	font_hexa,
 	font_mini,
@@ -55,9 +53,6 @@ extern bopti_image_t
 	img_rtc_segments,
 	img_tlb_cells;
 
-extern img_t
-	img_libimg_swords;
-
 #endif
 
 #if GINT_RENDER_RGB
@@ -69,7 +64,6 @@ extern bopti_image_t
 	img_rtc_arrows,
 	img_rtc_segments,
 	img_swift,
-	img_swords,
 	img_libimg_even_odd,
 	img_libimg_odd_even,
 	img_libimg_sq_even,

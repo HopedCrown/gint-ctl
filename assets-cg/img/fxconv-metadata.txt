@@ -4,8 +4,6 @@
 
 swift.png:
   profile: p4
-swords.png:
-  profile: p8
 kbd_pressed.png:
   profile: p4
 kbd_released.png:

@@ -70,7 +70,6 @@ set(ASSETS_fx
   assets-fx/img/kbd_events.png
   assets-fx/img/kbd_pressed.png
   assets-fx/img/kbd_released.png
-  assets-fx/img/libimg_swords.png
   assets-fx/img/opt_dump.png
   assets-fx/img/opt_gint_bfile.png
   assets-fx/img/opt_gint_bopti.png
@@ -112,7 +111,6 @@ set(ASSETS_RGB
   assets-cg/img/libimg_sq_odd.png
   assets-cg/img/libimg_train.png
   assets-cg/img/rtc_arrows.png
-  assets-cg/img/swords.png
 )
 set(ASSETS_cg
   ${ASSETS_RGB}
