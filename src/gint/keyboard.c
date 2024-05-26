@@ -17,14 +17,12 @@ struct keysprite {
 	u8 x, y;
 	/* Size of rectangle */
 	u8 w, h;
-	/* Position of label sprite in spritesheet (height 32 pixels) */
-	u8 sx;
-	u8 sy: 5;
-	/* Unused */
-	u8 _: 3;
+	/* sx, sy: Position of label sprite in spritesheet (height 32 pixels) */
 	/* lw, lh: Size of label sprite in spritesheet */
 	/* lx, ly: Offset of key to label */
-	u8 lw: 5;
+	u8 sx;
+	u8 lw;
+	u8 sy: 5;
 	u8 ly: 3;
 	u8 lh: 4;
 	u8 lx: 4;

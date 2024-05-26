@@ -1,3 +1,4 @@
+#include <gint/config.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/bfile.h>
@@ -10,6 +11,8 @@
 #include <gintctl/gint.h>
 
 #include <stdio.h>
+
+#define ENABLE_FS_DUMP !GINT_HW_CP
 
 struct region {
 	char const *name;
@@ -31,6 +34,7 @@ static struct region const regs[] = {
 	#endif
 };
 
+#if ENABLE_FS_DUMP
 static void switch_dump(int region, int segment, char *filename, int *retcode)
 {
 	uint32_t start = regs[region].start;
@@ -76,6 +80,7 @@ static int do_dump_smem(int region, int segment)
 
 	return retcode;
 }
+#endif
 
 static void do_dump_usb(int region)
 {
@@ -149,7 +154,9 @@ void gintctl_gint_dump(void)
 		fkey_button(3, "RAM_8C");
 		fkey_button(4, "RS");
 		fkey_action(5, "USB");
+		#if ENABLE_FS_DUMP
 		fkey_action(6, "SMEM");
+		#endif
 		#endif
 
 		dupdate();
@@ -174,6 +181,8 @@ void gintctl_gint_dump(void)
 
 		retcode = 0;
 		if(key == KEY_F5) do_dump_usb(region);
+		#if ENABLE_FS_DUMP
 		if(key == KEY_F6) retcode = do_dump_smem(region, segment);
+		#endif
 	}
 }

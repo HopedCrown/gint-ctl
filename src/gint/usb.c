@@ -1,3 +1,4 @@
+#include <gint/config.h>
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/mpu/usb.h>
@@ -62,6 +63,7 @@ static void usb_logger(char const *format, va_list args)
 
 static void save_logger(void)
 {
+#if !GINT_HW_CP
 	uint16_t const *file = u"\\\\fls0\\usb-log.txt";
 	int size = log_pos;
 
@@ -73,6 +75,7 @@ static void save_logger(void)
 
 	BFile_Write(fd, log_buffer, log_pos);
 	BFile_Close(fd);
+#endif
 }
 
 //---

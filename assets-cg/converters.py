@@ -112,6 +112,17 @@ def _kbdsprite_keycodes(model):
             0x31, 0x32, 0x33, 0x34, 0x35,
             0x21, 0x22, 0x23, 0x24, 0x25,
             0x11, 0x12, 0x13, 0x14, 0x15 ]
+    if model == "cp":
+        return [
+            0xa1,       0x86,       0x44,
+                  0x85,       0x76,
+            0x81,       0x75,       0x07,
+
+            0xa5, 0xa2, 0xa3, 0xa4, 0x73, 0x35,
+            0x53, 0x41, 0x42, 0x43, 0x34,
+            0x54, 0x31, 0x32, 0x33, 0x25,
+            0x55, 0x21, 0x22, 0x23, 0x24,
+            0x14, 0x11, 0x12, 0x13, 0x15 ]
     raise Exception(f"unknown keycode set {model}")
 
 def convert_kbd_sprite(input, keycodeset):
@@ -137,9 +148,11 @@ def convert_kbd_sprite(input, keycodeset):
         lx, ly, lright, lbottom = key.getbbox()
         if ly >= 8:
             ly = 7
+        if lx >= 15:
+            lx = 15
         lw = lright-lx
         lh = lbottom-ly
-        assert lx < 16 and ly < 8
+        assert lx < 16 and ly < 8 and lw < 256 and lh < 16
         KEYLABELS.append((lx, ly, lw, lh))
 
     # Standard expected solution is 160x30
@@ -180,9 +193,8 @@ def convert_kbd_sprite(input, keycodeset):
             assert 0 <= value < (1 << n)
             return value
         DATA_KEYS[index] = bytes([
-            x, y, w, h, sx,
-            (bits(sy, 5) << 3) + bits(0, 3), # 3 free bits here!
-            (bits(lw, 5) << 3) + bits(ly, 3),
+            x, y, w, h, sx, lw,
+            (bits(sy, 5) << 3) + bits(ly, 3),
             (bits(lh, 4) << 4) + bits(lx, 4),
             bits(code, 8),
         ])

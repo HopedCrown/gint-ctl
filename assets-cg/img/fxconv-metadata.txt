@@ -13,6 +13,9 @@ kbd_released.png:
 kbd_sprite_cg.png:
   custom-type: kbd-sprite
   keycodes: cg
+kbd_sprite_cp.png:
+  custom-type: kbd-sprite
+  keycodes: cp
 
 libimg_even_odd.png:
   profile: rgb565a

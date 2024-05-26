@@ -5,6 +5,7 @@ project(gintctl VERSION 2.10.0 LANGUAGES C ASM)
 
 include(GenerateG1A)
 include(GenerateG3A)
+include(GenerateHH2Bin)
 include(Fxconv)
 
 find_package(Gint 2.8 REQUIRED)
@@ -116,9 +117,12 @@ set(ASSETS_RGB
 set(ASSETS_cg
   ${ASSETS_RGB}
   assets-cg/img/kbd_sprite_cg.png)
+set(ASSETS_cp
+  ${ASSETS_RGB}
+  assets-cg/img/kbd_sprite_cp.png)
 
 fxconv_declare_converters(assets-cg/converters.py)
-fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} WITH_METADATA)
+fxconv_declare_assets(${ASSETS_fx} ${ASSETS_cg} ${ASSETS_cp} WITH_METADATA)
 
 add_executable(gintctl ${SOURCES} ${ASSETS_${FXSDK_PLATFORM}})
 target_compile_options(gintctl PRIVATE
@@ -141,4 +145,6 @@ elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCG50)
 elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G_G3A)
   generate_g3a(TARGET gintctl OUTPUT "gintctl-fx.g3a"
     NAME "" ICONS assets-cg/icon-uns.png assets-cg/icon-sel.png)
+elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCP)
+  generate_hh2_bin(TARGET gintctl OUTPUT "gintctl-hh2.bin")
 endif()
