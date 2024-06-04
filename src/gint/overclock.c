@@ -11,7 +11,7 @@
 #include <libprof.h>
 #include <stdio.h>
 
-#if GINT_HW_CG && GINT_RENDER_RGB
+#if (GINT_HW_CG || GINT_HW_CP) && GINT_RENDER_RGB
 
 #define CPG SH7305_CPG
 #define BSC SH7305_BSC

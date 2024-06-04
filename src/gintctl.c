@@ -20,6 +20,11 @@
 
 #include <fxlibc/printf.h>
 
+#if GINT_HW_CP
+GSECTION(".hh2.info") GVISIBLE
+char _hh2info[] = "GINTCTL\0gint control application\0Lephe\0" "2.10";
+#endif
+
 /* TODO:
    * Interrupt controller state?
    * Clock frequencies
@@ -35,13 +40,15 @@ struct menu menu_gint = {
 	{ "DSP processors",     gintctl_gint_dsp, 0 },
 	#endif
 	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
+	#if !GINT_HW_CP
 	{ "Memory dump",        gintctl_gint_dump, 0 },
+	#endif
 	{ "Drivers and worlds", gintctl_gint_drivers, 0 },
 	#if !GINT_HW_CP
 	{ "BFile filesystem",   gintctl_gint_bfile, 0 },
 	#endif
 	{ "TLB management",     gintctl_gint_tlb, 0 },
-	#if GINT_HW_CG && GINT_RENDER_RGB
+	#if (GINT_HW_CG || GINT_HW_CP) && GINT_RENDER_RGB
 	{ "Overclocking",       gintctl_gint_overclock, MENU_SH4_ONLY },
 	#endif
 	{ "Memory allocation",  gintctl_gint_kmalloc, 0 },
@@ -51,7 +58,9 @@ struct menu menu_gint = {
 	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
 	{ "Real-time clock",    gintctl_gint_rtc, 0 },
+	#if !GINT_HW_CP
 	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
+	#endif
 	#if GINT_HW_CG && GINT_RENDER_RGB
 	{ "USB tracer",         gintctl_gint_usbtrace, MENU_SH4_ONLY },
 	#endif
@@ -64,7 +73,9 @@ struct menu menu_gint = {
 	#if GINT_RENDER_MONO
 	{ "Gray rendering",     gintctl_gint_grayrender, 0 },
 	#endif
+	#if !GINT_HW_CP
 	{ "GDB",                gintctl_gint_gdb, MENU_SH4_ONLY },
+	#endif
 	{ NULL, NULL, 0 },
 }};
 
@@ -73,6 +84,7 @@ struct menu menu_perf = {
 	_("Performance", "Performance benchmarks"), .entries = {
 
 	{ "libprof basics",      gintctl_perf_libprof, 0 },
+#if !GINT_HW_CP
 	{ "CPU and cache",       gintctl_perf_cpucache, 0 },
 	{ _("CPU parallelism", "Superscalar and pipeline parallelism"),
 	                         gintctl_perf_cpu, 0 },
@@ -84,13 +96,15 @@ struct menu menu_perf = {
 	{ "Rendering functions", gintctl_perf_render, 0 },
 
 	/* TODO: Comparison with MonochromeLib */
-
+#endif
 	{ NULL, NULL, 0 },
 }};
 
 //---
 // Global shortcuts
 //---
+
+#if !GINT_HW_CP
 
 /* Whether we're recording */
 static bool getkey_recording = false;
@@ -189,6 +203,9 @@ key_event_t gintctl_getkey(void)
 {
 	return gintctl_getkey_opt(GETKEY_DEFAULT);
 }
+#else
+#define gintctl_getkey getkey
+#endif
 
 //---
 //	Main application
@@ -249,7 +266,9 @@ int main(void)
 	gint_setrestart(1);
 
 	/* Enable global getkey() shortcuts */
+#if !GINT_HW_CP
 	getkey_set_feature_function(getkey_global_shortcuts);
+#endif
 
 	/* Start the profiling library */
 	prof_init();
@@ -265,7 +284,9 @@ int main(void)
 	#endif
 
 	/* Get notified when fxlink messages arrive through USB */
+#if !GINT_HW_CP
 	usb_fxlink_set_notifier(gintctl_fxlink_notification);
+#endif
 
 	/* Enable keyboard options globally because we're going to interrupt
 	   getkey_opt() to answer USB requests synchronously */
@@ -286,15 +307,15 @@ int main(void)
 		ev = gintctl_getkey();
 		key = ev.key;
 
-		if(key == KEY_F1)
+		if(key == KEY_F1 || key == KEY_EQUALS)
 			menu = NULL;
-		if(key == KEY_F2)
+		if(key == KEY_F2 || key == KEY_X)
 			menu = &menu_gint;
-		if(key == KEY_F3)
+		if(key == KEY_F3 || key == KEY_Y)
 			menu = &menu_perf;
-		if(key == KEY_F5)
+		if(key == KEY_F5 || key == KEY_POWER)
 			gintctl_regs();
-		if(key == KEY_F6)
+		if(key == KEY_F6 || key == KEY_DIV)
 			gintctl_mem();
 
 		if(!menu) continue;
