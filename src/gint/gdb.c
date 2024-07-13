@@ -47,7 +47,8 @@ void gintctl_gint_gdb(void)
 
 	while (key != KEY_EXIT) {
 		dclear(C_WHITE);
-		row_title(GINT_HW_SWITCH("GDB", "GDB remote serial protocol"));
+		row_title(GINT_HW_SWITCH("GDB", "GDB remote serial protocol",
+			"GDB remote serial protocol"));
 
 #if GINT_RENDER_MONO
 		dimage(0, 56, &img_opt_gint_gdb);
