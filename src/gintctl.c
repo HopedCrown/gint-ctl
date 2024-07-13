@@ -43,6 +43,7 @@ struct menu menu_gint = {
 	{ "Overclocking",       gintctl_gint_overclock, MENU_SH4_ONLY },
 	#endif
 	{ "Memory allocation",  gintctl_gint_kmalloc, 0 },
+	{ "Syscall emulation",  gintctl_gint_syscallemu, 0 },
 	{ "Keyboard",           gintctl_gint_keyboard, 0 },
 	{ "Timers",             gintctl_gint_timer, 0 },
 	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },

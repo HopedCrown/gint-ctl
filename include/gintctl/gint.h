@@ -31,6 +31,9 @@ void gintctl_gint_tlb(void);
 /* gintctl_gint_overclock(): Clock speed detection and setting */
 void gintctl_gint_overclock(void);
 
+/* gintct_gint_syscallemu: Linux syscall interface emulation */
+void gintctl_gint_syscallemu(void);
+
 /* gintct_gint_keyboard: Real-time keyboard visualization */
 void gintctl_gint_keyboard(void);
 
