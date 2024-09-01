@@ -446,24 +446,24 @@ void gintctl_gint_usbtrace(void)
 
     // Command composition tab
 
-    jscrolledlist *tab1 = jscrolledlist_create(NULL, info_command,
-        paint_command);
+    jscrolledlist *tab1 =
+        jscrolledlist_create(info_command, paint_command, NULL);
     jlist *commands_list = tab1->list;
-    jlist_update_model(commands_list, 1);
+    jlist_update_model(commands_list, 1, NULL);
 
     // Trace browsing tab
 
-    jscrolledlist *tab2 = jscrolledlist_create(NULL, info_trace,
-        paint_trace);
+    jscrolledlist *tab2 =
+        jscrolledlist_create(info_trace, paint_trace, NULL);
     jlist *traces_list = tab2->list;
-    jlist_update_model(traces_list, 0);
+    jlist_update_model(traces_list, 0, NULL);
 
     // New command selection tab
 
-    jscrolledlist *tab3 = jscrolledlist_create(NULL, info_commandoption,
-        paint_commandoption);
+    jscrolledlist *tab3 =
+        jscrolledlist_create(info_commandoption, paint_commandoption, NULL);
     jlist *commandoptions_list = tab3->list;
-    jlist_update_model(commandoptions_list, COMMAND__TOTAL);
+    jlist_update_model(commandoptions_list, COMMAND__TOTAL, NULL);
 
     // Scene setup
 
@@ -490,7 +490,7 @@ void gintctl_gint_usbtrace(void)
     commands_add(COMMAND_WRITE_SYNC_TEXT_HEADER);
     commands_add(COMMAND_WRITE_SYNC_SHORT_TEXT);
     commands_add(COMMAND_COMMIT_SYNC);
-    jlist_update_model(commands_list, commands_len+1);
+    jlist_update_model(commands_list, commands_len+1, NULL);
 
     while(1) {
         jevent e = jscene_run(scr->scene);
@@ -511,7 +511,7 @@ void gintctl_gint_usbtrace(void)
         }
         if(e.type == JLIST_ITEM_TRIGGERED && e.source == commandoptions_list) {
             commands_add(e.data);
-            jlist_update_model(commands_list, commands_len + 1);
+            jlist_update_model(commands_list, commands_len + 1, NULL);
             gscreen_show_tab(scr, 0);
         }
         if(e.type == JLIST_ITEM_TRIGGERED && e.source == traces_list) {
@@ -522,12 +522,12 @@ void gintctl_gint_usbtrace(void)
 
         if(key == KEY_F5 && gscreen_in(scr, 1)) {
             traces_clear();
-            jlist_update_model(traces_list, traces_len);
+            jlist_update_model(traces_list, traces_len, NULL);
         }
 
         if(key == KEY_F6 && gscreen_in(scr, 0)) {
             execute_tracer();
-            jlist_update_model(traces_list, traces_len);
+            jlist_update_model(traces_list, traces_len, NULL);
             gscreen_show_tab(scr, 1);
         }
 
@@ -543,12 +543,12 @@ void gintctl_gint_usbtrace(void)
         if(key == KEY_UP && e.key.alpha && focus == commands_list) {
             int s = commands_move_by(jlist_selected_item(commands_list), -1);
             // TODO: Factor out these list model updates
-            jlist_update_model(commands_list, commands_len + 1);
+            jlist_update_model(commands_list, commands_len + 1, NULL);
             jlist_select(commands_list, s);
         }
         if(key == KEY_DOWN && e.key.alpha && focus == commands_list) {
             int s = commands_move_by(jlist_selected_item(commands_list), +1);
-            jlist_update_model(commands_list, commands_len + 1);
+            jlist_update_model(commands_list, commands_len + 1, NULL);
             jlist_select(commands_list, s);
         }
 

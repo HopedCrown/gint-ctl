@@ -16,7 +16,6 @@ set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
 set(SOURCES
   src/gintctl.c
-  src/menu.c
   src/plot.c
   src/usb_commands.c
   src/util.c
@@ -56,6 +55,7 @@ set(SOURCES
   src/perf/memory.S
   src/perf/render.c
   src/regs/regs.c
+  src/widgets/gmenu.c
   src/widgets/gscreen.c
   src/widgets/gtable.c
 )

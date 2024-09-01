@@ -9,12 +9,13 @@
 #include <gint/gray.h>
 
 #include <gintctl/util.h>
-#include <gintctl/menu.h>
 #include <gintctl/assets.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
 #include <gintctl/mem.h>
+#include <gintctl/widgets/gscreen.h>
+#include <gintctl/widgets/gmenu.h>
 
 #include <libprof.h>
 
@@ -31,8 +32,9 @@ char _hh2info[] = "GINTCTL\0gint control application\0Lephe\0" "2.10";
    * F2 to save hardware data to file */
 
 /* gint test menu */
-struct menu menu_gint = {
-	_("gint tests", "gint features and driver tests"), .entries = {
+struct menuentry menu_gint[] = {
+	{ _("gint tests", "gint features and driver tests"),
+	  NULL, MENU_CATEGORY },
 
 	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
@@ -77,11 +79,12 @@ struct menu menu_gint = {
 	{ "GDB",                gintctl_gint_gdb, MENU_SH4_ONLY },
 	#endif
 	{ NULL, NULL, 0 },
-}};
+};
 
 /* Performance menu */
-struct menu menu_perf = {
-	_("Performance", "Performance benchmarks"), .entries = {
+struct menuentry menu_perf[] = {
+	{ _("Performance", "Performance benchmarks"),
+	  NULL, MENU_CATEGORY },
 
 	{ "libprof basics",      gintctl_perf_libprof, 0 },
 #if !GINT_HW_CP
@@ -98,7 +101,7 @@ struct menu menu_perf = {
 	/* TODO: Comparison with MonochromeLib */
 #endif
 	{ NULL, NULL, 0 },
-}};
+};
 
 //---
 // Global shortcuts
@@ -175,6 +178,8 @@ static bool getkey_global_shortcuts(key_event_t e)
 
 int volatile gintctl_interrupt = 0;
 
+// TODO: Replace gintctl_getkey and related mechanisms with JustUI events
+// Note: this requires a single scene for the entire application
 static void gintctl_fxlink_notification(void)
 {
 	/* Hack: use bit #31 to indicate an internal interrupt */
@@ -211,58 +216,8 @@ key_event_t gintctl_getkey(void)
 //	Main application
 //---
 
-/* gintctl_main(): Show the main tab */
-void gintctl_main(void)
-{
-	#if GINT_RENDER_MONO
-	row_title("gint %s %07x", GINT_VERSION, GINT_HASH);
-
-	row_print(3, 1, "F2:gint tests");
-	row_print(4, 1, "F3:Performance");
-	row_print(6, 1, "F5:MPU registers");
-	row_print(7, 1, "F6:Memory map/dump");
-	#endif
-
-	#if GINT_RENDER_RGB
-	row_title("gint %s (@%07x) for fx-CG 50", GINT_VERSION, GINT_HASH);
-	row_print(1,1, "F2: gint features and driver tests");
-	row_print(2,1, "F3: Performance benchmarks");
-	row_print(4,1, "F5: MPU register browser");
-	row_print(5,1, "F6: Hexadecimal memory browser");
-
-	row_print(7,1, "This add-in is running a unikernel called gint by");
-	row_print(8,1, "Lephe'. Information about the project is available");
-	row_print(9,1, "on planet-casio.com.");
-	#endif
-}
-
-static void draw(struct menu *menu)
-{
-	dclear(C_WHITE);
-
-	if(menu) menu_show(menu);
-	else gintctl_main();
-
-	#if GINT_RENDER_MONO
-	dimage(0, 56, &img_opt_main);
-	#endif
-
-	#if GINT_RENDER_RGB
-	fkey_action(1, "INFO");
-	fkey_menu(2, "GINT");
-	fkey_menu(3, "PERF");
-	fkey_button(5, "REGS");
-	fkey_button(6, "MEMORY");
-	#endif
-}
-
 int main(void)
 {
-	/* Initialize menu metadata */
-	int top = _(1, 0), bottom = 1;
-	menu_init(&menu_gint, top, bottom);
-	menu_init(&menu_perf, top, bottom);
-
 	gint_setrestart(1);
 
 	/* Enable global getkey() shortcuts */
@@ -295,41 +250,93 @@ int main(void)
 	tr.enabled |= KEYDEV_TR_DELAYED_ALPHA | KEYDEV_TR_INSTANT_ALPHA;
 	keydev_set_transform(keydev_std(), tr);
 
-	key_event_t ev;
-	int key = 0;
-	struct menu *menu = NULL;
+	//---
+	// Main menu UI
+	//---
 
-	while(key != KEY_EXIT)
-	{
-		draw(menu);
-		dupdate();
+	gscreen *s = gscreen_create2("", &img_opt_main, "",
+		"/INFO;/GINT;/PERF;;@REGS;@MEMORY");
 
-		ev = gintctl_getkey();
-		key = ev.key;
+	// TODO: Better macro distinctions
+	jlabel_asprintf(s->title,
+#if GINT_HW_CG
+		"gint %s (@%07x) for fx-CG", GINT_VERSION, GINT_HASH
+#elif GINT_HW_CP
+		"gint %s (@%07x) for fx-CP", GINT_VERSION, GINT_HASH
+#else
+		"gint %s %07x", GINT_VERSION, GINT_HASH
+#endif
+	);
 
-		if(key == KEY_F1 || key == KEY_EQUALS)
-			menu = NULL;
-		if(key == KEY_F2 || key == KEY_X)
-			menu = &menu_gint;
-		if(key == KEY_F3 || key == KEY_Y)
-			menu = &menu_perf;
-		if(key == KEY_F5 || key == KEY_POWER)
+	char const *main_menu_str = _(
+		"F2:gint tests\n"
+		"F3:Performance\n"
+		"F5:MPU registers\n"
+		"F6:Memory map/dump",
+		//---
+		"F2: gint features and driver tests\n"
+		"F3: Performance benchmarks\n"
+		"F5: MPU register browser (WIP)\n"
+		"F6: Hexadecimal memory browser\n"
+		"\n"
+		"This add-in is running a unikernel called gint by Lephe'. "
+		"Information about the project is available on planet-casio.com.");
+
+	jlabel *main_menu_label = jlabel_create(main_menu_str, NULL);
+	jlabel_set_line_spacing(main_menu_label, _(0,4));
+	jlabel_set_wrap_mode(main_menu_label, J_WRAP_WORD);
+	jlabel_set_block_alignment(main_menu_label, J_ALIGN_LEFT, J_ALIGN_TOP);
+	jwidget_set_padding(main_menu_label, 4, 4, 4, 4);
+	gscreen_add_tab(s, main_menu_label, NULL);
+
+	gmenu *menu1 = gmenu_create(menu_gint, NULL);
+	gscreen_add_tab(s, menu1, menu1->list);
+
+	gmenu *menu2 = gmenu_create(menu_perf, NULL);
+	gscreen_add_tab(s, menu2, menu2->list);
+
+	while(true) {
+		jevent e = jscene_run(s->scene);
+
+		if(e.type == JSCENE_PAINT) {
+			dclear(C_WHITE);
+			jscene_render(s->scene);
+			dupdate();
+		}
+
+		if(e.type == JLIST_ITEM_TRIGGERED) {
+			struct menuentry const *entries = ((jlist *)e.source)->user;
+			entries[e.data].function();
+			s->scene->widget.update = true;
+		}
+
+		if(e.type != JSCENE_KEY || e.key.type != KEYEV_DOWN) continue;
+		int key = e.key.key;
+
+		if(key == KEY_EXIT)
+			break;
+		if(key == KEY_F1)
+			gscreen_show_tab(s, 0);
+		if(key == KEY_F2)
+			gscreen_show_tab(s, 1);
+		if(key == KEY_F3)
+			gscreen_show_tab(s, 2);
+		if(key == KEY_F5) {
 			gintctl_regs();
-		if(key == KEY_F6 || key == KEY_DIV)
+			s->scene->widget.update = true;
+		}
+		if(key == KEY_F6) {
 			gintctl_mem();
-
-		if(!menu) continue;
-
-		if(key == KEY_UP || key == KEY_DOWN)
-			menu_move(menu, key, ev.shift || keydown(KEY_SHIFT),0);
-		if(key == KEY_EXE)
-			menu_exec(menu);
+			s->scene->widget.update = true;
+		}
 	}
 
 	/* Prepare a main menu frame to maintain the illusion when coming
 	   back after a restart */
-	draw(NULL);
+	gscreen_show_tab(s, 0);
+	jscene_render(s->scene);
 
+	gscreen_destroy(s);
 	prof_quit();
 	return 0;
 }
