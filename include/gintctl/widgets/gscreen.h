@@ -22,7 +22,8 @@ struct gscreen_tab;
 
    The scene of a gscreen can be accessed with (the_gscreen->scene). */
 typedef struct {
-	jscene *scene;
+	jwidget widget;
+
 	/* Number of tabs */
 	int tab_count;
 	/* Information on tabs */
@@ -48,16 +49,17 @@ struct gscreen_tab {
    one here and use gscreen_set_tab_{title,fkeys}_visible(). */
 
 #if GINT_RENDER_MONO
-gscreen *gscreen_create(char const *title, bopti_image_t const *fkeys);
-#define gscreen_create2(short, img, long, fkeys) gscreen_create(short, img)
+gscreen *gscreen_create(
+	char const *title, bopti_image_t const *fkeys, void *parent);
+#define gscreen_create2(shrt, img, lng, fkeys, parent) \
+	gscreen_create(shrt, img, parent)
 #endif
 
 #if GINT_RENDER_RGB
-gscreen *gscreen_create(char const *title, char const *fkeys);
-#define gscreen_create2(short, img, long, fkeys) gscreen_create(long, fkeys)
+gscreen *gscreen_create(char const *title, char const *fkeys, void *parent);
+#define gscreen_create2(shrt, img, lng, fkeys, parent) \
+	gscreen_create(lng, fkeys, parent)
 #endif
-
-void gscreen_destroy(gscreen *s);
 
 //---
 // Function bar settings
@@ -103,12 +105,5 @@ int gscreen_current_tab(gscreen *s);
 
 /* gscreen_in(): Check if we're in a specific tab */
 bool gscreen_in(gscreen *s, int tab);
-
-//---
-// Focus management
-//---
-
-/* Set focus for the current tab */
-void gscreen_focus(gscreen *s, void *widget);
 
 #endif /* _GINTCTL_WIDGETS_GSCREEN */

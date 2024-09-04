@@ -441,8 +441,9 @@ void gintctl_gint_usbtrace(void)
     commands_clear();
     traces_clear();
 
+    jscene *scene = jscene_create_fullscreen(NULL);
     gscreen *scr = gscreen_create("Live USB state tracing",
-        "/PROG;/TRACES;;;;#RUN|/PROG;/TRACES;;;#CLEAR;");
+        "/PROG;/TRACES;;;;#RUN|/PROG;/TRACES;;;#CLEAR;", scene);
 
     // Command composition tab
 
@@ -475,7 +476,7 @@ void gintctl_gint_usbtrace(void)
     gscreen_set_tab_fkeys_visible(scr, 2, false);
 
     gscreen_show_tab(scr, 0);
-    jscene_set_focused_widget(scr->scene, commands_list);
+    jscene_set_focused_widget(scene, commands_list);
 
     commands_add(COMMAND_OPEN);
     commands_add(COMMAND_OPEN_WAIT);
@@ -493,15 +494,15 @@ void gintctl_gint_usbtrace(void)
     jlist_update_model(commands_list, commands_len+1, NULL);
 
     while(1) {
-        jevent e = jscene_run(scr->scene);
-        void *focus = jscene_focused_widget(scr->scene);
+        jevent e = jscene_run(scene);
+        void *focus = jscene_focused_widget(scene);
         int key = 0;
         if(e.type == JSCENE_KEY && e.key.type == KEYEV_DOWN)
             key = e.key.key;
 
         if(e.type == JSCENE_PAINT) {
             dclear(C_WHITE);
-            jscene_render(scr->scene);
+            jscene_render(scene);
             dupdate();
         }
 
@@ -558,7 +559,7 @@ void gintctl_gint_usbtrace(void)
             gscreen_show_tab(scr, 0);
     }
 
-    gscreen_destroy(scr);
+    jwidget_destroy(scene);
 }
 
 #endif

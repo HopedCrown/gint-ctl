@@ -254,8 +254,9 @@ int main(void)
 	// Main menu UI
 	//---
 
+	jscene *scene = jscene_create_fullscreen(NULL);
 	gscreen *s = gscreen_create2("", &img_opt_main, "",
-		"/INFO;/GINT;/PERF;;@REGS;@MEMORY");
+		"/INFO;/GINT;/PERF;;@REGS;@MEMORY", scene);
 
 	// TODO: Better macro distinctions
 	jlabel_asprintf(s->title,
@@ -304,18 +305,18 @@ int main(void)
 	};
 
 	while(true) {
-		jevent e = jscene_run(s->scene);
+		jevent e = jscene_run(scene);
 
 		if(e.type == JSCENE_PAINT) {
 			dclear(C_WHITE);
-			jscene_render(s->scene);
+			jscene_render(scene);
 			dupdate();
 		}
 
 		if(e.type == JLIST_ITEM_TRIGGERED) {
 			struct menuentry const *entries = ((jlist *)e.source)->user;
 			entries[e.data].function();
-			s->scene->widget.update = true;
+			scene->widget.update = true;
 		}
 
 		if(jevent_is_press(e, KEY_EXIT))
@@ -328,20 +329,20 @@ int main(void)
 			gscreen_show_tab(s, 2);
 		if(jevent_is_press(e, KEY_F4) || jevent_is_press(e, CP_Fk[3])) {
 			gintctl_regs();
-			s->scene->widget.update = true;
+			scene->widget.update = true;
 		}
 		if(jevent_is_press(e, KEY_F5) || jevent_is_press(e, CP_Fk[4])) {
 			gintctl_mem();
-			s->scene->widget.update = true;
+			scene->widget.update = true;
 		}
 	}
 
 	/* Prepare a main menu frame to maintain the illusion when coming
 	   back after a restart */
 	gscreen_show_tab(s, 0);
-	jscene_render(s->scene);
+	jscene_render(scene);
 
-	gscreen_destroy(s);
+	jwidget_destroy(scene);
 	prof_quit();
 	return 0;
 }

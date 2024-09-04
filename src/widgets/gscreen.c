@@ -5,25 +5,31 @@
 #include <justui/jscene.h>
 #include <justui/jlabel.h>
 #include <justui/jfkeys.h>
+#include <justui/jwidget-api.h>
 
 #include <stdlib.h>
 
+/* Type identifier for gscreen */
+static int gscreen_type_id = -1;
+
 #if GINT_RENDER_MONO
-gscreen *gscreen_create(char const *name, bopti_image_t const *img)
+gscreen *gscreen_create(
+	char const *name, bopti_image_t const *img, void *parent)
 #endif
 #if GINT_RENDER_RGB
-gscreen *gscreen_create(char const *name, char const *labels)
+gscreen *gscreen_create(char const *name, char const *labels, void *parent)
 #endif
 {
-	gscreen *g = malloc(sizeof *g);
-	if(!g) return NULL;
+	if(gscreen_type_id < 0)
+		return NULL;
 
-	jscene *s = jscene_create_fullscreen(NULL);
-	if(!s) { free(g); return NULL; }
+	gscreen *s = malloc(sizeof *s);
+	if(!s) return NULL;
 
-	g->scene = s;
-	g->tabs = NULL;
-	g->tab_count = 0;
+	jwidget_init(&s->widget, gscreen_type_id, parent);
+
+	s->tabs = NULL;
+	s->tab_count = 0;
 
 	jlabel *title = name ? jlabel_create(name, s) : NULL;
 	jwidget *stack = jwidget_create(s);
@@ -34,8 +40,8 @@ gscreen *gscreen_create(char const *name, char const *labels)
 		return NULL;
 	}
 
-	g->title = title;
-	g->fkeys = fkeys;
+	s->title = title;
+	s->fkeys = fkeys;
 
 	jlayout_set_vbox(s)->spacing = _(1,3);
 	jlayout_set_stack(stack);
@@ -61,21 +67,14 @@ gscreen *gscreen_create(char const *name, char const *labels)
 	#endif
 
 	jwidget_set_stretch(stack, 1, 1, false);
-	return g;
-}
-
-void gscreen_destroy(gscreen *s)
-{
-	if(s->scene) jwidget_destroy(s->scene);
-	free(s->tabs);
-	free(s);
+	return s;
 }
 
 /* tab_stack(): Stacked widget where the tabs are located */
 static jwidget *tab_stack(gscreen *s)
 {
 	int index = (s->title != NULL) ? 1 : 0;
-	return s->scene->widget.children[index];
+	return s->widget.children[index];
 }
 
 //---
@@ -103,8 +102,10 @@ void gscreen_add_tab(gscreen *s, void *widget, void *focus)
 	s->tabs[s->tab_count].fkey_level = 0;
 	s->tab_count++;
 
-	if(s->tab_count == 1)
-		jscene_set_focused_widget(s->scene, focus);
+	// TODO: Make stack widget a focus scope? How to handle focus well?
+	jscene *scene = jscene_owning(s);
+	if(s->tab_count == 1 && scene)
+		jscene_set_focused_widget(scene, focus);
 
 	jwidget_add_child(tab_stack(s), widget);
 	jwidget_set_stretch(widget, 1, 1, false);
@@ -166,8 +167,11 @@ bool gscreen_show_tab(gscreen *s, int tab)
 	if(tab < 0 || tab >= stack->child_count) return false;
 
 	/* Update keyboard focus */
-	s->tabs[l->active].focus = jscene_focused_widget(s->scene);
-	jscene_set_focused_widget(s->scene, s->tabs[tab].focus);
+	jscene *scene = jscene_owning(s);
+	if(scene) {
+		s->tabs[l->active].focus = jscene_focused_widget(scene);
+		jscene_set_focused_widget(scene, s->tabs[tab].focus);
+	}
 
 	l->active = tab;
 	stack->update = 1;
@@ -202,10 +206,26 @@ bool gscreen_in(gscreen *s, int tab)
 }
 
 //---
-// Focus management
+// Widget definition
 //---
 
-void gscreen_focus(gscreen *s, void *widget)
+static void gscreen_poly_destroy(void *s0)
 {
-	return jscene_set_focused_widget(s->scene, widget);
+	gscreen *s = s0;
+	free(s->tabs);
+}
+
+/* gscreen type definition */
+static jwidget_poly type_gscreen = {
+	.name    = "gscreen",
+	.csize   = NULL,
+	.render  = NULL,
+	.event   = NULL,
+	.destroy = gscreen_poly_destroy,
+};
+
+__attribute__((constructor(2002)))
+static void j_register_gscreen(void)
+{
+	gscreen_type_id = j_register_widget(&type_gscreen, "jwidget");
 }

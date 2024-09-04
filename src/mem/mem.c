@@ -121,8 +121,9 @@ void gintctl_mem(void)
 {
 	struct view v = { .base = 0x88000000, .ascii = false, .lines = _(9,14) };
 
+	jscene *scene = jscene_create_fullscreen(NULL);
 	gscreen *s = gscreen_create2(NULL, &img_opt_mem,
-		"Memory browser", "@JUMP;;#ROM;#RAM;#ILRAM;#ADDIN");
+		"Memory browser", "@JUMP;;#ROM;#RAM;#ILRAM;#ADDIN", scene);
 	jwidget *tab = jwidget_create(NULL);
 	jpainted *mem = jpainted_create(paint_mem, &v, _(115,321), _(53,167), tab);
 	jinput *input = jinput_create("Go to:" _(," "), 12, tab);
@@ -137,13 +138,13 @@ void gintctl_mem(void)
 	int key = 0;
 	while(key != KEY_EXIT)
 	{
-		bool input_focus = (jscene_focused_widget(s->scene) == input);
-		jevent e = jscene_run(s->scene);
+		bool input_focus = (jscene_focused_widget(scene) == input);
+		jevent e = jscene_run(scene);
 
 		if(e.type == JSCENE_PAINT)
 		{
 			dclear(C_WHITE);
-			jscene_render(s->scene);
+			jscene_render(scene);
 			dupdate();
 		}
 		if(e.type == JINPUT_VALIDATED)
@@ -164,7 +165,7 @@ void gintctl_mem(void)
 		{
 			jwidget_set_visible(input, false);
 			gscreen_set_tab_fkeys_visible(s, 0, true);
-			gscreen_focus(s, NULL);
+			jscene_set_focused_widget(scene, NULL);
 		}
 
 		if(e.type != JSCENE_KEY || e.key.type == KEYEV_UP) continue;
@@ -179,7 +180,7 @@ void gintctl_mem(void)
 			jinput_clear(input);
 			jwidget_set_visible(input, true);
 			gscreen_set_tab_fkeys_visible(s, 0, false);
-			gscreen_focus(s, input);
+			jscene_set_focused_widget(scene, input);
 		}
 
 		#if GINT_RENDER_MONO
@@ -196,5 +197,5 @@ void gintctl_mem(void)
 		if(key == KEY_F6 && !input_focus) v.base = 0x00300000;
 		mem->widget.update = 1;
 	}
-	gscreen_destroy(s);
+	jwidget_destroy(scene);
 }

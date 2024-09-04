@@ -151,18 +151,19 @@ void gintctl_perf_cpu(void)
 	gtable_set_font(table, _(&font_mini, dfont_default()));
 	jwidget_set_margin(table, 0, 2, 1, 2);
 
+	jscene *scene = jscene_create_fullscreen(NULL);
 	gscreen *scr = gscreen_create2("CPU parallelism", &img_opt_perf_cpu,
-		"CPU instruction parallelism and pipelining", "@RUN;;;;;");
+		"CPU instruction parallelism and pipelining", "@RUN;;;;;", scene);
 	gscreen_add_tabs(scr, table, table);
-	jscene_set_focused_widget(scr->scene, table);
+	jscene_set_focused_widget(scene, table);
 
 	int key = 0;
 	while(key != KEY_EXIT) {
-		jevent e = jscene_run(scr->scene);
+		jevent e = jscene_run(scene);
 
 		if(e.type == JSCENE_PAINT) {
 			dclear(C_WHITE);
-			jscene_render(scr->scene);
+			jscene_render(scene);
 			dupdate();
 		}
 
@@ -184,5 +185,5 @@ void gintctl_perf_cpu(void)
 		}
 	}
 
-	gscreen_destroy(scr);
+	jwidget_destroy(scene);
 }
