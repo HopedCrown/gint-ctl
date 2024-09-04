@@ -295,6 +295,14 @@ int main(void)
 	gmenu *menu2 = gmenu_create(menu_perf, NULL);
 	gscreen_add_tab(s, menu2, menu2->list);
 
+	static uint8_t const CP_Fk[6] = {
+#if GINT_HW_CP
+		KEY_EQUALS, KEY_X, KEY_Y, KEY_Z, KEY_CARET, KEY_DIV
+#else
+		0
+#endif
+	};
+
 	while(true) {
 		jevent e = jscene_run(s->scene);
 
@@ -310,22 +318,19 @@ int main(void)
 			s->scene->widget.update = true;
 		}
 
-		if(e.type != JSCENE_KEY || e.key.type != KEYEV_DOWN) continue;
-		int key = e.key.key;
-
-		if(key == KEY_EXIT)
+		if(jevent_is_press(e, KEY_EXIT))
 			break;
-		if(key == KEY_F1)
+		if(jevent_is_press(e, KEY_F1) || jevent_is_press(e, CP_Fk[0]))
 			gscreen_show_tab(s, 0);
-		if(key == KEY_F2)
+		if(jevent_is_press(e, KEY_F2) || jevent_is_press(e, CP_Fk[1]))
 			gscreen_show_tab(s, 1);
-		if(key == KEY_F3)
+		if(jevent_is_press(e, KEY_F3) || jevent_is_press(e, CP_Fk[2]))
 			gscreen_show_tab(s, 2);
-		if(key == KEY_F5) {
+		if(jevent_is_press(e, KEY_F4) || jevent_is_press(e, CP_Fk[3])) {
 			gintctl_regs();
 			s->scene->widget.update = true;
 		}
-		if(key == KEY_F6) {
+		if(jevent_is_press(e, KEY_F5) || jevent_is_press(e, CP_Fk[4])) {
 			gintctl_mem();
 			s->scene->widget.update = true;
 		}

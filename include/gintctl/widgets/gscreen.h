@@ -42,8 +42,8 @@ struct gscreen_tab {
 	jwidget *focus;
 };
 
-/* gscreen_create(): Set up a standard scene.
-   If (title = NULL), the scene has no title bar, if (fkeys = NULL) it has no
+/* gscreen_create(): Set up a standard screen.
+   If (title = NULL), the screen has no title bar, if (fkeys = NULL) it has no
    function bar. To show a title/function bar on some tabs but not all, create
    one here and use gscreen_set_tab_{title,fkeys}_visible(). */
 
@@ -74,7 +74,7 @@ void gscreen_set_fkeys_level(gscreen *s, int level);
    The child's parent will be changed. The widget will also have a stretch of
    (1, 1, false) set by default. If not NULL, the last parameter indicates
    which widget to focus when the tab is first shown. */
-void gscreen_add_tab(gscreen *scene, void *widget, void *focus);
+void gscreen_add_tab(gscreen *s, void *widget, void *focus);
 
 /* gcreen_add_tabs(): Add several tabs at once, with no special parameters */
 void gscreen_add_tabs(gscreen *s, ...);
