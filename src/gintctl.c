@@ -255,6 +255,7 @@ int main(void)
 	//---
 
 	jscene *scene = jscene_create_fullscreen(NULL);
+	jlayout_set_stack(scene);
 	gscreen *s = gscreen_create2("", &img_opt_main, "",
 		"/INFO;/GINT;/PERF;;@REGS;@MEMORY", scene);
 
@@ -327,11 +328,11 @@ int main(void)
 			gscreen_show_tab(s, 1);
 		if(jevent_is_press(e, KEY_F3) || jevent_is_press(e, CP_Fk[2]))
 			gscreen_show_tab(s, 2);
-		if(jevent_is_press(e, KEY_F4) || jevent_is_press(e, CP_Fk[3])) {
+		if(jevent_is_press(e, KEY_F5) || jevent_is_press(e, CP_Fk[4])) {
 			gintctl_regs();
 			scene->widget.update = true;
 		}
-		if(jevent_is_press(e, KEY_F5) || jevent_is_press(e, CP_Fk[4])) {
+		if(jevent_is_press(e, KEY_F6) || jevent_is_press(e, CP_Fk[5])) {
 			gintctl_mem();
 			scene->widget.update = true;
 		}

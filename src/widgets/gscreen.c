@@ -9,16 +9,10 @@
 
 #include <stdlib.h>
 
-/* Type identifier for gscreen */
-static int gscreen_type_id = -1;
+J_DEFINE_WIDGET(gscreen, destroy)
 
-#if GINT_RENDER_MONO
-gscreen *gscreen_create(
-	char const *name, bopti_image_t const *img, void *parent)
-#endif
-#if GINT_RENDER_RGB
-gscreen *gscreen_create(char const *name, char const *labels, void *parent)
-#endif
+gscreen *gscreen_create(char const *name,
+	_(bopti_image_t const *img, char const *labels), void *parent)
 {
 	if(gscreen_type_id < 0)
 		return NULL;
@@ -27,6 +21,7 @@ gscreen *gscreen_create(char const *name, char const *labels, void *parent)
 	if(!s) return NULL;
 
 	jwidget_init(&s->widget, gscreen_type_id, parent);
+	jwidget_set_stretch(s, 1, 1, false);
 
 	s->tabs = NULL;
 	s->tab_count = 0;
@@ -68,6 +63,12 @@ gscreen *gscreen_create(char const *name, char const *labels, void *parent)
 
 	jwidget_set_stretch(stack, 1, 1, false);
 	return s;
+}
+
+void gscreen_poly_destroy(void *s0)
+{
+	gscreen *s = s0;
+	free(s->tabs);
 }
 
 /* tab_stack(): Stacked widget where the tabs are located */
@@ -203,29 +204,4 @@ int gscreen_current_tab(gscreen *s)
 bool gscreen_in(gscreen *s, int tab)
 {
 	return gscreen_current_tab(s) == tab;
-}
-
-//---
-// Widget definition
-//---
-
-static void gscreen_poly_destroy(void *s0)
-{
-	gscreen *s = s0;
-	free(s->tabs);
-}
-
-/* gscreen type definition */
-static jwidget_poly type_gscreen = {
-	.name    = "gscreen",
-	.csize   = NULL,
-	.render  = NULL,
-	.event   = NULL,
-	.destroy = gscreen_poly_destroy,
-};
-
-__attribute__((constructor(2002)))
-static void j_register_gscreen(void)
-{
-	gscreen_type_id = j_register_widget(&type_gscreen, "jwidget");
 }

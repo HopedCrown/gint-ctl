@@ -5,15 +5,14 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+J_DEFINE_WIDGET(gtable, csize, layout, render, event, destroy)
+
 struct gtable_column {
 	char const *title;
 	font_t const *font;
 	uint16_t size;
 	uint16_t width;
 };
-
-/* Type identifier for gtable */
-static int gtable_type_id = -1;
 
 void update_visible(gtable *t);
 
@@ -203,14 +202,14 @@ void update_visible(gtable *t)
 	}
 }
 
-static void gtable_poly_csize(void *t0)
+void gtable_poly_csize(void *t0)
 {
 	gtable *t = t0;
 	t->widget.w = 64;
 	t->widget.h = 32;
 }
 
-static void gtable_poly_layout(void *t0)
+void gtable_poly_layout(void *t0)
 {
 	gtable *t = t0;
 	t->visible = 0;
@@ -239,7 +238,7 @@ static void gtable_poly_layout(void *t0)
 	}
 }
 
-static void gtable_poly_render(void *t0, int base_x, int base_y)
+void gtable_poly_render(void *t0, int base_x, int base_y)
 {
 	gtable *t = t0;
 	int row_height = compute_row_height(t);
@@ -304,7 +303,7 @@ void gtable_provide(gtable *t, ...)
 	va_end(args);
 }
 
-static bool gtable_poly_event(void *t0, jevent e)
+bool gtable_poly_event(void *t0, jevent e)
 {
 	gtable *t = t0;
 	int end = gtable_end(t);
@@ -330,25 +329,8 @@ static bool gtable_poly_event(void *t0, jevent e)
 	return false;
 }
 
-static void gtable_poly_destroy(void *t0)
+void gtable_poly_destroy(void *t0)
 {
 	gtable *t = t0;
 	free(t->meta);
-}
-
-/* gtable type definition */
-static jwidget_poly type_gtable = {
-	.name    = "gtable",
-	.csize   = gtable_poly_csize,
-	.layout  = gtable_poly_layout,
-	.render  = gtable_poly_render,
-	.event   = gtable_poly_event,
-	.destroy = gtable_poly_destroy,
-};
-
-/* Type registration */
-__attribute__((constructor(2000)))
-static void j_register_gtable(void)
-{
-	gtable_type_id = j_register_widget(&type_gtable, "jwidget");
 }
