@@ -14,8 +14,7 @@
 #include <gintctl/gint.h>
 #include <gintctl/perf.h>
 #include <gintctl/mem.h>
-#include <gintctl/widgets/gscreen.h>
-#include <gintctl/widgets/gmenu.h>
+#include <gintctl/ui.h>
 
 #include <libprof.h>
 
@@ -213,6 +212,53 @@ key_event_t gintctl_getkey(void)
 #endif
 
 //---
+// UI/scene management: a global JustUI scene with a stack of gscreens in it
+//---
+
+static jscene *scene = NULL;
+
+jscene *gintctl_scene(void)
+{
+	return scene;
+}
+
+void gintctl_scene_init(void)
+{
+	scene = jscene_create_fullscreen(NULL);
+	jlayout_set_stack(scene);
+	jwidget_set_background(scene, C_WHITE);
+	jscene_set_autopaint(scene, true);
+}
+
+gscreen *gintctl_scene_push(gscreen *s)
+{
+	if(!s)
+		return NULL;
+	jwidget_add_child(scene, s);
+	jlayout_get_stack(scene)->active = scene->widget.child_count - 1;
+	scene->widget.update = 1;
+	jwidget_scope_set_target(scene, s);
+	return s;
+}
+
+void gintctl_scene_pop(void)
+{
+	/* Don't pop the last screen */
+	int N = scene->widget.child_count;
+	if(N >= 2) {
+		jwidget_remove_child(scene, scene->widget.children[N - 1]);
+		jlayout_get_stack(scene)->active = N - 2;
+		jwidget_scope_set_target(scene, scene->widget.children[N - 2]);
+	}
+	scene->widget.update = 1;
+}
+
+void gintctl_scene_deinit(void)
+{
+	jwidget_destroy(scene);
+}
+
+//---
 //	Main application
 //---
 
@@ -250,14 +296,15 @@ int main(void)
 	tr.enabled |= KEYDEV_TR_DELAYED_ALPHA | KEYDEV_TR_INSTANT_ALPHA;
 	keydev_set_transform(keydev_std(), tr);
 
+	gintctl_scene_init();
+
 	//---
 	// Main menu UI
 	//---
 
-	jscene *scene = jscene_create_fullscreen(NULL);
-	jlayout_set_stack(scene);
 	gscreen *s = gscreen_create2("", &img_opt_main, "",
-		"/INFO;/GINT;/PERF;;@REGS;@MEMORY", scene);
+		"/INFO;/GINT;/PERF;;@REGS;@MEMORY", NULL);
+	gintctl_scene_push(s);
 
 	// TODO: Better macro distinctions
 	jlabel_asprintf(s->title,
@@ -297,44 +344,31 @@ int main(void)
 	gmenu *menu2 = gmenu_create(menu_perf, NULL);
 	gscreen_add_tab(s, menu2, menu2->list);
 
-	static uint8_t const CP_Fk[6] = {
-#if GINT_HW_CP
-		KEY_EQUALS, KEY_X, KEY_Y, KEY_Z, KEY_CARET, KEY_DIV
-#else
-		0
-#endif
-	};
-
 	while(true) {
-		jevent e = jscene_run(scene);
-
-		if(e.type == JSCENE_PAINT) {
-			dclear(C_WHITE);
-			jscene_render(scene);
-			dupdate();
-		}
+		jevent e = jscene_run(gintctl_scene());
 
 		if(e.type == JLIST_ITEM_TRIGGERED) {
 			struct menuentry const *entries = ((jlist *)e.source)->user;
 			entries[e.data].function();
-			scene->widget.update = true;
+			gintctl_scene_pop();
 		}
 
 		if(jevent_is_press(e, KEY_EXIT))
 			break;
-		if(jevent_is_press(e, KEY_F1) || jevent_is_press(e, CP_Fk[0]))
+
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0)
 			gscreen_show_tab(s, 0);
-		if(jevent_is_press(e, KEY_F2) || jevent_is_press(e, CP_Fk[1]))
+		if(e.type == JFKEYS_TRIGGERED && e.data == 1)
 			gscreen_show_tab(s, 1);
-		if(jevent_is_press(e, KEY_F3) || jevent_is_press(e, CP_Fk[2]))
+		if(e.type == JFKEYS_TRIGGERED && e.data == 2)
 			gscreen_show_tab(s, 2);
-		if(jevent_is_press(e, KEY_F5) || jevent_is_press(e, CP_Fk[4])) {
+		if(e.type == JFKEYS_TRIGGERED && e.data == 4) {
 			gintctl_regs();
-			scene->widget.update = true;
+			gintctl_scene_pop();
 		}
-		if(jevent_is_press(e, KEY_F6) || jevent_is_press(e, CP_Fk[5])) {
+		if(e.type == JFKEYS_TRIGGERED && e.data == 5) {
 			gintctl_mem();
-			scene->widget.update = true;
+			gintctl_scene_pop();
 		}
 	}
 
@@ -343,7 +377,7 @@ int main(void)
 	gscreen_show_tab(s, 0);
 	jscene_render(scene);
 
-	jwidget_destroy(scene);
+	gintctl_scene_deinit();
 	prof_quit();
 	return 0;
 }

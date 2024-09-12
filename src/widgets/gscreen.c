@@ -2,14 +2,13 @@
 #include <gintctl/assets.h>
 #include <gintctl/util.h>
 
-#include <justui/jscene.h>
 #include <justui/jlabel.h>
 #include <justui/jfkeys.h>
 #include <justui/jwidget-api.h>
 
 #include <stdlib.h>
 
-J_DEFINE_WIDGET(gscreen, destroy)
+J_DEFINE_WIDGET(gscreen, event, destroy)
 
 gscreen *gscreen_create(char const *name,
 	_(bopti_image_t const *img, char const *labels), void *parent)
@@ -21,6 +20,7 @@ gscreen *gscreen_create(char const *name,
 	if(!s) return NULL;
 
 	jwidget_init(&s->widget, gscreen_type_id, parent);
+	jwidget_set_focus_policy(s, J_FOCUS_POLICY_SCOPE);
 	jwidget_set_stretch(s, 1, 1, false);
 
 	s->tabs = NULL;
@@ -65,6 +65,15 @@ gscreen *gscreen_create(char const *name,
 	return s;
 }
 
+bool gscreen_poly_event(void *s0, jevent e)
+{
+	gscreen *s = s0;
+
+	/* Give the event to the fkeys if it wants it */
+	return (s->fkeys && jwidget_event(s->fkeys, e))
+		|| jwidget_poly_event(s, e);
+}
+
 void gscreen_poly_destroy(void *s0)
 {
 	gscreen *s = s0;
@@ -103,13 +112,12 @@ void gscreen_add_tab(gscreen *s, void *widget, void *focus)
 	s->tabs[s->tab_count].fkey_level = 0;
 	s->tab_count++;
 
-	// TODO: Make stack widget a focus scope? How to handle focus well?
-	jscene *scene = jscene_owning(s);
-	if(s->tab_count == 1 && scene)
-		jscene_set_focused_widget(scene, focus);
-
 	jwidget_add_child(tab_stack(s), widget);
 	jwidget_set_stretch(widget, 1, 1, false);
+
+	/* Set focus of gscreen's scope to this widget */
+	if(s->tab_count == 1)
+		jwidget_scope_set_target(s, focus);
 }
 
 #undef gscreen_add_tabs
@@ -168,11 +176,8 @@ bool gscreen_show_tab(gscreen *s, int tab)
 	if(tab < 0 || tab >= stack->child_count) return false;
 
 	/* Update keyboard focus */
-	jscene *scene = jscene_owning(s);
-	if(scene) {
-		s->tabs[l->active].focus = jscene_focused_widget(scene);
-		jscene_set_focused_widget(scene, s->tabs[tab].focus);
-	}
+	s->tabs[l->active].focus = jwidget_scope_get_target(s);
+	jwidget_scope_set_target(s, s->tabs[tab].focus);
 
 	l->active = tab;
 	stack->update = 1;

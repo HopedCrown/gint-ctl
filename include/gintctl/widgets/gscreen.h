@@ -1,5 +1,5 @@
 //---
-// gintctl.widgets.gscreen: gintctl's extended standard scene
+// gintctl.widgets.gscreen: gintctl's standard screen with title and F-keys
 //---
 
 #ifndef _GINTCTL_WIDGETS_GSCREEN

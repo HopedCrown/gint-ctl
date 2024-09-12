@@ -1,5 +1,6 @@
 #include <gint/display.h>
 #include <gint/keyboard.h>
+#include <gintctl/util.h>
 #include <stdarg.h>
 
 /* TODO: integrate in gint */

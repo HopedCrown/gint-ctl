@@ -6,7 +6,7 @@
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
-#include <gintctl/widgets/gscreen.h>
+#include <gintctl/ui.h>
 #include <justui/jpainted.h>
 #include <justui/jinput.h>
 
@@ -121,9 +121,10 @@ void gintctl_mem(void)
 {
 	struct view v = { .base = 0x88000000, .ascii = false, .lines = _(9,14) };
 
-	jscene *scene = jscene_create_fullscreen(NULL);
 	gscreen *s = gscreen_create2(NULL, &img_opt_mem,
-		"Memory browser", "@JUMP;;#ROM;#RAM;#ILRAM;#ADDIN", scene);
+		"Memory browser", "@JUMP;;#ROM;#RAM;#ILRAM;#ADDIN", NULL);
+	gintctl_scene_push(s);
+
 	jwidget *tab = jwidget_create(NULL);
 	jpainted *mem = jpainted_create(paint_mem, &v, _(115,321), _(53,167), tab);
 	jinput *input = jinput_create("Go to:" _(," "), 12, tab);
@@ -138,15 +139,9 @@ void gintctl_mem(void)
 	int key = 0;
 	while(key != KEY_EXIT)
 	{
-		bool input_focus = (jscene_focused_widget(scene) == input);
-		jevent e = jscene_run(scene);
+		jevent e = jscene_run(gintctl_scene());
+		bool input_focus = input->widget.focused;
 
-		if(e.type == JSCENE_PAINT)
-		{
-			dclear(C_WHITE);
-			jscene_render(scene);
-			dupdate();
-		}
 		if(e.type == JINPUT_VALIDATED)
 		{
 			/* Parse string into hexa */
@@ -165,37 +160,40 @@ void gintctl_mem(void)
 		{
 			jwidget_set_visible(input, false);
 			gscreen_set_tab_fkeys_visible(s, 0, true);
-			jscene_set_focused_widget(scene, NULL);
+			jwidget_scope_set_target(s, NULL);
 		}
 
-		if(e.type != JSCENE_KEY || e.key.type == KEYEV_UP) continue;
-		key = e.key.key;
-
-		int move_speed = (e.key.shift ? 8 : 1);
-		if(key == KEY_UP)   v.base -= move_speed * 8 * v.lines;
-		if(key == KEY_DOWN) v.base += move_speed * 8 * v.lines;
-
-		if(key == KEY_F1 && !input_focus)
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0 && !input_focus)
 		{
 			jinput_clear(input);
 			jwidget_set_visible(input, true);
 			gscreen_set_tab_fkeys_visible(s, 0, false);
-			jscene_set_focused_widget(scene, input);
+			jwidget_scope_set_target(s, input);
 		}
 
 		#if GINT_RENDER_MONO
-		if(key == KEY_F2 && !input_focus)
+		if(e.type == JFKEYS_TRIGGERED && e.data == 1 && !input_focus)
 		{
 			v.ascii = !v.ascii;
 			jfkeys_set_level(s->fkeys, v.ascii);
 		}
 		#endif
 
-		if(key == KEY_F3 && !input_focus) v.base = 0x80000000;
-		if(key == KEY_F4 && !input_focus) v.base = 0x88000000;
-		if(key == KEY_F5 && !input_focus) v.base = 0xe5200000;
-		if(key == KEY_F6 && !input_focus) v.base = 0x00300000;
+		if(e.type == JFKEYS_TRIGGERED && e.data >= 2 && !input_focus) {
+			static uint32_t const bases[] = {
+				0x80000000, 0x88000000, 0xe5200000, 0x00300000 };
+			v.base = bases[e.data - 2];
+			mem->widget.update = 1;
+		}
+
+		if(e.type != JWIDGET_KEY || e.key.type == KEYEV_UP || input_focus)
+			continue;
+		key = e.key.key;
+
+		int move_speed = (e.key.shift ? 8 : 1);
+		if(key == KEY_UP)   v.base -= move_speed * 8 * v.lines;
+		if(key == KEY_DOWN) v.base += move_speed * 8 * v.lines;
+
 		mem->widget.update = 1;
 	}
-	jwidget_destroy(scene);
 }
