@@ -107,10 +107,11 @@ static void paint_mem(int x, int y, struct view *v)
 		dtext(x,      y + 12*i, C_BLACK, header);
 		dtext(x + 85, y + 12*i, status ? C_RED : C_BLACK, bytes);
 
-		for(int k = 7; k >= 0; k--)
-		{
-			ascii[k+1] = 0;
-			dtext(x + 250 + 9*k, y + 12*i, C_BLACK, ascii+k);
+		if(!status) {
+			for(int k = 7; k >= 0; k--) {
+				ascii[k+1] = 0;
+				dtext(x + 250 + 9*k, y + 12*i, C_BLACK, ascii+k);
+			}
 		}
 		#endif
 	}
