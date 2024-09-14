@@ -48,7 +48,7 @@ gscreen *gscreen_create(char const *name,
 		jwidget_set_stretch(title, 1, 0, false);
 
 		#if GINT_RENDER_MONO
-		jwidget_set_padding(title, 1, 1, 0, 1);
+		jwidget_set_padding(title, 1, 1, 1, 1);
 		jwidget_set_margin(title, 0, 0, 1, 0);
 		#endif
 

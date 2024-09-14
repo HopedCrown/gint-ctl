@@ -30,11 +30,15 @@ char _hh2info[] = "GINTCTL\0gint control application\0Lephe\0" "2.10";
    * Clock frequencies
    * F2 to save hardware data to file */
 
+#if GINT_RENDER_MONO
+# define CTGY(SH, LG)
+#else
+# define CTGY(SH, LG) {LG, NULL, MENU_CATEGORY},
+#endif
+
 /* gint test menu */
 struct menuentry menu_gint[] = {
-	{ _("gint tests", "gint features and driver tests"),
-	  NULL, MENU_CATEGORY },
-
+	CTGY("gint tests", "gint features and driver tests")
 	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
 	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
@@ -79,9 +83,7 @@ struct menuentry menu_gint[] = {
 
 /* Performance menu */
 struct menuentry menu_perf[] = {
-	{ _("Performance", "Performance benchmarks"),
-	  NULL, MENU_CATEGORY },
-
+	CTGY("Performance", "Performance benchmarks")
 	{ "libprof basics",      gintctl_perf_libprof, 0 },
 #if !GINT_HW_CP
 	{ "CPU and cache",       gintctl_perf_cpucache, 0 },
@@ -243,7 +245,9 @@ void gintctl_scene_pop(void)
 	/* Don't pop the last screen */
 	int N = scene->widget.child_count;
 	if(N >= 2) {
-		jwidget_remove_child(scene, scene->widget.children[N - 1]);
+		jwidget *child = scene->widget.children[N - 1];
+		jwidget_remove_child(scene, child);
+		jwidget_destroy(child);
 		jlayout_get_stack(scene)->active = N - 2;
 		jwidget_scope_set_target(scene, scene->widget.children[N - 2]);
 	}
@@ -329,10 +333,8 @@ int main(void)
 		"Information about the project is available on planet-casio.com.");
 
 	jlabel *main_menu_label = jlabel_create(main_menu_str, NULL);
-	jlabel_set_line_spacing(main_menu_label, _(0,4));
 	jlabel_set_wrap_mode(main_menu_label, J_WRAP_WORD);
-	jlabel_set_block_alignment(main_menu_label, J_ALIGN_LEFT, J_ALIGN_TOP);
-	jwidget_set_padding(main_menu_label, 4, 4, 4, 4);
+	jwidget_set_padding(main_menu_label, _(1,3), _(1,3), _(1,3), _(1,3));
 	gscreen_add_tab(s, main_menu_label, NULL);
 
 	gmenu *menu1 = gmenu_create(menu_gint, NULL);

@@ -18,7 +18,7 @@ static void gmenu_paint(int x, int y, GUNUSED int w, GUNUSED int h,
 {
 	struct menuentry const *entries = list->user, *entry = &entries[index];
 
-	int dx = (entry->flags & MENU_CATEGORY) ? 0 : _(6, 8);
+	int dx = (entry->flags & MENU_CATEGORY) ? 0 : _(0, 8);
 	dtext(x + _(1,3) + dx, y + _(0,2), C_BLACK, entry->name);
 }
 
@@ -41,7 +41,7 @@ gmenu *gmenu_create(struct menuentry *entries, void *parent)
 	}
 
 	jlist_update_model(sl->list, len, entries);
-	jframe_set_visibility_margin(sl->frame, _(4,8), _(15,30));
+	jframe_set_visibility_margin(sl->frame, _(4,8), _(5,30));
 
 	return sl;
 }
