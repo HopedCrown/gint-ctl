@@ -37,9 +37,6 @@ struct menuentry menu_gint[] = {
 
 	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
-	#if GINT_HW_CG && GINT_RENDER_RGB
-	{ "DSP processors",     gintctl_gint_dsp, 0 },
-	#endif
 	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
 	#if !GINT_HW_CP
 	{ "Memory dump",        gintctl_gint_dump, 0 },

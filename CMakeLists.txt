@@ -23,8 +23,6 @@ set(SOURCES
   src/gint/cpumem.c
   src/gint/dma.c
   src/gint/drivers.c
-  src/gint/dsp.c
-  src/gint/dsp.s
   src/gint/dump.c
   src/gint/gdb.S
   src/gint/gdb.c
