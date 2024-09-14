@@ -166,11 +166,12 @@ static void scene_2(void)
 	image_free(tmp);
 }
 
-static void scene_3(image_t **img_ptr, u16 *palette)
+static void scene_3(image_t **img_ptr, u16 *palette, bool *force)
 {
 	image_t *img = *img_ptr;
-	if(!img) {
-		img = image_alloc(DWIDTH, DHEIGHT, IMAGE_P4_RGB565);
+	if(!img || *force) {
+		if(!img)
+			img = image_alloc(DWIDTH, DHEIGHT, IMAGE_P4_RGB565);
 		if(!img)
 			return;
 		image_set_palette(img, palette, 16, false);
@@ -198,6 +199,7 @@ static void scene_3(image_t **img_ptr, u16 *palette)
 				image_set_pixel(img, x, y, c & 15);
 			}
 		}
+		*force = false;
 	}
 
 	dimage(0, 0, img);
@@ -209,6 +211,7 @@ void gintctl_gint_image(void)
 	int tab=0, key=0;
 	image_t *img_pattern = NULL;
 	u16 img_pattern_palette[16];
+	bool force_scene_3 = false;
 
 	while(key != KEY_EXIT) {
 		if(tab == 0)
@@ -216,7 +219,7 @@ void gintctl_gint_image(void)
 		else if(tab == 1)
 			scene_2();
 		else if(tab == 2)
-			scene_3(&img_pattern, img_pattern_palette);
+			scene_3(&img_pattern, img_pattern_palette, &force_scene_3);
 
 		fkey_button(1, "SCENE 1");
 		fkey_button(2, "SCENE 2");
@@ -227,6 +230,7 @@ void gintctl_gint_image(void)
 		if(key == KEY_F1) tab = 0;
 		if(key == KEY_F2) tab = 1;
 		if(key == KEY_F3) tab = 2;
+		if(key == KEY_EXE && tab == 2) force_scene_3 = true;
 	}
 
 	image_free(img_pattern);
