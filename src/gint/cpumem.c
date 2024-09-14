@@ -6,6 +6,8 @@
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
+#include <gintctl/assets.h>
+#include <gintctl/ui.h>
 
 #include <stdio.h>
 
@@ -21,7 +23,7 @@ extern uint32_t
 
 
 /* MPU type and processor version */
-void show_mpucpu(void)
+void show_mpucpu(jlabel *label)
 {
 	char const *mpu_names[] = {
 		#if GINT_RENDER_MONO
@@ -57,25 +59,20 @@ void show_mpucpu(void)
 	int calc = gint[HWCALC];
 	int fs   = gint[HWFS];
 
-	extern volatile int cpu_sleep_block_counter;
-
 	/* Generate a default calc name if invalid values are found */
 	char calc_default[16];
 	sprintf(calc_default, "<CALCID %d>", calc);
-	char const *str_calc = calc_default;
-	if(calc >= 0 && calc < 7) str_calc = calc_names[calc];
+	char const *str_calc = (uint)calc < 7 ? calc_names[calc] : calc_default;
 
 	/* Generate a default MPU name if invalid values are found */
 	char mpu_default[16];
 	sprintf(mpu_default, "<MPUID %d>", mpu);
-	char const *str_mpu = mpu_default;
-	if(mpu >= 0 && mpu < 5) str_mpu = mpu_names[mpu];
+	char const *str_mpu = (uint)mpu < 5 ? mpu_names[mpu] : mpu_default;
 
 	/* Generate a default fs name if invalid values are found */
 	char fs_default[16];
 	sprintf(fs_default, "<FSID %d>", fs);
-	char const *str_fs = fs_default;
-	if(fs >= 0 && fs < 3) str_fs = fs_names[fs];
+	char const *str_fs = (uint)fs < 3 ? fs_names[fs] : fs_default;
 
 	volatile uint32_t *CPUOPM = (void *)0xff2f0000;
 	uint32_t SR, r15;
@@ -83,87 +80,66 @@ void show_mpucpu(void)
 	__asm__("mov r15, %0" : "=r"(r15));
 
 	#if GINT_RENDER_MONO
-	extern font_t font_mini;
-	font_t const *old_font = dfont(&font_mini);
-
-	dprint(1, 10, C_BLACK, "Model: %s", str_calc);
-	dprint(1, 16, C_BLACK, "MPU: %s", str_mpu);
-	dprint(1, 22, C_BLACK, "Filesystem: %s", str_fs);
-
-	print_prefix(29, 30,     "SR", "%08X", SR);
-	dline(29, 36, 29, 52, C_BLACK);
-	if(isSH3()) {
-		print_prefix(29, 36,    "PVR", "");
-		print_prefix(29, 42,    "PRR", "");
-		print_prefix(29, 48, "CPUOPM", "");
-	}
-	else {
-		print_prefix(29, 36,    "PVR", "%08X", gint[HWCPUVR]);
-		print_prefix(29, 42,    "PRR", "%08X", gint[HWCPUPR]);
-		print_prefix(29, 48, "CPUOPM", "%08X", *CPUOPM);
-	}
-	print_prefix(85, 30,    "VBR", "%08X", cpu_getVBR());
-	print_prefix(85, 36,    "R15", "%08X", r15);
-	print_prefix(85, 42,    "sbc", "%d", cpu_sleep_block_counter);
-	dline(85, 30, 85, 46, C_BLACK);
-	dfont(old_font);
-	#endif
-
-	#if GINT_RENDER_RGB
-	row_print(1, 1, "Calculator model: %s", str_calc);
-	row_print(3, 1, "MPU: %s", str_mpu);
-	row_print(4, 1, " Status Register: %08x", SR);
-	row_print(5, 1, " Processor Version Register: %08x", gint[HWCPUVR]);
-	row_print(6, 1, " Product Register: %08x", gint[HWCPUPR]);
-	row_print(7, 1, " CPU Operation Mode: %08x", *CPUOPM);
-	row_print(8, 1, " Current VBR: %08x", cpu_getVBR());
-	row_print(9, 1, " Current stack pointer: %08x", r15);
-	row_print(10, 1, " CPU sleep block level: %d", cpu_sleep_block_counter);
-	row_print(12, 1, "Filesystem type: %s", str_fs);
+	jlabel_asprintf(label,
+		"Model: %s\n"
+		"MPU: %s\n"
+		"Filesystem: %s\n"
+		"SR:  %08X | VBR: %08X\n"
+		"PVR: %08X | PRR: %08X\n"
+		"R15: %08X | CPUOPM: %08X",
+		str_calc, str_mpu, str_fs, SR, cpu_getVBR(),
+		isSH3() ? (uint)-1 : gint[HWCPUVR],
+		isSH3() ? (uint)-1 : gint[HWCPUPR], r15,
+		isSH3() ? (uint)-1 : *CPUOPM);
+	#elif GINT_RENDER_RGB
+	jlabel_asprintf(label,
+		"Calculator model: %s\n"
+		"MPU: %s\n"
+		" Status Register: %08x\n"
+		" Processor Version Register: %08x\n"
+		" Product Register: %08x\n"
+		" CPU Operation Mode: %08x\n"
+		" Current VBR: %08x\n"
+		" Current stack pointer: %08x\n"
+		"\n"
+		"Filesystem type: %s",
+		str_calc, str_mpu, SR, gint[HWCPUVR], gint[HWCPUPR], *CPUOPM,
+		cpu_getVBR(), r15, str_fs);
 	#endif
 }
 
 /* Memory */
-static void show_memory(void)
+static void show_memory(jlabel *label)
 {
 	#if GINT_RENDER_MONO
-	extern font_t font_mini;
-	font_t const *old_font = dfont(&font_mini);
-	print_prefix(28, 10,   "brom", "%08X", &brom);
-	print_prefix(28, 16,  "rdata", "%08X", &rdata);
-	print_prefix(28, 22,   "rbss", "%08X", &rbss);
-	print_prefix(28, 28, "rreloc", "%08X", mmu_uram());
-
-	print_prefix(98, 10,   "srom", "%06d", &srom);
-	print_prefix(98, 16,  "sdata", "%06d", &sdata);
-	print_prefix(98, 22,   "sbss", "%06d", &sbss);
-	print_prefix(98, 28, "sreloc", "%06d", &sgmapped);
-
-	dprint(1, 38, C_BLACK, "ROM: %dk, RAM: %dk",
-		gint[HWROM] >> 10, gint[HWRAM] >> 10);
-	dprint(1, 45, C_BLACK, "User RAM: %08X (%dk, P0 %dk)",
-		mmu_uram(), mmu_uram_size() >> 10, gint[HWURAM] >> 10);
-	dfont(old_font);
+	jlabel_asprintf(label,
+		"ROM: %dk, RAM: %dk\n"
+		"User RAM: %08X (%dk, P0 %dk)\n"
+		">rom:   %08X +%06d\n"
+		">data:  %08X +%06d\n"
+		">bss:   %08X +%06d\n"
+		">reloc: %08X +%06d",
+		gint[HWROM] >> 10, gint[HWRAM] >> 10,
+		mmu_uram(), mmu_uram_size() >> 10, gint[HWURAM] >> 10,
+		&brom, &srom, &rdata, &sdata, &rbss, &sbss, mmu_uram(), &sgmapped);
 	#endif
 
 	#if GINT_RENDER_RGB
 	uint32_t base_ram  = 0x88000000;
 	if(gint[HWCALC] == HWCALC_FXCG50) base_ram = 0x8c000000;
 
-	row_print(1, 1, "RAM: %dM, RAM: %dM (starts at %08X)",
-		gint[HWROM] >> 20, gint[HWRAM] >> 20, base_ram);
-	row_print(2, 1, "Userspace RAM: %08X (%dk continuous block)",
-		mmu_uram(), mmu_uram_size() >> 10);
-	row_print(3, 1, "Total RAM mapped in P0: %dk",
-		gint[HWURAM] >> 10);
-
-	print_prefix(80, row_y(5),   "brom", "%08X", &brom);
-	print_prefix(80, row_y(6),  "rdata", "%08X", &rdata);
-	print_prefix(80, row_y(7),   "rbss", "%08X", &rbss);
-
-	print_prefix(240, row_y(5),   "srom", "%06d", &srom);
-	print_prefix(240, row_y(6),  "sdata", "%06d", &sdata);
-	print_prefix(240, row_y(7),   "sbss", "%06d", &sbss);
+	jlabel_asprintf(label,
+		"RAM: %dM, RAM: %dM (starts at %08X)\n"
+		"Userspace RAM: %08X (%dk continuous block)\n"
+		"Total RAM mapped in P0: %dk\n"
+		"\n"
+		">ROM:  %08X (+%06d)\n"
+		">DATA: %08X (+%06d)\n"
+		">BSS:  %08X (+%06d)\n",
+		gint[HWROM] >> 20, gint[HWRAM] >> 20, base_ram,
+		mmu_uram(), mmu_uram_size() >> 10,
+		gint[HWURAM] >> 10,
+		&brom, &srom, &rdata, &sdata, &rbss, &sbss);
 	#endif
 }
 
@@ -209,30 +185,28 @@ static void hw_display(int *row)
 /* gintctl_gint_cpumem(): Detected CPU and memory configuration */
 void gintctl_gint_cpumem(void)
 {
-	int tab=0, key=0;
+	gscreen *s = gscreen_create2("CPU and memory", &img_opt_gint_cpumem,
+		"Processor and memory", "/MPU/CPU;/MEMORY;;;;", NULL);
+	gintctl_scene_push(s);
 
-	while(key != KEY_EXIT)
-	{
-		dclear(C_WHITE);
+	// extern font_t font_mini;
+	jlabel *label_cpu = jlabel_create("<cpu>", NULL);
+	jlabel_set_font(label_cpu, _(&font_mini, dfont_default()));
+	show_mpucpu(label_cpu);
+	gscreen_add_tab(s, label_cpu, NULL);
 
-		if(tab == 0) show_mpucpu();
-		if(tab == 1) show_memory();
+	jlabel *label_mem = jlabel_create("<mem>", NULL);
+	jlabel_set_font(label_mem, _(&font_mini, dfont_default()));
+	show_memory(label_mem);
+	gscreen_add_tab(s, label_mem, NULL);
 
-		#if GINT_RENDER_MONO
-		row_title("CPU and memory");
-		extern bopti_image_t img_opt_gint_cpumem;
-		dimage(0, 56, &img_opt_gint_cpumem);
-		#endif
-
-		#if GINT_RENDER_RGB
-		row_title("Processor and memory");
-		fkey_menu(1, "MPU/CPU");
-		fkey_menu(2, "MEMORY");
-		#endif
-
-		dupdate();
-		key = getkey().key;
-		if(key == KEY_F1) tab = 0;
-		if(key == KEY_F2) tab = 1;
+	while(true) {
+		jevent e = jscene_run(gintctl_scene());
+		if(jevent_is_press(e, KEY_EXIT))
+			break;
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0)
+			gscreen_show_tab(s, 0);
+		if(e.type == JFKEYS_TRIGGERED && e.data == 1)
+			gscreen_show_tab(s, 1);
 	}
 }
