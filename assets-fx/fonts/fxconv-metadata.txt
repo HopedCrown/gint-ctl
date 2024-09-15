@@ -4,6 +4,7 @@ hexa.png:
   charset: print
   grid.size: 3x5
   grid.padding: 1
+  line-spacing: 6
 
 mini.png:
   type: font
@@ -13,6 +14,7 @@ mini.png:
   height: 5
   grid.size: 5x6
   grid.padding: 1
+  line-spacing: 7
 
 title.png:
   type: font
@@ -20,6 +22,7 @@ title.png:
   charset: print
   grid.size: 5x6
   grid.padding: 1
+  line-spacing: 7
 
 uf5x7:
   type: font
@@ -27,3 +30,4 @@ uf5x7:
   charset: unicode
   grid.size: 5x7
   grid.padding: 1
+  line-spacing: 8

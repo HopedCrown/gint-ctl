@@ -5,8 +5,10 @@
 #include <gintctl/util.h>
 #include <gintctl/gint.h>
 #include <gintctl/assets.h>
+#include <gintctl/ui.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 
 /* Byte-based memory detection functions */
@@ -154,68 +156,30 @@ static void e500_search(int e500_pages[32])
 	}
 }
 
-#if GINT_RENDER_MONO
-static void show_region(int row, struct region *r)
+static void table_gen(gtable *t, int row, struct region const *regions)
 {
-	/* Out-of-bounds rows */
-	if(row < 1 || row > 9 || (row == 1 && r)) return;
-
-	extern font_t font_mini;
-	font_t const *old_font = dfont(&font_mini);
-	int y = (row - 1) * 6 + 2 * (row > 1);
-
-	if(!r)
-	{
-		dprint( 1, y, C_BLACK, "Area");
-		dprint(26, y, C_BLACK, "Address");
-		dprint(62, y, C_BLACK, "Size");
-		dprint(82, y, C_BLACK, "At end");
-		dfont(old_font);
-		return;
-	}
-
-	char const *reasons[] = { "Not tested", "Read-only", "Loops", "" };
-
-	dprint( 1, y, C_BLACK, "%s", r->name);
-	dprint(26, y, C_BLACK, "%08X", r->mem);
-
-	if(r->reason != 0)
-		dprint(62, y, C_BLACK, "%dk", r->size >> 10);
-	else
-		dprint(62, y, C_BLACK, "-");
-
-	dprint(82, y, C_BLACK, "%s", reasons[r->reason]);
-	dfont(old_font);
-}
-#endif
-
-#if GINT_RENDER_RGB
-static void show_region(int y, struct region *r)
-{
+	struct region const *r = &regions[row];
 	char const *reasons[] = {
 		"Not tested",
-		"Not writable",
-		"Wraps around",
-		"Maybe larger!",
+		_("Read-only", "Not writable"),
+		_("Loops", "Wraps around"),
+		_("More?", "Maybe larger!"),
 	};
 
-	if(!r)
-	{
-		row_print(y,  2, "Area");
-		row_print(y,  9, "Address");
-		row_print(y, 18, "AS");
-		row_print(y, 22, "Size");
-		row_print(y, 35, "At end");
-		return;
-	}
+	GUNUSED char c2[16], c3[16], c4[16] = "-";
+	sprintf(c2, "%08X", r->mem);
 
-	row_print(y,  2, "%s", r->name);
-	row_print(y,  9, "%08X", r->mem);
-	row_print(y, 18, "%d", r->use_lword ? 32 : 8);
-	row_print(y, 22, "%d %s", r->size, r->size >= (1000000) ? "B" : "bytes");
-	row_print(y, 35, reasons[r->reason]);
-}
+#if GINT_RENDER_MONO
+	if(r->reason != 0)
+		sprintf(c4, "%dk", r->size >> 10);
+	gtable_provide(t, r->name, c2, c4, reasons[r->reason]);
+#else
+	sprintf(c3, "%d", r->use_lword ? 32 : 8);
+	if(r->reason != 0)
+		sprintf(c4, "%d %s", r->size, r->size >= (1000000) ? "B" : "bytes");
+	gtable_provide(t, r->name, c2, c3, c4, reasons[r->reason]);
 #endif
+}
 
 /* gintctl_gint_ram(): Determine the size of some memory areas */
 void gintctl_gint_ram(void)
@@ -233,115 +197,80 @@ void gintctl_gint_ram(void)
 		{ "RSRAM", 0xfd800000, false,    4, /**/ 0, 0 },
 		{ "URAM",  0xa55f0000, false,    4, /**/ 0, 0 },
 		{ "RAM",   0xac000000, false, 1024, /**/ 0, 0 },
-		{ NULL },
 	};
 
 	/* Region count (for the scrolling list on fx-9860G) */
 	GUNUSED int region_count = 9;
-	/* List scroll no fx-9860G */
-	GUNUSED int scroll = spu_zero();
-
-	/* 0: Standard regions, 1: Detailed e500 search */
-	int tab = 0;
 
 	/* Detailed 16-page e500 search */
 	int e500_pages[32];
 	e500_search(e500_pages);
 
-	key_event_t ev;
-	int key = 0;
-	while(key != KEY_EXIT)
-	{
-		dclear(C_WHITE);
+	gscreen *s = gscreen_create2("RAM discovery", &img_opt_gint_ram,
+		"On-chip and external RAM discovery",
+		"@ILRAM;@XYRAM;@DSP;@?;#BANKS;#E500", NULL);
+	gintctl_scene_push(s);
 
-		#if GINT_RENDER_MONO
-		if(tab == 0) {
-			show_region(1, NULL);
-			dhline(6, C_BLACK);
-			for(int i = 0; i < region_count; i++)
-				show_region(i+2-scroll, &r[i]);
-			scrollbar_px(/* view */ 8, 54, /* range */ 0, region_count,
-				/* visible */ scroll, 8);
-			dimage(0, 56, &img_opt_gint_ram);
-		}
-		else if(tab == 1) {
-			// TODO
-		}
-		#endif
+	// RAM region table
 
-		#if GINT_RENDER_RGB
-		row_title("On-chip memory discovery");
+	gtable *table = gtable_create(_(4,5), table_gen, (void *)r, NULL);
+	gtable_set_rows(table, sizeof r / sizeof r[0]);
+#if GINT_RENDER_MONO
+	gtable_set_column_titles(table, "Area", "Address", "Size", "At end");
+	gtable_set_column_sizes(table, 25, 36, 20, 38);
+	gtable_set_font(table, &font_mini);
+#else
+	gtable_set_column_titles(table, "Area", "Address", "AS", "Size", "At end");
+	gtable_set_column_sizes(table, 4, 6, 2, 8, 10);
+	gtable_set_row_height(table, 12);
+#endif
+	gscreen_add_tab(s, table, table);
 
-		if(tab == 0) {
-			show_region(1, NULL);
-			for(int i = 0; r[i].name; i++)
-				show_region(i+2, &r[i]);
+	// E500 breakdown table
 
-			fkey_button(1, "ILRAM");
-			fkey_button(2, "XYRAM");
-			fkey_button(3, "DSP0");
-			fkey_button(4, "DSP1");
-			fkey_action(6, "E500");
-		}
-		else if(tab == 1) {
-			for(int i = 0; i < 32; i++) {
-				row_print(2 + i / 4, 2 + 12 * (i % 4), "%08X:%d",
-					0xe5000000 + (i << 12), e500_pages[i]);
-			}
-		}
-		#endif
+	jlabel *label_e500 = jlabel_create("<e500>", NULL);
+	jlabel_set_font(label_e500, _(&font_mini, dfont_default()));
 
-		dupdate();
+	char str_e500[512] = _("e50xx000", "e50xxxxx") " pages:\n";
+	int n = strlen(str_e500);
+	for(int i = 0; i < 32; i++)
+		n += sprintf(str_e500 + n, _(" ", "  ") "%02X%s:%02d%s",
+			i, _("", "000"), e500_pages[i], ((i & 3) == 3) ? "\n" : "");
+	jlabel_set_text(label_e500, str_e500);
+	gscreen_add_tab(s, label_e500, NULL);
+	gscreen_set_tab_title_visible(s, 1, _(false, true));
 
-		ev = getkey();
-		key = ev.key;
-		if(tab == 0 && key == KEY_F1)
-		{
+	// Event loop
+
+	while(true) {
+		jevent e = jscene_run(gintctl_scene());
+		if(jevent_is_press(e, KEY_EXIT))
+			break;
+
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0)
 			explore_region(&r[0]);
-		}
-		if(tab == 0 && key == KEY_F2)
-		{
+		if(e.type == JFKEYS_TRIGGERED && e.data == 1) {
 			explore_region(&r[1]);
 			explore_region(&r[2]);
 		}
-		if(tab == 0 && key == KEY_F3)
-		{
+		if(e.type == JFKEYS_TRIGGERED && e.data == 2) {
 			explore_region(&r[3]);
 			explore_region(&r[4]);
 			explore_region(&r[5]);
-		}
-		if(tab == 0 && key == KEY_F4)
-		{
 			explore_region(&r[6]);
 			explore_region(&r[7]);
 			explore_region(&r[8]);
 		}
-		if(tab == 0 && key == KEY_F5)
-		{
+		if(e.type == JFKEYS_TRIGGERED && e.data == 3) {
 			explore_region(&r[9]);
 			explore_region(&r[10]);
 			explore_region(&r[11]);
 		}
+		if(e.type == JFKEYS_TRIGGERED && e.data == 4)
+			gscreen_show_tab(s, gscreen_current_tab(s) == 1 ? 0 : 1);
+		if(e.type == JFKEYS_TRIGGERED && e.data == 5)
+			gscreen_show_tab(s, gscreen_current_tab(s) == 2 ? 0 : 2);
 
-		#ifdef GINT_RENDER_MONO
-		int scroll_max = region_count - 8;
-		if(tab == 0 && key == KEY_UP)
-		{
-			if(ev.shift || keydown(KEY_SHIFT)) scroll=0;
-			else if(scroll > 0) scroll--;
-		}
-		if(tab == 0 && key == KEY_DOWN)
-		{
-			if(ev.shift || keydown(KEY_SHIFT)) scroll=scroll_max;
-			else if(scroll < scroll_max) scroll++;
-		}
-		#endif
-
-		if(tab == 0 && key == KEY_F6)
-			tab = 1;
-		if(tab == 1 && key == KEY_EXIT) {
-			tab = 0;
-			key = 0;
-		}
+		table->widget.update = 1;
 	}
 }

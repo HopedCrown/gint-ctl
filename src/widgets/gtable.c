@@ -190,6 +190,16 @@ int compute_row_height(gtable *t)
 	return row_height;
 }
 
+/* Vertical offset where to draw to text within row so that largest font ends
+   up somewhat centered vertically and the others align in baseline. */
+int compute_row_offset(gtable *t, int row_height)
+{
+	int offset = 0;
+	for(int i = 0; i < t->columns; i++)
+		offset = max(offset, (row_height - t->meta[i].font->line_height - 1) / 2);
+	return offset;
+}
+
 /* Recompute (visible) based on the current size */
 void update_visible(gtable *t)
 {
@@ -242,12 +252,17 @@ void gtable_poly_render(void *t0, int base_x, int base_y)
 {
 	gtable *t = t0;
 	int row_height = compute_row_height(t);
+	int row_offset = compute_row_offset(t, row_height);
 	int cw = jwidget_content_width(t);
 	int y = base_y;
 
+#if GINT_RENDER_RGB
+	drect(base_x, y, base_x + cw - 1, y + row_height - 1, C_RGB(28, 28, 28));
+#endif
+
 	for(uint i=0, x=base_x; i < t->columns; i++) {
 		font_t const *old_font = dfont(t->meta[i].font);
-		dtext(x, y, C_BLACK, t->meta[i].title);
+		dtext(x, y + row_offset, C_BLACK, t->meta[i].title);
 		dfont(old_font);
 
 		x += t->meta[i].width;
@@ -260,7 +275,7 @@ void gtable_poly_render(void *t0, int base_x, int base_y)
 
 	for(uint i = 0; t->offset + i < t->rows && i < t->visible; i++) {
 		t->x = base_x;
-		t->y = y;
+		t->y = y + row_offset;
 
 		t->generator(t, t->offset + i, t->arg);
 		y += row_height + t->row_spacing;
