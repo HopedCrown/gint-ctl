@@ -34,7 +34,6 @@ set(SOURCES
   src/gint/ram.c
   src/gint/render.c
   src/gint/rtc.c
-  src/gint/spuram.c
   src/gint/syscallemu.c
   src/gint/timer.c
   src/gint/timer_callbacks.c

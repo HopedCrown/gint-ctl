@@ -41,7 +41,6 @@ struct menuentry menu_gint[] = {
 	CTGY("gint tests", "gint features and driver tests")
 	{ "CPU and memory",     gintctl_gint_cpumem, 0 },
 	{ "RAM discovery",      gintctl_gint_ram, MENU_SH4_ONLY },
-	{ "SPU memory",         gintctl_gint_spuram, MENU_SH4_ONLY },
 	#if !GINT_HW_CP
 	{ "Memory dump",        gintctl_gint_dump, 0 },
 	#endif

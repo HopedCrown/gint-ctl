@@ -40,103 +40,80 @@ static void restore(volatile uint32_t *area, uint32_t *save, int pages)
 	}
 }
 
-#if GINT_RENDER_MONO
-static void render_header(int y, GUNUSED int bank_count)
-{
-	y = 9 + 6*y;
-	dtext( 1, 9, C_BLACK, "Area");
-	dtext(24, 9, C_BLACK, "Address");
-	dtext(60, 9, C_BLACK, "Visible pages");
-}
-
-static void render_area(int y, char const *name, uint32_t *area)
-{
-	y = 9 + 6*y;
-	dprint( 1, y, C_BLACK, "%s", name);
-	dprint(24, y, C_BLACK, "%08X", (uint32_t)area);
-
-	int b = 0, bank = 0;
-	while(1)
-	{
-		bank = bank_number(area);
-		if(b == 7) break;
-
-		dprint(60+8*b, y, C_BLACK, bank >= 0 ? "%d" : "-", bank);
-		area += 0x2000;
-		b++;
-	}
-}
-
-static void render_bank(int y, char const *name, volatile uint32_t *bank,
-	int banks, int dsp, int focus)
-{
-	y = 9 + 6*y;
-	dprint( 1, y, C_BLACK, "%s", name);
-	dprint(29, y, C_BLACK, "=%02X", *bank);
-
-	for(int b = 0; b < banks; b++)
-	{
-		int active = *bank & (1 << b);
-
-		int x  = 50 + 8*b - 1;
-		int ry = y + (dsp==0) - 1;
-
-		int fill = active ? C_BLACK : C_WHITE;
-		int border = (focus == b) ? C_BLACK : C_WHITE;
-		drect_border(x, ry, x+7, ry+5, fill, 1, border);
-	}
-}
-#endif
-
 #if GINT_RENDER_RGB
-static void render_header(int y, int bank_count)
+static void render_area(int x, int y, char const *name, uint32_t *area)
 {
-	dtext(row_x(2),  row_y(y), C_BLACK, "Area:");
-	dtext(row_x(9),  row_y(y), C_BLACK, "Address:");
+	dtext(x+8, y, C_BLACK, name);
+	dprint(x+64, y, C_BLACK, "%08X", (u32)area);
 
-	for(int b = 0; b < bank_count; b++)
-	{
-		row_print(y, 20+4*b, "%d:", b*32);
-	}
-}
+	for(int p = 0; true; p++) {
+		int bank = bank_number(area);
+		if(bank < 0) break;
 
-static void render_area(int y, char const *name, uint32_t *area)
-{
-	row_print(y, 2, "%s", name);
-	row_print(y, 9, "%08X", (uint32_t)area);
-
-	int b = 0, bank = 0;
-	while(1)
-	{
-		bank = bank_number(area);
-		if(bank == -1) break;
-
-		row_print(y, 20+4*b, "%d", bank);
+		dprint(x-6+row_x(20+4*p), y, C_BLACK, "%d", bank);
 		area += 0x2000;
-		b++;
 	}
 }
 
-static void render_bank(int y, char const *name, volatile uint32_t *bank,
-	int banks, int dsp, int focus)
+static void render_bank(int x, int y, char const *name, u32 volatile *bank,
+	int pages, int dsp, int focus)
 {
-	row_print(y, 2, "%s", name);
-	row_print(y, 10, "= %02X", *bank);
+	dprint(x +  6, y, C_BLACK, "%s = %02X", name, *bank);
 
-	for(int b = 0; b < banks; b++)
+	int fx = -1, fy = -1;
+	int size = 12;
+
+	for(int p = 0; p < pages; p++)
 	{
-		int active = *bank & (1 << b);
+		int active = *bank & (1 << p);
 
-		int w  = row_x(3) - row_x(0);
-		int x  = row_x(20 + 4*b) - 2;
-		int h  = row_y(1) - row_y(0) - 2;
-		int ry = row_y(y) + 2*(dsp==0) - 4;
+		int rx = x + 108 + size * p - 2;
+		int ry = y + 2 * (dsp == 0) - 4;
 
-		int fill = C_RGB(24,24,24);
+		int fill = C_RGB(28,28,28);
 		if(active) fill = dsp ? C_RGB(31,24,0) : C_GREEN;
-		int border = (focus == b) ? C_BLACK : C_RGB(16,16,16);
-		drect_border(x, ry, x+w, ry+h, fill, 1, border);
+		drect_border(rx, ry, rx+size, ry+size, fill, 1, C_RGB(16,16,16));
+
+		if(focus == p)
+			fx = rx, fy = ry;
 	}
+
+	if(focus >= 0)
+		drect_border(fx, fy, fx+size, fy+size, C_NONE, 1, C_BLACK);
+}
+
+static void render_widget(int x, int y, int cur_bank, int cur_page)
+{
+	uint32_t *PRAM0 = (void *)0xfe200000;
+	uint32_t *XRAM0 = (void *)0xfe240000;
+	uint32_t *YRAM0 = (void *)0xfe280000;
+	uint32_t *PRAM1 = (void *)0xfe300000;
+	uint32_t *XRAM1 = (void *)0xfe340000;
+	uint32_t *YRAM1 = (void *)0xfe380000;
+
+	dtext(x+8, y, C_BLACK, "Area:");
+	dtext(x+64, y, C_BLACK, "Address:");
+
+	for(int p = 0; p < 7; p++)
+		dprint(x-6+row_x(20+4*p), y, C_BLACK, "%d:", p*32);
+
+	render_area(x, y+14*1, "PRAM0", PRAM0);
+	render_area(x, y+14*2, "XRAM0", XRAM0);
+	render_area(x, y+14*3, "YRAM0", YRAM0);
+	render_area(x, y+14*4, "PRAM1", PRAM1);
+	render_area(x, y+14*5, "XRAM1", XRAM1);
+	render_area(x, y+14*6, "YRAM1", YRAM1);
+
+	dtext(x, y+14*8, C_BLACK, "Bank settings for DSP0 and DSP1:");
+	render_bank(x, y+14*9, "PBANKC0", &SPU.PBANKC0, 5, 0,
+		(cur_bank == 0) ? cur_page : -1);
+	render_bank(x, y+14*10, "PBANKC1", &SPU.PBANKC1, 5, 1,
+		(cur_bank == 0) ? cur_page : -1);
+
+	render_bank(x+185, y+14*9, "XBANKC0", &SPU.XBANKC0, 7, 0,
+		(cur_bank == 1) ? cur_page : -1);
+	render_bank(x+185, y+14*10, "XBANKC1", &SPU.XBANKC1, 7, 1,
+		(cur_bank == 1) ? cur_page : -1);
 }
 #endif
 
@@ -163,105 +140,40 @@ void gintctl_gint_spuram(void)
 	save_and_setup(XRAM1, saves[4], 7);
 	save_and_setup(YRAM1, saves[5], 4);
 
-	int cur_bank = 0;
-	int cur_page = 0;
-
-	int switch_key = _(KEY_F6, KEY_F1);
-
-	#if GINT_RENDER_MONO
-	int tab = 0;
-	#endif
+	int cursor = 0;
+	int cur_bank = 0; // derived from cursor
+	int cur_page = 0; // derived from cursor
 
 	while(key != KEY_EXIT)
 	{
 		dclear(C_WHITE);
 
-		#if GINT_RENDER_MONO
-		row_title("SPU memory banking");
-
-		extern font_t font_hexa;
-		font_t const *old_font = dfont(&font_hexa);
-
-		if(tab == 0)
-		{
-			render_header(0, 7);
-			render_area(1, "PRAM0", PRAM0);
-			render_area(2, "XRAM0", XRAM0);
-			render_area(3, "YRAM0", YRAM0);
-			render_area(4, "PRAM1", PRAM1);
-			render_area(5, "XRAM1", XRAM1);
-			render_area(6, "YRAM1", YRAM1);
-		}
-		else if(tab == 1)
-		{
-			render_bank(1, "PBANKC0", &SPU.PBANKC0, 5, 0,
-				(cur_bank == 0) ? cur_page : -1);
-			render_bank(2, "PBANKC1", &SPU.PBANKC1, 5, 1,
-				(cur_bank == 0) ? cur_page : -1);
-			render_bank(4, "XBANKC0", &SPU.XBANKC0, 7, 0,
-				(cur_bank == 1) ? cur_page : -1);
-			render_bank(5, "XBANKC1", &SPU.XBANKC1, 7, 1,
-				(cur_bank == 1) ? cur_page : -1);
-		}
-
-		dfont(old_font);
-		extern bopti_image_t img_opt_gint_spuram;
-		dsubimage(0, 56, &img_opt_gint_spuram, 0, 0,
-			(tab == 1 ? 128 : 107), 8, DIMAGE_NONE);
-		#endif
-
 		#if GINT_RENDER_RGB
-		row_title("SPU memory: PRAM0, XRAM0, YRAM0, YRAM");
+		row_title("SPU memory: {P,X,Y}RAM{0,1}");
 		row_print(1, 1, "Pages layout in memory (offsets in kiB):");
-
-		render_header(2, 7);
-		render_area(3, "PRAM0", PRAM0);
-		render_area(4, "XRAM0", XRAM0);
-		render_area(5, "YRAM0", YRAM0);
-		render_area(6, "PRAM1", PRAM1);
-		render_area(7, "XRAM1", XRAM1);
-		render_area(8, "YRAM1", YRAM1);
-
-		row_print(9, 1, "Bank settings for DSP0 and DSP1:");
-		render_bank(10, "PBANKC0", &SPU.PBANKC0, 5, 0,
-			(cur_bank == 0) ? cur_page : -1);
-		render_bank(11, "PBANKC1", &SPU.PBANKC1, 5, 1,
-			(cur_bank == 0) ? cur_page : -1);
-		render_bank(12, "XBANKC0", &SPU.XBANKC0, 7, 0,
-			(cur_bank == 1) ? cur_page : -1);
-		render_bank(13, "XBANKC1", &SPU.XBANKC1, 7, 1,
-			(cur_bank == 1) ? cur_page : -1);
-
-		fkey_button(1, "SWITCH");
+		render_widget(6, 36, cur_bank, cur_page);
 		#endif
 
 		dupdate();
-		key = getkey().key;
+		key = getkey_opt(GETKEY_DEFAULT & ~GETKEY_MOD_SHIFT, NULL).key;
 
-		if(key == KEY_LEFT && cur_page > 0)
-			cur_page--;
-		if(key == KEY_RIGHT && cur_page < (cur_bank ? 7 : 5) - 1)
-			cur_page++;
-		if(key == KEY_UP && cur_bank == 1 && cur_page < 5)
-			cur_bank--;
-		if(key == KEY_DOWN && cur_bank == 0)
-			cur_bank++;
+		if(key == KEY_LEFT)
+			cursor -= (cursor > 0);
+		if(key == KEY_RIGHT)
+			cursor += (cursor + 1 < 12);
+		cur_bank = (cursor >= 5);
+		cur_page = cursor - 5 * cur_bank;
 
-		if(key == switch_key && cur_bank == 0 && _(tab == 1, 1))
+		if((key == KEY_EXE || key == KEY_SHIFT) && cur_bank == 0)
 		{
 			SPU.PBANKC0 ^= (1 << cur_page);
 			SPU.PBANKC1 ^= (1 << cur_page);
 		}
-		if(key == switch_key && cur_bank == 1 && _(tab == 1, 1))
+		if((key == KEY_EXE || key == KEY_SHIFT) && cur_bank == 1)
 		{
 			SPU.XBANKC0 ^= (1 << cur_page);
 			SPU.XBANKC1 ^= (1 << cur_page);
 		}
-
-		#if GINT_RENDER_MONO
-		if(key == KEY_F1) tab = 0;
-		if(key == KEY_F2) tab = 1;
-		#endif
 	}
 
 	/* Restore the values we saved before altering page data */
