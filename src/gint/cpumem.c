@@ -189,7 +189,6 @@ void gintctl_gint_cpumem(void)
 		"Processor and memory", "/MPU/CPU;/MEMORY;;;;", NULL);
 	gintctl_scene_push(s);
 
-	// extern font_t font_mini;
 	jlabel *label_cpu = jlabel_create("<cpu>", NULL);
 	jlabel_set_font(label_cpu, _(&font_mini, dfont_default()));
 	show_mpucpu(label_cpu);

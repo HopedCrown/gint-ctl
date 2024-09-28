@@ -82,7 +82,7 @@ void gintctl_gint_render(void)
 
 	dupdate();
 
-#if GINT_HW_CG
+#if GINT_HW_CG && GINT_RENDER_RGB
 	extern image_t gint_gdb_icons_rgb565;
 	video_update(0, 0, &gint_gdb_icons_rgb565, 0);
 #endif

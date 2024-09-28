@@ -7,12 +7,19 @@
 #include <gint/usb.h>
 #include <gint/usb-ff-bulk.h>
 
-#include <gintctl/util.h>
 #include <gintctl/gint.h>
+#include <gintctl/ui.h>
 
 #include <stdio.h>
+#include <string.h>
 
 #define ENABLE_FS_DUMP !GINT_HW_CP
+
+#if ENABLE_FS_DUMP
+# define CONFIG_FKEY_FSDUMP "#SMEM"
+#else
+# define CONFIG_FKEY_FSDUMP ""
+#endif
 
 struct region {
 	char const *name;
@@ -105,84 +112,83 @@ static void do_dump_usb(int region)
 	if(!open) usb_close();
 }
 
+void generate_filename(char *filename, int region, int segment)
+{
+	sprintf(filename, "%s%02x.bin", regs[region].name, segment);
+}
+
+void generate_label_text(
+	jlabel *label, int region, int segment, char const *filename, int rc)
+{
+	char rc_str[16] = "";
+	if(rc == 1) strcpy(rc_str, "DONE");
+	if(rc < 0) sprintf(rc_str, _("E", "Error ") "%d", rc);
+	jlabel_asprintf(label,
+		"Region: %s\n"
+		"Segment: %d (total %d)\n"
+		"File: %s\n"
+		_("","\n") "%s",
+		regs[region].name, segment, regs[region].segment_count, filename,
+		rc_str);
+}
+
 /* gintctl_gint_dump(): Dump memory to filesystem */
 void gintctl_gint_dump(void)
 {
 	int region=0, segment=0;
 	char filename[30];
-	int retcode = 0;
+	int rc = 0;
 
-	int key = 0;
-	while(key != KEY_EXIT)
+	extern bopti_image_t img_opt_dump;
+	gscreen *s = gscreen_create2("Memory dump", &img_opt_dump,
+			"Memory dump to USB/filesystem",
+			"@ROM;@RAM_88;@RAM_8C;@RS;#USB;" CONFIG_FKEY_FSDUMP, NULL);
+	gintctl_scene_push(s);
+
+	jlabel *label = jlabel_create("<info>", NULL);
+	generate_filename(filename, region, segment);
+	generate_label_text(label, region, segment, filename, rc);
+	gscreen_add_tab(s, label, NULL);
+
+	while(true)
 	{
-		sprintf(filename, "%s%02x.bin", regs[region].name, segment);
-
-		dclear(C_WHITE);
-
-		#if GINT_RENDER_MONO
-		row_print(1, 1, "Memory dump");
-
-		row_print(3, 1, "Region:  %s", regs[region].name);
-		row_print(4, 1, "Segment: %d (total %d)", segment,
-			regs[region].segment_count);
-		row_print(5, 1, "File:    %s", filename);
-
-		extern bopti_image_t img_opt_dump;
-		dimage(0, 56, &img_opt_dump);
-
-		if(retcode == 1) dprint(77, 56, C_BLACK, "Done!");
-		if(retcode < 0)  dprint(77, 56, C_BLACK, "E%d",retcode);
-		#endif
-
-		#if GINT_RENDER_RGB
-		row_title("Memory dump to filesystem");
-
-		row_print(1, 1, "Region:");
-		row_print(2, 1, "Segment:");
-		row_print(3, 1, "File:");
-
-		row_print(1, 10, "%s", regs[region].name);
-		row_print(2, 10, "%d (total %d)", segment,
-			regs[region].segment_count);
-		row_print(3, 10, "%s", filename);
-
-		if(retcode == 1) row_print(5, 1, "Done!");
-		if(retcode < 0)  row_print(5, 1, "Error %d", retcode);
-
-		fkey_button(1, "ROM");
-		fkey_button(2, "RAM_88");
-		fkey_button(3, "RAM_8C");
-		fkey_button(4, "RS");
-		fkey_action(5, "USB");
-		#if ENABLE_FS_DUMP
-		fkey_action(6, "SMEM");
-		#endif
-		#endif
-
-		dupdate();
-
-		key = getkey().key;
+		jevent e = jscene_run(gintctl_scene());
+		if(jevent_is_press(e, KEY_EXIT))
+			break;
 
 		int select = -1;
-		if(key == KEY_F1) select = 0;
-		if(key == KEY_F2) select = 1;
-		if(key == KEY_F3) select = 2;
-		if(key == KEY_F4 && _(0,1)) select = 3;
+		bool changed = false;
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0) select = 0;
+		if(e.type == JFKEYS_TRIGGERED && e.data == 1) select = 1;
+		if(e.type == JFKEYS_TRIGGERED && e.data == 2) select = _(3,2);
+		if(e.type == JFKEYS_TRIGGERED && e.data == 3 && _(0,1)) select = 3;
 
 		if(select >= 0 && select == region)
 		{
 			segment = (segment + 1) % regs[region].segment_count;
+			changed = true;
 		}
 		else if(select >= 0 && select != region)
 		{
 			region = select;
 			segment = 0;
+			changed = true;
 		}
 
-		retcode = 0;
-		if(key == KEY_F5) do_dump_usb(region);
-		#if ENABLE_FS_DUMP
-		if(key == KEY_F6) retcode = do_dump_smem(region, segment);
-		#endif
+		rc = 0;
+		if(e.type == JFKEYS_TRIGGERED && e.data == 4) {
+			do_dump_usb(region);
+			changed = true;
+		}
+		if(e.type == JFKEYS_TRIGGERED && e.data == 5 && ENABLE_FS_DUMP) {
+			rc = do_dump_smem(region, segment);
+			changed = true;
+		}
+
+		if(changed)
+		{
+			generate_filename(filename, region, segment);
+			generate_label_text(label, region, segment, filename, rc);
+		}
 	}
 }
