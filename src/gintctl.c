@@ -247,7 +247,9 @@ void gintctl_scene_pop(void)
 		jwidget *child = scene->widget.children[N - 1];
 		jwidget_remove_child(scene, child);
 		jwidget_destroy(child);
-		jlayout_get_stack(scene)->active = N - 2;
+		jlayout_stack *s = jlayout_get_stack(scene);
+		if(s)
+			s->active = N - 2;
 		jwidget_scope_set_target(scene, scene->widget.children[N - 2]);
 	}
 	scene->widget.update = 1;

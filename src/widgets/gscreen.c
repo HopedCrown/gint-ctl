@@ -203,7 +203,7 @@ int gscreen_current_tab(gscreen *s)
 {
 	jwidget *stack = tab_stack(s);
 	jlayout_stack *l = jlayout_get_stack(stack);
-	return l->active;
+	return l ? l->active : -1;
 }
 
 bool gscreen_in(gscreen *s, int tab)
