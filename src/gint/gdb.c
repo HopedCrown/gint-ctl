@@ -6,9 +6,12 @@
 #include <gint/config.h>
 
 #include <gintctl/assets.h>
+#include <gintctl/config.h>
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <stdio.h>
+
+#if GINTCTL_ENABLE_USB
 
 #ifdef FXCG50
 static void val(int y, const char *name, uint32_t value)
@@ -105,3 +108,5 @@ void gintctl_gint_gdb(void)
 		}
 	}
 }
+
+#endif /* GINTCTL_ENABLE_USB */

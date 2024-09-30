@@ -8,6 +8,7 @@
 #include <gint/config.h>
 #include <gint/gray.h>
 
+#include <gintctl/config.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
@@ -59,10 +60,10 @@ struct menuentry menu_gint[] = {
 	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
 	{ "Real-time clock",    gintctl_gint_rtc, 0 },
-	#if !GINT_HW_CP
+	#if !GINT_HW_CP && GINTCTL_ENABLE_USB
 	{ "USB communication",  gintctl_gint_usb, MENU_SH4_ONLY },
 	#endif
-	#if GINT_HW_CG && GINT_RENDER_RGB
+	#if GINT_HW_CG && GINT_RENDER_RGB && GINTCTL_ENABLE_USB
 	{ "USB tracer",         gintctl_gint_usbtrace, MENU_SH4_ONLY },
 	#endif
 	{ "Basic rendering",    gintctl_gint_render, 0 },
@@ -74,7 +75,7 @@ struct menuentry menu_gint[] = {
 	#if GINT_RENDER_MONO
 	{ "Gray rendering",     gintctl_gint_grayrender, 0 },
 	#endif
-	#if !GINT_HW_CP
+	#if !GINT_HW_CP && GINTCTL_ENABLE_USB
 	{ "GDB",                gintctl_gint_gdb, MENU_SH4_ONLY },
 	#endif
 	{ NULL, NULL, 0 },
@@ -105,6 +106,7 @@ struct menuentry menu_perf[] = {
 //---
 
 #if !GINT_HW_CP
+#if GINTCTL_ENABLE_USB
 
 /* Whether we're recording */
 static bool getkey_recording = false;
@@ -128,9 +130,11 @@ static void getkey_record_video_frame(int onscreen)
 	usb_fxlink_videocapture(onscreen);
 	#endif
 }
+#endif
 
 static bool getkey_global_shortcuts(key_event_t e)
 {
+#if GINTCTL_ENABLE_USB
 	if(usb_is_open() && e.key == KEY_OPTN && !e.shift && !e.alpha) {
 		#ifdef FX9860G
 		if(dgray_enabled())
@@ -156,6 +160,7 @@ static bool getkey_global_shortcuts(key_event_t e)
 			getkey_recording = false;
 		}
 	}
+#endif
 	if(e.shift && e.key == KEY_COMMA) {
 		static int stage = 0;
 		stage = (stage + 1) % 8;
@@ -185,12 +190,13 @@ static void gintctl_fxlink_notification(void)
 
 key_event_t gintctl_getkey_opt(int options)
 {
-	usb_fxlink_header_t header;
-
 	while(1) {
 		key_event_t ev = getkey_opt(options, &gintctl_interrupt);
+#if GINTCTL_ENABLE_USB
+		usb_fxlink_header_t header;
 		while(usb_fxlink_handle_messages(&header))
 			gintctl_handle_usb_command(&header);
+#endif
 
 		/* Keep waiting only if we were interrupted *and* the interrupt only
 		   set bit #31 */
@@ -287,7 +293,7 @@ int main(void)
 	#endif
 
 	/* Get notified when fxlink messages arrive through USB */
-#if !GINT_HW_CP
+#if !GINT_HW_CP && GINTCTL_ENABLE_USB
 	usb_fxlink_set_notifier(gintctl_fxlink_notification);
 #endif
 

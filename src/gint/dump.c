@@ -7,6 +7,7 @@
 #include <gint/usb.h>
 #include <gint/usb-ff-bulk.h>
 
+#include <gintctl/config.h>
 #include <gintctl/gint.h>
 #include <gintctl/ui.h>
 
@@ -19,6 +20,12 @@
 # define CONFIG_FKEY_FSDUMP "#SMEM"
 #else
 # define CONFIG_FKEY_FSDUMP ""
+#endif
+
+#if GINTCTL_ENABLE_USB
+# define CONFIG_FKEY_USBDUMP "#USB"
+#else
+# define CONFIG_FKEY_USBDUMP ""
 #endif
 
 struct region {
@@ -91,6 +98,7 @@ static int do_dump_smem(int region, int segment)
 
 static void do_dump_usb(int region)
 {
+#if GINTCTL_ENABLE_USB
 	bool open = usb_is_open();
 	if(!open) {
 		usb_interface_t const *interfaces[] = { &usb_ff_bulk, NULL };
@@ -110,6 +118,7 @@ static void do_dump_usb(int region)
 
 	/* Close the USB link if it wasn't open before */
 	if(!open) usb_close();
+#endif
 }
 
 void generate_filename(char *filename, int region, int segment)
@@ -142,7 +151,8 @@ void gintctl_gint_dump(void)
 	extern bopti_image_t img_opt_dump;
 	gscreen *s = gscreen_create2("Memory dump", &img_opt_dump,
 			"Memory dump to USB/filesystem",
-			"@ROM;@RAM_88;@RAM_8C;@RS;#USB;" CONFIG_FKEY_FSDUMP, NULL);
+			"@ROM;@RAM_88;@RAM_8C;@RS;" CONFIG_FKEY_USBDUMP ";"
+			CONFIG_FKEY_FSDUMP, NULL);
 	gintctl_scene_push(s);
 
 	jlabel *label = jlabel_create("<info>", NULL);

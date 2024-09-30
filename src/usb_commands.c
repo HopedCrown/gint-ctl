@@ -6,6 +6,10 @@
 #include <endian.h>
 #include <ctype.h>
 
+#include <gintctl/config.h>
+
+#if GINTCTL_ENABLE_USB
+
 static void drop(usb_fxlink_header_t const *h)
 {
     USB_LOG("[gintctl] dropping %.16s.%.16s\n", h->application, h->type);
@@ -103,3 +107,5 @@ void gintctl_handle_usb_command(usb_fxlink_header_t const *h)
 
     drop(h);
 }
+
+#endif /* GINTCTL_ENABLE_USB */

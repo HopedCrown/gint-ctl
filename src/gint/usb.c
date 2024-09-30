@@ -16,6 +16,7 @@
 #include <gint/gint.h>
 #include <gint/config.h>
 
+#include <gintctl/config.h>
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
@@ -25,6 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if GINTCTL_ENABLE_USB
 
 #define USB SH7305_USB
 
@@ -589,3 +592,5 @@ void gintctl_gint_usb(void)
 	usb_set_log(NULL);
 	global_interrupt_flag = NULL;
 }
+
+#endif /* GINTCTL_ENABLE_USB */

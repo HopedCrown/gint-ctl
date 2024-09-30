@@ -4,6 +4,7 @@
 #include <gint/usb-ff-bulk.h>
 #include <gint/mpu/usb.h>
 
+#include <gintctl/config.h>
 #include <gintctl/gint.h>
 #include <gintctl/widgets/gscreen.h>
 #include <justui/jpainted.h>
@@ -14,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#if GINT_RENDER_RGB
+#if GINT_RENDER_RGB && GINTCTL_ENABLE_USB
 
 #define USB SH7305_USB
 
