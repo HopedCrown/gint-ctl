@@ -8,6 +8,14 @@
 #include <justui/jwidget.h>
 #include <gint/display.h>
 
+typedef enum {
+    /* Selected item is indicated by inverting its rendered area */
+    GTABLE_SELECTION_INVERT = 1,
+    /* Selected item is indicated by applying a background color */
+    GTABLE_SELECTION_BACKGROUND = 2,
+
+} gtable_selection_style;
+
 /* gtable: A dynamic scrolling table
 
    This widget is a table with a header and a set of rows, that scrolls
@@ -37,7 +45,19 @@ typedef struct gtable {
 	/* Coordinates during rendering */
 	int16_t x, y;
 
+	/* Whether selection of rows is enabled */
+	bool selection_enabled;
+	/* Cursor, -1 if disabled */
+	int16_t selection_cursor;
+	/* Selection style (defaults to invert) */
+	int8_t selection_style;
+	/* Selection background color */
+	uint16_t selection_bg;
+
 } gtable;
+
+/* Row triggered with EXE while selected. */
+extern uint16_t GTABLE_ROW_TRIGGERED;
 
 /* gtable_create(): Create a scrolling table
 
@@ -112,14 +132,27 @@ void gtable_set_row_height(gtable *t, int row_height);
 /* gtable_set_row_spacing(): Set additional row spacing */
 void gtable_set_row_spacing(gtable *t, int row_spacing);
 
+/* gtable_set_selection_enabled(): Set whether there is a cursor */
+void gtable_set_selection_enabled(gtable *t, bool selection_enabled);
+
+/* gtable_set_selection_style(): Set how to draw selected elements
+   The color is used for the BACKGROUND style, ignored for INVERT. */
+void gtable_set_selection_style(
+	gtable *t, gtable_selection_style style, int color);
+
 //---
 // Movement
 //---
 
-/* gtable_scroll_to(): Scroll to the specified offset (if acceptable) */
+/* gtable_scroll_to(): Scroll to the specified offset (if acceptable)
+   When selection is enabled this can result in the cursor being invisible
+   until it moves again. Prefer gtable_select() in this case. */
 void gtable_scroll_to(gtable *t, int offset);
 
 /* gtable_end(): Offset of the end of the table */
 int gtable_end(gtable *t);
+
+/* gtable_select(): Select to specified row number */
+void gtable_select(gtable *t, int row);
 
 #endif /* _GINTCTL_WIDGETS_GTABLE */

@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 J_DEFINE_WIDGET(gtable, csize, layout, render, event, destroy)
+J_DEFINE_EVENTS(GTABLE_ROW_TRIGGERED)
 
 struct gtable_column {
 	char const *title;
@@ -38,6 +39,11 @@ gtable *gtable_create(int columns, void *generator, j_arg_t arg, void *parent)
 
 	t->row_height = 0;
 	t->row_spacing = 1;
+
+	t->selection_enabled = false;
+	t->selection_cursor = -1;
+	t->selection_style = GTABLE_SELECTION_INVERT;
+	t->selection_bg = 0x0000;
 
 	for(uint i = 0; i < t->columns; i++) {
 		t->meta[i].title = NULL;
@@ -153,6 +159,26 @@ void gtable_set_row_spacing(gtable *t, int row_spacing)
 	t->widget.dirty = 1;
 }
 
+void gtable_set_selection_enabled(gtable *t, bool selection_enabled)
+{
+	/* Avoid shake for no-op calls */
+	if(t->selection_enabled == selection_enabled)
+		return;
+
+	/* Enabling selection will scroll the table to make the default selection
+	   (i.e. row #0) visible */
+	t->selection_enabled = selection_enabled;
+	if(selection_enabled && t->selection_cursor < 0 && t->rows > 0)
+		t->selection_cursor = 0;
+}
+
+void gtable_set_selection_style(
+	gtable *t, gtable_selection_style style, int color)
+{
+	t->selection_style = style;
+	t->selection_bg = color;
+}
+
 //---
 // Movement
 //---
@@ -173,6 +199,24 @@ int gtable_end(gtable *t)
 {
 	update_visible(t);
 	return max((int)t->rows - (int)t->visible, 0);
+}
+
+void gtable_select(gtable *t, int row)
+{
+	if(!t->selection_enabled || row < 0 || row >= (int)t->rows)
+		return;
+
+	/* Avoid the offset shake for no-op selections */
+	if(t->selection_cursor == row)
+		return;
+
+	t->selection_cursor = row;
+
+	/* Scroll up if needed; try to scroll one element further */
+	if(t->selection_cursor < t->offset + 1)
+		gtable_scroll_to(t, row - (row > 0));
+	if(t->selection_cursor >= t->offset + t->visible - 1)
+		gtable_scroll_to(t, t->selection_cursor - t->visible + 2);
 }
 
 //---
@@ -256,6 +300,8 @@ void gtable_poly_render(void *t0, int base_x, int base_y)
 	int cw = jwidget_content_width(t);
 	int y = base_y;
 
+	bool scrollbar = (t->visible < t->rows);
+
 #if GINT_RENDER_RGB
 	drect(base_x, y, base_x + cw - 1, y + row_height - 1, C_RGB(28, 28, 28));
 #endif
@@ -273,16 +319,26 @@ void gtable_poly_render(void *t0, int base_x, int base_y)
 	y += t->row_spacing + 1;
 	int rows_y = y;
 
+	int sel_xmax = base_x + cw - 1 - (scrollbar ? _(2,4) : 0);
+
 	for(uint i = 0; t->offset + i < t->rows && i < t->visible; i++) {
 		t->x = base_x;
 		t->y = y + row_offset;
 
+		if(t->selection_cursor == t->offset + (int)i
+			&& t->selection_style == GTABLE_SELECTION_BACKGROUND) {
+			drect(base_x, y, sel_xmax, y + row_height - 1, t->selection_bg);
+		}
 		t->generator(t, t->offset + i, t->arg);
+		if(t->selection_cursor == t->offset + (int)i
+			&& t->selection_style == GTABLE_SELECTION_INVERT) {
+			drect(base_x, y, sel_xmax, y + row_height - 1, C_INVERT);
+		}
 		y += row_height + t->row_spacing;
 	}
 
 	/* Scrollbar */
-	if(t->visible < t->rows) {
+	if(scrollbar) {
 		/* Area where the scroll bar lives */
 		int area_w = _(1,2);
 		int area_x = base_x + cw - area_w;
@@ -328,20 +384,41 @@ bool gtable_poly_event(void *t0, jevent e)
 
 	if(e.key.type == KEYEV_UP) return false;
 
-	if(e.key.key == KEY_DOWN && t->offset < end) {
-		if(e.key.shift) t->offset = end;
-		else t->offset++;
-		t->widget.update = 1;
-		return true;
+	if(t->selection_enabled) {
+		if(e.key.key == KEY_DOWN && t->selection_cursor < t->rows - 1) {
+			gtable_select(t, t->selection_cursor + 1);
+			t->widget.update = 1;
+			return true;
+		}
+		if(e.key.key == KEY_UP && t->selection_cursor > 0) {
+			gtable_select(t, t->selection_cursor - 1);
+			t->widget.update = 1;
+			return true;
+		}
+		if(e.key.key == KEY_EXE && (uint)t->selection_cursor < t->rows) {
+			jevent ev = { 0 };
+			ev.type = GTABLE_ROW_TRIGGERED;
+			ev.data = t->selection_cursor;
+			jwidget_emit(t, ev);
+			return true;
+		}
 	}
-	if(e.key.key == KEY_UP && t->offset > 0) {
-		if(e.key.shift) t->offset = 0;
-		else t->offset--;
-		t->widget.update = 1;
-		return true;
+	else {
+		if(e.key.key == KEY_DOWN && t->offset < end) {
+			if(e.key.shift) t->offset = end;
+			else t->offset++;
+			t->widget.update = 1;
+			return true;
+		}
+		if(e.key.key == KEY_UP && t->offset > 0) {
+			if(e.key.shift) t->offset = 0;
+			else t->offset--;
+			t->widget.update = 1;
+			return true;
+		}
 	}
 
-	return false;
+	return jwidget_poly_event(t, e);
 }
 
 void gtable_poly_destroy(void *t0)
