@@ -11,49 +11,54 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
+#include <gintctl/ui.h>
 
+#include <stdio.h>
 #include <string.h>
-
-//---
-// Driver list and information
-//---
-
-static void draw_list(int offset, int maximum)
-{
-	#if GINT_RENDER_RGB
-	row_print(1, 2, "Id");
-	row_print(1, 5, "Name");
-	row_print(1, 13, "Size");
-	row_print(1, 18, "Flags");
-	#endif
-
-	font_t const *old_font = dfont(_(&font_mini, dfont_default()));
-
-	for(int i=offset; i < (int)gint_driver_count() && i < offset+maximum; i++)
-	{
-		gint_driver_t *d = &gint_drivers[i];
-		uint8_t flags = gint_driver_flags[i];
-		int y = _(10+6*(i-offset), row_y(i-offset+2));
-
-		dprint(_( 2,row_x(2)),  y, C_BLACK, "%d", i);
-		dprint(_(12,row_x(5)),  y, C_BLACK, "%s", d->name);
-		dprint(_(36,row_x(13)), y, C_BLACK, "%d", d->state_size);
-		dprint(_(52,row_x(18)), y, C_BLACK, "%s%s%s",
-			(flags & GINT_DRV_CLEAN) ? "CLEAN " : "",
-			(flags & GINT_DRV_FOREIGN_POWERED) ? _("FP ","FOREIGN_POW. ") : "",
-			(flags & GINT_DRV_SHARED) ? "SHARED " : ""
-		);
-	}
-
-	dfont(old_font);
-
-	if((int)gint_driver_count() > maximum) scrollbar_px(_(8,50), _(55,200), 0,
-		gint_driver_count(), offset, maximum);
-}
 
 //---
 // State management
 //---
+
+static void gen_label(jlabel *l, gint_world_t world, int i)
+{
+	if(gint_driver_flags[i] & GINT_DRV_SHARED)
+		return jlabel_set_text(l, "Device is shared");
+	if(world == gint_world_addin && (gint_driver_flags[i] & GINT_DRV_CLEAN))
+		return jlabel_set_text(l, "Device is clean");
+
+	jlabel_set_text(l, "No state");
+
+	if(!strcmp(gint_drivers[i].name, "CPG")) {
+		cpg_state_t const *s = world[i];
+		if(!isSH3())
+			jlabel_asprintf(l, "SSCGCR: %08X", s->SSCGCR);
+	}
+
+	else if(!strcmp(gint_drivers[i].name, "CPU")) {
+		cpu_state_t const *s = world[i];
+		jlabel_asprintf(l,
+			"SR: %08X\n"
+			"VBR: %08X\n"
+			"CPUOPM: %08X",
+			s->SR, s->VBR, s->CPUOPM);
+	}
+
+	else if(!strcmp(gint_drivers[i].name, "DMA")) {
+		dma_state_t const *s = world[i];
+
+		#if GINT_RENDER_MONO
+		#define LINE(I) #I ": %08X->%08X %08X\n"
+		#define ARGS(I) s->ch[I].SAR, s->ch[I].DAR, s->ch[I].CHCR
+		#else
+		#define LINE(I) #I ": %08X->%08X TCR:%08X CHCR:%08X\n"
+		#define ARGS(I) s->ch[I].SAR, s->ch[I].DAR, s->ch[I].TCR, s->ch[I].CHCR
+		#endif
+		jlabel_asprintf(l,
+			LINE(0) LINE(1) LINE(2) LINE(3) LINE(4) LINE(5) "OR: %08X",
+			ARGS(0), ARGS(1), ARGS(2), ARGS(3), ARGS(4), ARGS(5), s->OR);
+	}
+}
 
 static void draw_state(gint_world_t world, int i)
 {
@@ -255,6 +260,21 @@ static void draw_manual(struct switch_stats *stats)
 	#endif
 }
 
+static void table_drv_gen(gtable *t, int row)
+{
+	char f1[8], f3[8], f4[64];
+	gint_driver_t const *d = &gint_drivers[row];
+	uint8_t flags = gint_driver_flags[row];
+
+	sprintf(f1, "%d", row);
+	sprintf(f3, "%d", d->state_size);
+	sprintf(f4, "%s%s%s",
+			(flags & GINT_DRV_CLEAN) ? "CLEAN " : "",
+			(flags & GINT_DRV_FOREIGN_POWERED) ? _("FP ","FOREIGN_POW. ") : "",
+			(flags & GINT_DRV_SHARED) ? "SHARED " : "");
+	gtable_provide(t, f1, d->name, f3, f4);
+}
+
 //---
 // Main test
 //---
@@ -265,8 +285,46 @@ void gintctl_gint_drivers(void)
 	int key=0, tab=0, list_scroll=0, list_max=_(7,12), selected_driver=0;
 	struct switch_stats stats = { 0 };
 
+	extern bopti_image_t img_opt_gint_drivers;
+	gscreen *s = gscreen_create2("Drivers and worlds", &img_opt_gint_drivers,
+		"Drivers and world switches", "@DRIVERS;@SWITCH;;;;", NULL);
+	gintctl_scene_push(s);
+
+	gtable *table_drv = gtable_create(4, table_drv_gen, NULL, NULL);
+	gtable_set_rows(table_drv, gint_driver_count());
+	gtable_set_column_titles(table_drv, "#", "Name", "Size", "Flags");
+	gtable_set_selection_enabled(table_drv, true);
+#if GINT_RENDER_MONO
+	gtable_set_column_sizes(table_drv, 1, 4, 2, 8);
+	gtable_set_font(table_drv, &font_mini);
+#else
+	gtable_set_column_sizes(table_drv, 1, 4, 2, 8);
+	gtable_set_row_height(table_drv, 12);
+	jwidget_set_margin(table_drv, 0, 4, 0, 4);
+#endif
+	gscreen_add_tab(s, table_drv, table_drv);
+
+	jlabel *label_details = jlabel_create("<details>", NULL);
+	gscreen_add_tab(s, label_details, NULL);
+
 	while(key != KEY_EXIT)
 	{
+		jevent e = jscene_run(gintctl_scene());
+
+		if(jevent_is_press(e, KEY_EXIT) && gscreen_current_tab(s) == 0)
+			break;
+		if(jevent_is_press(e, KEY_EXIT) && gscreen_current_tab(s) == 1) {
+			gscreen_show_tab(s, 0);
+		}
+
+		if(e.type == GTABLE_ROW_TRIGGERED) {
+			int i = e.data;
+			// TODO: Also consider gint_world_addin
+			gen_label(label_details, gint_world_os, i);
+			gscreen_show_tab(s, 1);
+		}
+
+#if 0
 		dclear(C_WHITE);
 
 		#if GINT_RENDER_MONO
@@ -325,5 +383,6 @@ void gintctl_gint_drivers(void)
 		{
 			/* TODO: World switch with performance statistics */
 		}
+#endif
 	}
 }
