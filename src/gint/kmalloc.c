@@ -443,7 +443,7 @@ static void draw_integrity(kmalloc_arena_t *arena)
 }
 
 static char const *arena_names[] = {
-	NULL, "_uram", "_ostk", "_os", "pram0",
+	NULL, "_uram", "_ostk", "_ld1", "_ld2", "_ld3", "_ld4", "_os", "pram0",
 };
 
 static kmalloc_arena_t *next_arena(int *current)
