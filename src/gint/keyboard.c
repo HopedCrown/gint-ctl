@@ -142,11 +142,17 @@ static char const *key_name(int key)
 		"1",     "2",    "3",    "+",    "-",     "0x48",
 		"0",     ".",    "x10^", "(-)",  "EXE",   "0x49",
 	};
+	char const *key_names_0xa[] = {
+		"KBD", "x", "y", "z", "=",
+		"ON", "|<", ">|", "PGUP", "PGDN", "SETTINGS", "OK", "CATALOG",
+		"Sqrt", "Exp",
+	};
 
 	if(key == 0) return "N/A";
 	if(key == KEY_ACON) key = 0x45;
 	int row = 9 - (key >> 4);
 	int col = (key & 15) - 1;
+	if((key & 0xf0) == 0xa0) return key_names_0xa[col];
 	return key_names[6*row + col];
 }
 
