@@ -7,6 +7,7 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
+#include <gintctl/ui.h>
 
 #include <gintctl/widgets/gscreen.h>
 #include <gintctl/widgets/gtable.h>
@@ -78,35 +79,25 @@ static void table_gen(gtable *t, int row)
 
 void gintctl_gint_bfile(void)
 {
+	gscreen *s = gscreen_create2("BFile filesystem", &img_opt_gint_bfile,
+		"BFile access to storage memory", "@LIST;;;;;", NULL);
+	gintctl_scene_push(s);
+
 	gtable *table = gtable_create(2, table_gen, NULL, NULL);
 	gtable_set_rows(table, 0);
 	gtable_set_column_titles(table, "Name", "Size");
 	gtable_set_column_sizes(table, 3, 1);
 	gtable_set_font(table, _(&font_mini, dfont_default()));
 	jwidget_set_margin(table, 0, 2, 1, 2);
+	gscreen_add_tab(s, table, table);
 
-	jscene *scene = jscene_create_fullscreen(NULL);
+	while(1) {
+		jevent e = jscene_run(gintctl_scene());
 
-	gscreen *scr = gscreen_create2("BFile filesystem", &img_opt_gint_bfile,
-		"BFile access to storage memory", "@LIST;;;;;", scene);
-	gscreen_add_tabs(scr, table, table);
-	jscene_set_focused_widget(scene, table);
+		if(jevent_is_press(e, KEY_EXIT))
+			break;
 
-	int key = 0;
-	while(key != KEY_EXIT) {
-		jevent e = jscene_run(scene);
-
-		if(e.type == JSCENE_PAINT) {
-			dclear(C_WHITE);
-			jscene_render(scene);
-			dupdate();
-		}
-
-		key = 0;
-		if(e.type == JSCENE_KEY && e.key.type == KEYEV_DOWN)
-			key = e.key.key;
-
-		if(key == KEY_F1) {
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0) {
 			if(test_names) {
 				for(int i = 0; test_names[i]; i++)
 					free(test_names[i]);
@@ -123,8 +114,6 @@ void gintctl_gint_bfile(void)
 			gtable_set_rows(table, rows);
 		}
 	}
-
-	jwidget_destroy(scene);
 }
 
 #endif /* GINT_HW_CP */
