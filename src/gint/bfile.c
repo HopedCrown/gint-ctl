@@ -1,3 +1,4 @@
+#include <gint/config.h>
 #include <gint/gint.h>
 #include <gint/bfile.h>
 #include <gint/display.h>
@@ -12,6 +13,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#if !GINT_HW_CP
 
 /* Names and file information */
 static char **test_names = NULL;
@@ -123,3 +126,5 @@ void gintctl_gint_bfile(void)
 
 	jwidget_destroy(scene);
 }
+
+#endif /* GINT_HW_CP */

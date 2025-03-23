@@ -39,6 +39,7 @@ set(SOURCES
   src/gint/timer_callbacks.c
   src/gint/tlb.c
   src/gint/topti.c
+  src/gint/touch.c
   src/gint/usb.c
   src/gint/usbtrace.c
   src/mem/mem.c

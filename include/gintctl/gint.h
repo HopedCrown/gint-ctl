@@ -79,4 +79,7 @@ void gintctl_gint_gdb(void);
 /* gintctl_gint_bfile(): Foundations of the filesystem access system */
 void gintctl_gint_bfile(void);
 
+/* gintctl_gint_touch(): Internals of the I2C and touch screen drivers. */
+void gintctl_gint_touch(void);
+
 #endif /* GINTCTL_GINT */
