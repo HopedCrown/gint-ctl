@@ -13,6 +13,8 @@
 #include <gintctl/assets.h>
 #include <gintctl/ui.h>
 
+#include <justui/jpainted.h>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -20,48 +22,30 @@
 // State management
 //---
 
-static void gen_label(jlabel *l, gint_world_t world, int i)
+static void table_drv_gen(gtable *t, int row)
 {
-	if(gint_driver_flags[i] & GINT_DRV_SHARED)
-		return jlabel_set_text(l, "Device is shared");
-	if(world == gint_world_addin && (gint_driver_flags[i] & GINT_DRV_CLEAN))
-		return jlabel_set_text(l, "Device is clean");
+	char f1[8], f3[8], f4[64];
+	gint_driver_t const *d = &gint_drivers[row];
+	uint8_t flags = gint_driver_flags[row];
 
-	jlabel_set_text(l, "No state");
-
-	if(!strcmp(gint_drivers[i].name, "CPG")) {
-		cpg_state_t const *s = world[i];
-		if(!isSH3())
-			jlabel_asprintf(l, "SSCGCR: %08X", s->SSCGCR);
-	}
-
-	else if(!strcmp(gint_drivers[i].name, "CPU")) {
-		cpu_state_t const *s = world[i];
-		jlabel_asprintf(l,
-			"SR: %08X\n"
-			"VBR: %08X\n"
-			"CPUOPM: %08X",
-			s->SR, s->VBR, s->CPUOPM);
-	}
-
-	else if(!strcmp(gint_drivers[i].name, "DMA")) {
-		dma_state_t const *s = world[i];
-
-		#if GINT_RENDER_MONO
-		#define LINE(I) #I ": %08X->%08X %08X\n"
-		#define ARGS(I) s->ch[I].SAR, s->ch[I].DAR, s->ch[I].CHCR
-		#else
-		#define LINE(I) #I ": %08X->%08X TCR:%08X CHCR:%08X\n"
-		#define ARGS(I) s->ch[I].SAR, s->ch[I].DAR, s->ch[I].TCR, s->ch[I].CHCR
-		#endif
-		jlabel_asprintf(l,
-			LINE(0) LINE(1) LINE(2) LINE(3) LINE(4) LINE(5) "OR: %08X",
-			ARGS(0), ARGS(1), ARGS(2), ARGS(3), ARGS(4), ARGS(5), s->OR);
-	}
+	sprintf(f1, "%d", row);
+	sprintf(f3, "%d", d->state_size);
+	sprintf(f4, "%s%s%s",
+			(flags & GINT_DRV_CLEAN) ? "CLEAN " : "",
+			(flags & GINT_DRV_FOREIGN_POWERED) ? _("FP ","FOREIGN_POW. ") : "",
+			(flags & GINT_DRV_SHARED) ? "SHARED " : "");
+	gtable_provide(t, f1, d->name, f3, f4);
 }
 
-static void draw_state(gint_world_t world, int i)
+struct paint_params {
+	gint_world_t world;
+	int i;
+};
+
+static void draw_state(int x, int y, struct paint_params *params)
 {
+	gint_world_t world = params->world;
+	int i = params->i;
 	font_t const *old_font = dfont(_(&font_mini, dfont_default()));
 
 	if(i > 0)
@@ -70,7 +54,8 @@ static void draw_state(gint_world_t world, int i)
 		dprint(DWIDTH - _(4,16), _(57,row_y(1)), C_BLACK, ">");
 
 	dprint_opt(_(106, DWIDTH / 2), _(57, row_y(1)), C_BLACK, C_NONE,
-		DTEXT_CENTER, DTEXT_TOP, "%s", gint_drivers[i].name);
+		DTEXT_CENTER, DTEXT_TOP, "%s (%s)", gint_drivers[i].name,
+		world == gint_world_os ? "OS" : "gint");
 
 	if(gint_driver_flags[i] & GINT_DRV_SHARED)
 	{
@@ -237,42 +222,31 @@ struct switch_stats {
 	/* TODO: Performance statistics for each driver */
 };
 
-static void draw_manual(struct switch_stats *stats)
+static void draw_manual(jlabel *label, struct switch_stats *stats)
 {
 	#if GINT_RENDER_MONO
-	row_print(2, 1, "World switches: %d", stats->world_switch_count);
-	row_print(3, 1, "Return-to-menu: %d", stats->return_to_menu_count);
-	// row_print(4, 1, "Switch time: %d µs", stats->world_switch_time);
-	row_print(5, 1, "[1]: World switch");
-	row_print(6, 1, "[2]: Return-to-menu");
-	row_print(7, 1, "[3]: Measure perf");
+	jlabel_asprintf(label,
+		"World switches: %d\n"
+		"Return-to-menu: %d\n"
+		"\n" // "Switch time: %d µs\n", stats->world_switch_time
+		"[1]: World switch\n"
+		"[2]: Return-to-menu\n"
+		"[3]: Measure perf (TODO)",
+		stats->world_switch_count,
+		stats->return_to_menu_count);
 	#endif
 
 	#if GINT_RENDER_RGB
-	row_print(1, 1, "World switches performed: %d",
-		stats->world_switch_count);
-	row_print(2, 1, "Return-to-menu performed: %d",
+	jlabel_asprintf(label,
+		"World switches performed: %d\n"
+		"Return-to-menu performed: %d\n"
+		"\n" // "Switch time: %d µs\n", stats->world_switch_time
+		"[1]: Standard world switch\n"
+		"[2]: Return-to-menu with gint_osmenu()\n"
+		"[3]: World switch with shared libprof (TODO)",
+		stats->world_switch_count,
 		stats->return_to_menu_count);
-
-	row_print(11, 1, "[1]: Standard world switch");
-	row_print(12, 1, "[2]: Return-to-menu with gint_osmenu()");
-	row_print(13, 1, "[3]: World switch with shared libprof (TODO)");
 	#endif
-}
-
-static void table_drv_gen(gtable *t, int row)
-{
-	char f1[8], f3[8], f4[64];
-	gint_driver_t const *d = &gint_drivers[row];
-	uint8_t flags = gint_driver_flags[row];
-
-	sprintf(f1, "%d", row);
-	sprintf(f3, "%d", d->state_size);
-	sprintf(f4, "%s%s%s",
-			(flags & GINT_DRV_CLEAN) ? "CLEAN " : "",
-			(flags & GINT_DRV_FOREIGN_POWERED) ? _("FP ","FOREIGN_POW. ") : "",
-			(flags & GINT_DRV_SHARED) ? "SHARED " : "");
-	gtable_provide(t, f1, d->name, f3, f4);
 }
 
 //---
@@ -287,7 +261,7 @@ void gintctl_gint_drivers(void)
 
 	extern bopti_image_t img_opt_gint_drivers;
 	gscreen *s = gscreen_create2("Drivers and worlds", &img_opt_gint_drivers,
-		"Drivers and world switches", "@DRIVERS;@SWITCH;;;;", NULL);
+		"Drivers and world switches", "@DRIVERS;@SWITCH;;;;|#WORLD", NULL);
 	gintctl_scene_push(s);
 
 	gtable *table_drv = gtable_create(4, table_drv_gen, NULL, NULL);
@@ -304,73 +278,63 @@ void gintctl_gint_drivers(void)
 #endif
 	gscreen_add_tab(s, table_drv, table_drv);
 
-	jlabel *label_details = jlabel_create("<details>", NULL);
-	gscreen_add_tab(s, label_details, NULL);
+	struct paint_params paint_params;
+	paint_params.world = gint_world_os;
+	paint_params.i = 0;
+	jpainted *painted_details = jpainted_create(draw_state, &paint_params,
+		0, 0, NULL);
+	gscreen_add_tab(s, painted_details, NULL);
+	gscreen_set_tab_fkeys_level(s, 1, 1);
+
+	jlabel *label_switches = jlabel_create("<switches>", NULL);
+	gscreen_add_tab(s, label_switches, NULL);
 
 	while(key != KEY_EXIT)
 	{
 		jevent e = jscene_run(gintctl_scene());
+		int Fkey = (e.type == JFKEYS_TRIGGERED) ? e.data + 1 : -1;
+		int Tab = gscreen_current_tab(s);
+		int Key = e.type == JWIDGET_KEY &&
+		          (e.key.type == KEYEV_DOWN || e.key.type == KEYEV_HOLD) ?
+		          e.key.key : 0;
+		bool repaint_switches = false;
 
-		if(jevent_is_press(e, KEY_EXIT) && gscreen_current_tab(s) == 0)
-			break;
-		if(jevent_is_press(e, KEY_EXIT) && gscreen_current_tab(s) == 1) {
+		if(Tab == 1 && Key == KEY_EXIT)
 			gscreen_show_tab(s, 0);
+		else if(Key == KEY_EXIT)
+			break;
+
+		if(Tab == 1 && (Key == KEY_LEFT || Key == KEY_RIGHT)) {
+		   	int amount = (Key == KEY_LEFT) ? -1 : +1;
+			int cursor = gtable_select_move(table_drv, amount);
+			paint_params.i = cursor;
+			s->widget.update = 1;
 		}
 
 		if(e.type == GTABLE_ROW_TRIGGERED) {
-			int i = e.data;
-			// TODO: Also consider gint_world_addin
-			gen_label(label_details, gint_world_os, i);
+			paint_params.i = e.data;
 			gscreen_show_tab(s, 1);
 		}
 
-#if 0
-		dclear(C_WHITE);
+		if(Tab == 1 && Fkey == 1) {
+			paint_params.world = (paint_params.world == gint_world_os) ?
+				gint_world_addin : gint_world_os;
+			s->widget.update = 1;
+		}
+		else if(Fkey == 1)
+			gscreen_show_tab(s, 0);
 
-		#if GINT_RENDER_MONO
-		if(tab == 0 || tab == 3) row_print(1, 1, "Drivers and worlds");
-		dimage(0, 56, &img_opt_gint_drivers);
-		#endif
-
-		#if GINT_RENDER_RGB
-		row_title("Drivers and world switches");
-		fkey_menu(1, "DRIVERS");
-		fkey_menu(2, "OS");
-		fkey_menu(3, "ADDIN");
-		fkey_menu(4, "MANUAL");
-		#endif
-
-		if(tab == 0) draw_list(list_scroll, list_max);
-		if(tab == 1) draw_state(gint_world_os, selected_driver);
-		if(tab == 2) draw_state(gint_world_addin, selected_driver);
-		if(tab == 3) draw_manual(&stats);
-		dupdate();
-
-		key = getkey().key;
-		if(key == KEY_F1) tab = 0;
-		if(key == KEY_F2) tab = 1;
-		if(key == KEY_F3) tab = 2;
-		if(key == KEY_F4) tab = 3;
-
-		/* Action for list tab */
-		if(tab == 0 && key == KEY_UP && list_scroll > 0)
-			list_scroll--;
-		if(tab == 0 && key == KEY_DOWN && list_scroll <
-			(int)gint_driver_count() - list_max)
-			list_scroll++;
-
-		/* Actions for OS state tab */
-		if((tab == 1 || tab == 2) && key == KEY_LEFT && selected_driver > 0)
-			selected_driver--;
-		if((tab == 1 || tab == 2) && key == KEY_RIGHT
-			&& selected_driver < (int)gint_driver_count()-1)
-			selected_driver++;
+		if(Tab != 1 && Fkey == 2) {
+			gscreen_show_tab(s, 2);
+			repaint_switches = true;
+		}
 
 		/* Actions for the manual tab */
-		if(tab == 3 && key == KEY_1)
+		if(Tab == 2 && Key == KEY_1) {
 			gint_world_switch(GINT_CALL_INC(&stats.world_switch_count));
-		if(tab == 3 && key == KEY_2)
-		{
+			repaint_switches = true;
+		}
+		if(Tab == 2 && Key == KEY_2) {
 			/* TODO: Should render next frame in advance for seamless return */
 			stats.return_to_menu_count++;
 			dupdate();
@@ -378,11 +342,14 @@ void gintctl_gint_drivers(void)
 			gint_osmenu();
 			/* Wait for KEY_2 to be released before calling next getkey() */
 			while(keydown(KEY_2)) waitevent(NULL);
+			repaint_switches = true;
 		}
-		if(tab == 3 && key == KEY_3)
-		{
+		if(Tab == 2 && Key == KEY_3) {
 			/* TODO: World switch with performance statistics */
+			repaint_switches = true;
 		}
-#endif
+
+		if(repaint_switches)
+			draw_manual(label_switches, &stats);
 	}
 }

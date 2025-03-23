@@ -152,7 +152,13 @@ void gtable_scroll_to(gtable *t, int offset);
 /* gtable_end(): Offset of the end of the table */
 int gtable_end(gtable *t);
 
-/* gtable_select(): Select to specified row number */
-void gtable_select(gtable *t, int row);
+/* Select the specified row number. Returns the new cursor value, which might
+   differ because of bounds checks. */
+int gtable_select(gtable *t, int row);
+
+/* Move the selection by the specified number of rows. Like gtable_select(),
+   returns the number cursor position. Does nothing if the cursor is not
+   already within the bounds of the table. */
+int gtable_select_move(gtable *t, int amount);
 
 #endif /* _GINTCTL_WIDGETS_GTABLE */

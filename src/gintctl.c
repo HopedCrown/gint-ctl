@@ -242,7 +242,9 @@ gscreen *gintctl_scene_push(gscreen *s)
 	if(!s)
 		return NULL;
 	jwidget_add_child(scene, s);
-	jlayout_get_stack(scene)->active = scene->widget.child_count - 1;
+	jlayout_stack *sl = jlayout_get_stack(scene);
+	if(sl)
+		sl->active = scene->widget.child_count - 1;
 	scene->widget.update = 1;
 	jwidget_scope_set_target(scene, s);
 	return s;

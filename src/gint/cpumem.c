@@ -106,9 +106,11 @@ void show_mpucpu(jlabel *label)
 		" Current VBR: %08x\n"
 		" Current stack pointer: %08x\n"
 		"\n"
-		"Filesystem type: %s",
+		"OS version: %.10s\n"
+		" Serial number: %.12s\n"
+		" Filesystem type: %s",
 		str_calc, str_mpu, SR, gint[HWCPUVR], gint[HWCPUPR], *CPUOPM,
-		cpu_getVBR(), r15, str_fs);
+		cpu_getVBR(), r15, (char *)0x80020020, (char *)0x8001ffd0, str_fs);
 	#endif
 }
 

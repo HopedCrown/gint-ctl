@@ -201,14 +201,14 @@ int gtable_end(gtable *t)
 	return max((int)t->rows - (int)t->visible, 0);
 }
 
-void gtable_select(gtable *t, int row)
+int gtable_select(gtable *t, int row)
 {
 	if(!t->selection_enabled || row < 0 || row >= (int)t->rows)
-		return;
+		return t->selection_cursor;
 
 	/* Avoid the offset shake for no-op selections */
 	if(t->selection_cursor == row)
-		return;
+		return row;
 
 	t->selection_cursor = row;
 
@@ -217,6 +217,13 @@ void gtable_select(gtable *t, int row)
 		gtable_scroll_to(t, row - (row > 0));
 	if(t->selection_cursor >= t->offset + t->visible - 1)
 		gtable_scroll_to(t, t->selection_cursor - t->visible + 2);
+
+	return row;
+}
+
+int gtable_select_move(gtable *t, int amount)
+{
+	return gtable_select(t, t->selection_cursor + amount);
 }
 
 //---
