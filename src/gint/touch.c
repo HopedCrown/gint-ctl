@@ -11,6 +11,20 @@
 
 #if GINT_HW_CP
 
+static bool touch_get_os_calibration(
+    int *x_base, int *y_base, int *x_div, int *y_div)
+{
+    if(!memcmp((void *)0x80020020, "02.01.2000", 10) ||
+       !memcmp((void *)0x80020020, "02.01.7002", 10)) {
+        *x_base = *(int *)0x8c1bea50;
+        *y_base = *(int *)0x8c1bea54;
+        *x_div  = *(int *)0x8c1bea58;
+        *y_div  = *(int *)0x8c1bea5c;
+        return true;
+    }
+    return false;
+}
+
 //=== Copy of gint internals =================================================//
 
 /* _touch_adraw - raw 0x84 register information */
@@ -447,6 +461,27 @@ static int _world_switch(int switch_count, uintptr_t ptr, int y)
     return y + 1;
 }
 
+static int _world_calibration(int y)
+{
+    int x = 0;
+    _pxy("OS calibration parameters:");
+    y += 1;
+    x += 1;
+
+    int x_base, y_base, x_div, y_div;
+    if(!touch_get_os_calibration(&x_base, &y_base, &x_div, &y_div)) {
+        _pxy("not available");
+        return y+1;
+    }
+
+    _pxy("x_base: %04X (%d)", x_base, x_base);
+    _pxy("y_base: %04X (%d)", y_base, y_base);
+    _pxy("x_div: %04X (%d)", x_div, x_div);
+    _pxy("y_div: %04X (%d)", y_div, y_div);
+    return y + 1;
+}
+
+
 /* _world_drv_sync() - sync driver information */
 static void _world_drv_sync(void)
 {
@@ -488,6 +523,7 @@ void world_menu_display(struct menu *menu)
     y = _world_disp("Gint", &_world_info._gint, 0);
     y = _world_disp("Casio", &_world_info._casio, y);
     y = _world_switch(_world_info.switch_count, _world_info.ptr, y);
+    y = _world_calibration(y);
     dupdate();
 }
 
