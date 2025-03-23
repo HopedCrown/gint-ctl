@@ -6,7 +6,7 @@
 
 #include <gintctl/config.h>
 #include <gintctl/gint.h>
-#include <gintctl/widgets/gscreen.h>
+#include <gintctl/ui.h>
 #include <justui/jpainted.h>
 #include <justui/jwidget.h>
 #include <justui/jscrolledlist.h>
@@ -442,9 +442,9 @@ void gintctl_gint_usbtrace(void)
     commands_clear();
     traces_clear();
 
-    jscene *scene = jscene_create_fullscreen(NULL);
-    gscreen *scr = gscreen_create("Live USB state tracing",
-        "/PROG;/TRACES;;;;#RUN|/PROG;/TRACES;;;#CLEAR;", scene);
+    gscreen *s = gscreen_create("Live USB state tracing",
+        "/PROG;/TRACES;;;;#RUN|/PROG;/TRACES;;;#CLEAR;", NULL);
+    gintctl_scene_push(s);
 
     // Command composition tab
 
@@ -469,15 +469,15 @@ void gintctl_gint_usbtrace(void)
 
     // Scene setup
 
-    gscreen_add_tab(scr, tab1, commands_list);
-    gscreen_set_tab_fkeys_level(scr, 0, 0);
-    gscreen_add_tab(scr, tab2, traces_list);
-    gscreen_set_tab_fkeys_level(scr, 1, 1);
-    gscreen_add_tab(scr, tab3, commandoptions_list);
-    gscreen_set_tab_fkeys_visible(scr, 2, false);
+    gscreen_add_tab(s, tab1, commands_list);
+    gscreen_set_tab_fkeys_level(s, 0, 0);
+    gscreen_add_tab(s, tab2, traces_list);
+    gscreen_set_tab_fkeys_level(s, 1, 1);
+    gscreen_add_tab(s, tab3, commandoptions_list);
+    gscreen_set_tab_fkeys_visible(s, 2, false);
 
-    gscreen_show_tab(scr, 0);
-    jscene_set_focused_widget(scene, commands_list);
+    gscreen_show_tab(s, 0);
+    // jscene_set_focused_widget(scene, commands_list);
 
     commands_add(COMMAND_OPEN);
     commands_add(COMMAND_OPEN_WAIT);
@@ -495,26 +495,21 @@ void gintctl_gint_usbtrace(void)
     jlist_update_model(commands_list, commands_len+1, NULL);
 
     while(1) {
-        jevent e = jscene_run(scene);
-        void *focus = jscene_focused_widget(scene);
+        jevent e = jscene_run(gintctl_scene());
+        void *focus = jscene_focused_widget(gintctl_scene());
         int key = 0;
-        if(e.type == JSCENE_KEY && e.key.type == KEYEV_DOWN)
+        if(e.type == JWIDGET_KEY && e.key.type == KEYEV_DOWN)
             key = e.key.key;
-
-        if(e.type == JSCENE_PAINT) {
-            dclear(C_WHITE);
-            jscene_render(scene);
-            dupdate();
-        }
+        int Fkey = (e.type == JFKEYS_TRIGGERED) ? e.data + 1 : 0;
 
         if(e.type == JLIST_ITEM_TRIGGERED && e.source == commands_list) {
             if(e.data >= commands_len)
-                gscreen_show_tab(scr, 2);
+                gscreen_show_tab(s, 2);
         }
         if(e.type == JLIST_ITEM_TRIGGERED && e.source == commandoptions_list) {
             commands_add(e.data);
             jlist_update_model(commands_list, commands_len + 1, NULL);
-            gscreen_show_tab(scr, 0);
+            gscreen_show_tab(s, 0);
         }
         if(e.type == JLIST_ITEM_TRIGGERED && e.source == traces_list) {
             int cursor = jlist_selected_item(traces_list);
@@ -522,24 +517,24 @@ void gintctl_gint_usbtrace(void)
             jlist_select(traces_list, cursor);
         }
 
-        if(key == KEY_F5 && gscreen_in(scr, 1)) {
+        if(Fkey == 5 && gscreen_in(s, 1)) {
             traces_clear();
             jlist_update_model(traces_list, traces_len, NULL);
         }
 
-        if(key == KEY_F6 && gscreen_in(scr, 0)) {
+        if(Fkey == 6 && gscreen_in(s, 0)) {
             execute_tracer();
             jlist_update_model(traces_list, traces_len, NULL);
-            gscreen_show_tab(scr, 1);
+            gscreen_show_tab(s, 1);
         }
 
         //---
 
-        if(key == KEY_F1 && !gscreen_in(scr, 2)) {
-            gscreen_show_tab(scr, 0);
+        if(Fkey == 1 && !gscreen_in(s, 2)) {
+            gscreen_show_tab(s, 0);
         }
-        if(key == KEY_F2 && !gscreen_in(scr, 2)) {
-            gscreen_show_tab(scr, 1);
+        if(Fkey == 2 && !gscreen_in(s, 2)) {
+            gscreen_show_tab(s, 1);
         }
 
         if(key == KEY_UP && e.key.alpha && focus == commands_list) {
@@ -554,13 +549,11 @@ void gintctl_gint_usbtrace(void)
             jlist_select(commands_list, s);
         }
 
-        if(key == KEY_EXIT && (gscreen_in(scr, 0) || gscreen_in(scr, 1)))
+        if(key == KEY_EXIT && (gscreen_in(s, 0) || gscreen_in(s, 1)))
             break;
-        if((key == KEY_EXIT || key == KEY_F6) && gscreen_in(scr, 2))
-            gscreen_show_tab(scr, 0);
+        if((key == KEY_EXIT || Fkey == 6) && gscreen_in(s, 2))
+            gscreen_show_tab(s, 0);
     }
-
-    jwidget_destroy(scene);
 }
 
 #endif
