@@ -362,6 +362,13 @@ int main(void)
 		if(jevent_is_press(e, KEY_EXIT))
 			break;
 
+		if(jevent_is_press(e, KEY_NEXTTAB) || jevent_is_press(e, KEY_PREVTAB)) {
+			int dx = jevent_is_press(e, KEY_NEXTTAB) ? +1 : -1;
+			int target = gscreen_current_tab(s) + dx;
+			if(target >= 0 && target < s->tab_count)
+				gscreen_show_tab(s, target);
+		}
+
 		if(e.type == JFKEYS_TRIGGERED && e.data == 0)
 			gscreen_show_tab(s, 0);
 		if(e.type == JFKEYS_TRIGGERED && e.data == 1)
