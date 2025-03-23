@@ -9,6 +9,7 @@
 #include <gintctl/assets.h>
 #include <gintctl/ui.h>
 
+#include <stdlib.h>
 #include <stdio.h>
 
 /* TODO: Include <gint/cpu.h> */
@@ -48,6 +49,9 @@ void show_mpucpu(jlabel *label)
 		"Prizm fx-CG 20",
 		"fx-CG 50/Graph 90+E",
 		"fx-CG Manager",
+		"fx-9860G Slim",
+		"fx-CP 400",
+		"fx-CG 100/Graph Math+",
 	};
 	char const *fs_names[] = {
 		"Unknown",
@@ -62,7 +66,7 @@ void show_mpucpu(jlabel *label)
 	/* Generate a default calc name if invalid values are found */
 	char calc_default[16];
 	sprintf(calc_default, "<CALCID %d>", calc);
-	char const *str_calc = (uint)calc < 7 ? calc_names[calc] : calc_default;
+	char const *str_calc = (uint)calc < 10 ? calc_names[calc] : calc_default;
 
 	/* Generate a default MPU name if invalid values are found */
 	char mpu_default[16];
@@ -126,7 +130,9 @@ static void show_memory(jlabel *label)
 
 	#if GINT_RENDER_RGB
 	uint32_t base_ram  = 0x88000000;
-	if(gint[HWCALC] == HWCALC_FXCG50) base_ram = 0x8c000000;
+	if(gint[HWCALC] == HWCALC_FXCG50 || gint[HWCALC] == HWCALC_FXCG100 ||
+	   gint[HWCALC] == HWCALC_FXCP400)
+		base_ram = 0x8c000000;
 
 	jlabel_asprintf(label,
 		"RAM: %dM, RAM: %dM (starts at %08X)\n"
@@ -141,6 +147,34 @@ static void show_memory(jlabel *label)
 		gint[HWURAM] >> 10,
 		&brom, &srom, &rdata, &sdata, &rbss, &sbss);
 	#endif
+}
+
+/* Load info */
+static void show_load(jlabel *label)
+{
+	extern u32 *gint_load_info;
+
+	if(!gint_load_info) {
+		jlabel_set_text(label, "(null)");
+		return;
+	}
+
+	int len = 0;
+	while(gint_load_info[len]) len++;
+
+	char *text = malloc(11 * len + 1);
+	if(!text) {
+		jlabel_set_text(label, "(alloc failure)");
+		return;
+	}
+
+	for(int i = 0; i < len; i++) {
+		sprintf(text + 11 * i, "0x%08x%c", gint_load_info[i],
+			(i & 1) ? '\n' : ' ');
+	}
+
+	jlabel_set_text(label, text);
+	label->owns_text = true;
 }
 
 #if 0
@@ -186,7 +220,7 @@ static void hw_display(int *row)
 void gintctl_gint_cpumem(void)
 {
 	gscreen *s = gscreen_create2("CPU and memory", &img_opt_gint_cpumem,
-		"Processor and memory", "/MPU/CPU;/MEMORY;;;;", NULL);
+		"Processor and memory", "/MPU/CPU;/MEMORY;/LOAD;;;", NULL);
 	gintctl_scene_push(s);
 
 	jlabel *label_cpu = jlabel_create("<cpu>", NULL);
@@ -199,6 +233,11 @@ void gintctl_gint_cpumem(void)
 	show_memory(label_mem);
 	gscreen_add_tab(s, label_mem, NULL);
 
+	jlabel *label_load = jlabel_create("<load>", NULL);
+	jlabel_set_font(label_mem, _(&font_mini, dfont_default()));
+	show_load(label_load);
+	gscreen_add_tab(s, label_load, NULL);
+
 	while(true) {
 		jevent e = jscene_run(gintctl_scene());
 		if(jevent_is_press(e, KEY_EXIT))
@@ -207,5 +246,7 @@ void gintctl_gint_cpumem(void)
 			gscreen_show_tab(s, 0);
 		if(e.type == JFKEYS_TRIGGERED && e.data == 1)
 			gscreen_show_tab(s, 1);
+		if(e.type == JFKEYS_TRIGGERED && e.data == 2)
+			gscreen_show_tab(s, 2);
 	}
 }
