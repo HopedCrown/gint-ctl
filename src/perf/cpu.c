@@ -5,9 +5,7 @@
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
-
-#include <gintctl/widgets/gscreen.h>
-#include <gintctl/widgets/gtable.h>
+#include <gintctl/ui.h>
 
 #include <libprof.h>
 
@@ -151,27 +149,18 @@ void gintctl_perf_cpu(void)
 	gtable_set_font(table, _(&font_mini, dfont_default()));
 	jwidget_set_margin(table, 0, 2, 1, 2);
 
-	jscene *scene = jscene_create_fullscreen(NULL);
-	gscreen *scr = gscreen_create2("CPU parallelism", &img_opt_perf_cpu,
-		"CPU instruction parallelism and pipelining", "@RUN;;;;;", scene);
-	gscreen_add_tabs(scr, table, table);
-	jscene_set_focused_widget(scene, table);
+    gscreen *s = gscreen_create2("CPU parallelism", &img_opt_perf_cpu,
+        "CPU instruction parallelism and pipelining", "@RUN;;;;;", NULL);
+    gintctl_scene_push(s);
 
-	int key = 0;
-	while(key != KEY_EXIT) {
-		jevent e = jscene_run(scene);
+	gscreen_add_tab(s, table, table);
 
-		if(e.type == JSCENE_PAINT) {
-			dclear(C_WHITE);
-			jscene_render(scene);
-			dupdate();
-		}
+	while(1) {
+		jevent e = jscene_run(gintctl_scene());
+		if(jevent_is_press(e, KEY_EXIT))
+			break;
 
-		key = 0;
-		if(e.type == JSCENE_KEY && e.key.type == KEYEV_DOWN)
-			key = e.key.key;
-
-		if(key == KEY_F1) {
+		if(e.type == JFKEYS_TRIGGERED && e.data == 0) {
 			baseline_ticks = TMU_baseline();
 
 			#define MACRO_RUN(name, iter, str) {					\
@@ -184,6 +173,4 @@ void gintctl_perf_cpu(void)
 			table->widget.update = 1;
 		}
 	}
-
-	jwidget_destroy(scene);
 }
