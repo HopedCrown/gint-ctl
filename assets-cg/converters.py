@@ -9,8 +9,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../submodules/rectpack"
 import rectpack
 
 def convert(input, output, params, target):
-    match params["custom-type"]:
-        case "kbd-sprite": return convert_kbd_sprite(input, params["keycodes"])
+    if params["custom-type"] == "kbd-sprite":
+        return convert_kbd_sprite(input, params["keycodes"])
     return None
 
 # Assuming that im has a rectangle of pixels all satisfying a predicate P and
