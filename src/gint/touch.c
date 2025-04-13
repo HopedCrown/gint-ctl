@@ -5,6 +5,7 @@
 #include <gint/drivers.h>
 #include <gint/drivers/r61523.h>
 #include <gint/drivers/states.h>
+#include <gint/drivers/touch.h>
 #include <gint/defs/util.h>
 #include <libprof.h>
 #include <string.h>
@@ -27,88 +28,27 @@ static bool touch_get_os_calibration(
 
 //=== Copy of gint internals =================================================//
 
-/* _touch_adraw - raw 0x84 register information */
-struct _touch_adraw
-{
-    uint16_t x1;
-    uint16_t y1;
-    uint16_t z1;
-    uint16_t gh;
-    uint16_t x2;
-    uint16_t y2;
-    uint16_t z2;
-    uint16_t dm;
-};
-
-/* _touch_adconv - post-conversion raw 0x84 register information */
-struct _touch_adconv
-{
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-    int z1;
-    int z2;
-    uint16_t gh;
-    uint16_t dm;
-};
-
-/* _touch_addots_type - type of dots */
-enum _touch_addots_type
-{
-    TS_DOTS_TYPE_OFF    = 0,
-    TS_DOTS_TYPE_SINGLE = 1,
-    TS_DOTS_TYPE_DUAL   = 2,
-};
-
-/* _touch_addots - touchscreen dots information */
-struct _touch_addots
-{
-    enum _touch_addots_type type;
-    int x1;
-    int y1;
-    int z1;
-    int x2;
-    int y2;
-    int z2;
-};
-
-/* touch_adconv_get_raw() - read 0x84 register using I2C */
-extern int touch_adconv_get_raw(struct _touch_adraw *adraw);
-
-/* touch_adconv_get_conv() - perform the raw conversion */
-extern int touch_adconv_get_conv(
-    struct _touch_adconv *adconv,
-    struct _touch_adraw *adraw,
-    int type
-);
-
-/* touch_adconv_get_dots() - generate dots information */
-extern int touch_adconv_get_dots(
-    struct _touch_addots *dots,
-    struct _touch_adconv *adconv,
-    int type
-);
-
 // debug symbols
 
-/* touch_get_dots() - get dots information */
-extern int touch_get_dots(struct _touch_addots *dots);
-
 /* i2c_reg_read() - register read operation */
-extern int i2c_reg_read(int reg, void *buffer, size_t size);
+// extern int i2c_reg_read(int reg, void *buffer, size_t size);
 
-/* touch_get_dots() - get dots information */
-int touch_get_dots(struct _touch_addots *addots)
+/* touch_get_dots() - get dots information directly */
+void touch_get_dots(struct _touch_addots *addots)
 {
+    touch_get_last_scan(NULL, NULL, addots);
+}
+
+/* _adconv_info - internal adconv info */
+struct _adinfo {
     struct _touch_adraw adraw;
     struct _touch_adconv adconv;
-    int type;
+    struct _touch_addots dots;
+};
 
-    type = touch_adconv_get_raw(&adraw);
-    type = touch_adconv_get_conv(&adconv, &adraw, type);
-    type = touch_adconv_get_dots(addots, &adconv, type);
-    return type;
+void touch_get_adinfo(struct _adinfo *adinfo)
+{
+    touch_get_last_scan(&adinfo->adraw, &adinfo->adconv, &adinfo->dots);
 }
 
 //=== Headers ================================================================//
@@ -159,23 +99,14 @@ extern void adconv_menu_keyboard(void);
 
 //=== Menu #1: A/D Conv ======================================================//
 
-/* _adconv_info - internal adconv info */
-struct _adinfo {
-    struct _touch_adraw adraw;
-    struct _touch_adconv adconv;
-    struct _touch_addots dots;
-    int _type;
-};
-
 /* _adconv_disp_i2c() - disp raw I2C info */
-static int _adconv_disp_i2c(int y, struct _adinfo *info)
+static int _adconv_disp_i2c(int y, struct _adinfo const *info)
 {
     GAUTOTYPE adraw = &info->adraw;
     uint8_t test;
     int x;
 
-    info->_type = touch_adconv_get_raw(adraw);
-    i2c_reg_read(0x68, &test, 1);
+    // i2c_reg_read(0x68, &test, 1);
     x = 0;
     _pxy("Raw ADCONV values:");
     y += 1;
@@ -192,7 +123,7 @@ static int _adconv_disp_i2c(int y, struct _adinfo *info)
     x += 9;
     _pxy("RZ1 %04X", adraw->z1);
     _pxy("RZ2 %04X", adraw->z2);
-    _pxy("R68 %04X", test);
+    // _pxy("R68 %04X", test);
     y += 1;
     x = 1;
     _pxy("RX1 %d", adraw->x1);
@@ -207,18 +138,16 @@ static int _adconv_disp_i2c(int y, struct _adinfo *info)
     x += 9;
     _pxy("RZ1 %d", adraw->z1);
     _pxy("RZ2 %d", adraw->z2);
-    _pxy("R68 %d", test);
+    // _pxy("R68 %d", test);
     return y + 1;
 }
 
 /* _adconv_disp_adconv() - disp ad convertion */
-static int _adconv_disp_adconv(int y, struct _adinfo *info)
+static int _adconv_disp_adconv(int y, struct _adinfo const *info)
 {
     GAUTOTYPE adconv = &info->adconv;
-    GAUTOTYPE adraw = &info->adraw;
     int x;
 
-    info->_type = touch_adconv_get_conv(adconv, adraw, info->_type);
     x = 0;
     _pxy("ADCONV convert values:");
     y += 1;
@@ -253,14 +182,12 @@ static int _adconv_disp_adconv(int y, struct _adinfo *info)
 }
 
 /* _adconv_disp_dots() - disp dots information */
-static int _adconv_disp_dots(int y, struct _adinfo *info)
+static int _adconv_disp_dots(int y, struct _adinfo const *info)
 {
     static char const * const status[3] = {"Off", "Single", "Dual"};
-    GAUTOTYPE adconv = info->adconv;
     GAUTOTYPE dots = info->dots;
     int x;
 
-    touch_adconv_get_dots(&dots, &adconv, info->_type);
     x = 0;
     _pxy("DOTS CONVERSION");
     y += 1;
@@ -271,10 +198,10 @@ static int _adconv_disp_dots(int y, struct _adinfo *info)
     _pxy("P1(%d %d %d)", dots.x1, dots.y1, dots.z1);
     _pxy("P2(%d %d %d)", dots.x2, dots.y2, dots.z2);
     y += 1;
-    _pxy("STATUS %s", status[dots.type]);
-    if (dots.type != 0)
+    _pxy("STATUS %s", status[dots.touches]);
+    if (dots.touches >= 1)
         dpixel(dots.x1, dots.y1, C_BLACK);
-    if (dots.type == 2)
+    if (dots.touches >= 2)
         dpixel(dots.x2, dots.y2, C_RED);
     return y + 1;
 }
@@ -310,6 +237,8 @@ void adconv_menu_display(struct menu *menu)
     int y;
 
     memset(&info, 0x00, sizeof(struct _adinfo));
+    touch_get_adinfo(&info);
+
     dclear(C_WHITE);
     y = _adconv_disp_i2c(0, &info);
     y = _adconv_disp_adconv(y, &info);
@@ -350,25 +279,38 @@ void paint_menu_display(struct menu *menu)
         menu->dirty = false;
     }
     touch_get_dots(&dots);
-    if (dots.type == TS_DOTS_TYPE_OFF) {
+    if (dots.touches == 0) {
         _paint_info.have_prev = false;
         return;
     }
-    if (_paint_info.have_prev) {
-        dline(
-            _paint_info.x1,
-            _paint_info.y1,
-            dots.x1,
-            dots.y1,
-            (dots.type != TS_DOTS_TYPE_DUAL) ? C_BLACK : C_RED
-        );
-    } else {
-        dpixel(dots.x1, dots.y1, C_BLACK);
-    }
+
+    int color1 = C_BLACK, color2 = C_NONE;
+    if(dots.touches == 2)
+        color1 = C_BLUE, color2 = C_RED;
+
+    if (_paint_info.have_prev)
+        dline(_paint_info.x1, _paint_info.y1, dots.x1, dots.y1, color1);
+    else
+        dpixel(dots.x1, dots.y1, color1);
+
     _paint_info.x1 = dots.x1;
     _paint_info.y1 = dots.y1;
     _paint_info.have_prev = true;
     dupdate();
+
+    int crosshairs_size = 40;
+
+    for(int dy = -crosshairs_size; dy <= crosshairs_size; dy++)
+        r61523_set_pixel(dots.x1, dots.y1 + dy, color1);
+    for(int dx = -crosshairs_size; dx <= crosshairs_size; dx++)
+        r61523_set_pixel(dots.x1 + dx, dots.y1, color1);
+
+    if(dots.touches == 2) {
+        for(int dy = -crosshairs_size; dy <= crosshairs_size; dy++)
+            r61523_set_pixel(dots.x2, dots.y2 + dy, color2);
+        for(int dx = -crosshairs_size; dx <= crosshairs_size; dx++)
+            r61523_set_pixel(dots.x2 + dx, dots.y2, color2);
+    }
 }
 
 /* paint_menu_keyboard() - keyboard handling */
@@ -389,7 +331,6 @@ void dots_menu_init(void)
 void dots_menu_display(struct menu *menu)
 {
     struct _touch_addots dots;
-    int color;
 
     if (menu->dirty) {
         dclear(C_WHITE);
@@ -397,16 +338,30 @@ void dots_menu_display(struct menu *menu)
         menu->dirty = false;
     }
     touch_get_dots(&dots);
-    if (dots.type == TS_DOTS_TYPE_OFF)
+    if (dots.touches == 0)
         return;
-    color = (dots.type != TS_DOTS_TYPE_DUAL) ? C_BLACK : C_RED;
-    dpixel(dots.x1+0, dots.y1+0, color);
-    dpixel(dots.x1+0, dots.y1+1, color);
-    dpixel(dots.x1+1, dots.y1+0, color);
-    dpixel(dots.x1+1, dots.y1+1, color);
+
+    int color1 = C_BLACK, color2 = C_NONE;
+    if(dots.touches == 2)
+        color1 = C_BLUE, color2 = C_RED;
+
+    dpixel(dots.x1+0, dots.y1+0, color1);
+    dpixel(dots.x1+0, dots.y1+1, color1);
+    dpixel(dots.x1+1, dots.y1+0, color1);
+    dpixel(dots.x1+1, dots.y1+1, color1);
     r61523_display_rect(
         gint_vram, dots.x1, dots.x1 + 1, dots.y1, dots.y1 + 1
     );
+
+    if(dots.touches == 2) {
+        dpixel(dots.x2+0, dots.y2+0, color2);
+        dpixel(dots.x2+0, dots.y2+1, color2);
+        dpixel(dots.x2+1, dots.y2+0, color2);
+        dpixel(dots.x2+1, dots.y2+1, color2);
+        r61523_display_rect(
+            gint_vram, dots.x2, dots.x2 + 1, dots.y2, dots.y2 + 1
+        );
+    }
 }
 
 /* dots_menu_keyboard() - keyboard handling */
@@ -558,12 +513,10 @@ static struct {
 } _event_info;
 
 /* _event_table_sync() - fetch next touch-screen event */
-static void _event_table_sync(void)
+static void _event_table_sync(key_event_t evt)
 {
-    key_event_t evt;
-
-    evt = touch_next_event();
-    if (evt.type == KEYEV_NONE)
+    if (evt.type != KEYEV_TOUCH_PRESSED && evt.type != KEYEV_TOUCH_DRAG &&
+        evt.type != KEYEV_TOUCH_RELEASE)
         return;
     _event_info.buffer[_event_info.cursor].type = evt.type;
     _event_info.buffer[_event_info.cursor].x = evt.x;
@@ -639,8 +592,6 @@ void event_menu_display(struct menu *menu)
     int x;
 
     (void)menu;
-    _event_table_sync();
-
     y = 0;
     x = 0;
     evt = NULL;
@@ -731,7 +682,11 @@ void gintctl_gint_touch(void)
         *(menu.prof_frame) = prof_exec({menu.display(&menu);});
         if (*(menu.prof_peak) < *(menu.prof_frame))
             *(menu.prof_peak) = *(menu.prof_frame);
-        clearevents();
+
+        key_event_t ev;
+        while((ev = pollevent()).type != KEYEV_NONE)
+            _event_table_sync(ev);
+
         if (keypressed(KEY_CLEAR)) {
             break;
         }else if (keypressed(KEY_1)) {
