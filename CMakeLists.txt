@@ -12,8 +12,6 @@ find_package(Gint 2.8 REQUIRED)
 find_package(LibProf 2.1 REQUIRED)
 find_package(JustUI 1.0 REQUIRED)
 
-set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
-
 set(SOURCES
   src/gintctl.c
   src/plot.c
