@@ -515,8 +515,8 @@ static struct {
 /* _event_table_sync() - fetch next touch-screen event */
 static void _event_table_sync(key_event_t evt)
 {
-    if (evt.type != KEYEV_TOUCH_PRESSED && evt.type != KEYEV_TOUCH_DRAG &&
-        evt.type != KEYEV_TOUCH_RELEASE)
+    if (evt.type != KEYEV_TOUCH_DOWN && evt.type != KEYEV_TOUCH_DRAG &&
+        evt.type != KEYEV_TOUCH_UP)
         return;
     _event_info.buffer[_event_info.cursor].type = evt.type;
     _event_info.buffer[_event_info.cursor].x = evt.x;
@@ -565,10 +565,10 @@ static int _event_disp_event(key_event_t *evt, int y)
         return y;
     x = 1;
     type = "UNKNOWN";
-    if (evt->type == KEYEV_TOUCH_RELEASE)
-        type = "RELEASE";
-    if (evt->type == KEYEV_TOUCH_PRESSED)
-        type = "PRESSED";
+    if (evt->type == KEYEV_TOUCH_UP)
+        type = "UP";
+    if (evt->type == KEYEV_TOUCH_DOWN)
+        type = "DOWN";
     if (evt->type == KEYEV_TOUCH_DRAG)
         type = "DRAG";
     _pxy("%s x:%d y:%d", type, evt->x, evt->y);
@@ -604,7 +604,7 @@ void event_menu_display(struct menu *menu)
         y = _event_disp_event(evt, y);
     }
     if (evt != NULL) {
-        if (evt->type != KEYEV_NONE && evt->type != KEYEV_TOUCH_RELEASE) {
+        if (evt->type != KEYEV_NONE && evt->type != KEYEV_TOUCH_UP) {
             dpixel(evt->x + 0, evt->y + 0, C_BLACK);
             dpixel(evt->x + 0, evt->y + 1, C_BLACK);
             dpixel(evt->x + 1, evt->y + 0, C_BLACK);
