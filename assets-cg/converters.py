@@ -114,7 +114,8 @@ def _kbdsprite_keycodes(model):
             0x11, 0x12, 0x13, 0x14, 0x15 ]
     if model == "cp":
         return [
-            0xa1,       0x86,       0x44,
+                        0x86,
+            0xa1,                   0x44,
                   0x85,       0x76,
             0x81,       0x75,       0x07,
 
