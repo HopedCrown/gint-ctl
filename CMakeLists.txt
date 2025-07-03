@@ -28,6 +28,7 @@ set(SOURCES
   src/gint/keyboard.c
   src/gint/kmalloc.c
   src/gint/overclock.c
+  src/gint/r61523.c
   src/gint/ram.c
   src/gint/render.c
   src/gint/rtc.c

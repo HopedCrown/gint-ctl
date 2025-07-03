@@ -56,6 +56,7 @@ struct menuentry menu_gint[] = {
 	{ "Keyboard",           gintctl_gint_keyboard, 0 },
 	#if GINT_HW_CP
 	{ "Touch input",        gintctl_gint_touch, 0 },
+	{ "R61523 control",     gintctl_gint_r61523, 0 },
 	#endif
 	{ "Timers",             gintctl_gint_timer, 0 },
 	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },

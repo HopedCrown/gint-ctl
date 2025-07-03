@@ -82,4 +82,7 @@ void gintctl_gint_bfile(void);
 /* gintctl_gint_touch(): Internals of the I2C and touch screen drivers. */
 void gintctl_gint_touch(void);
 
+/* gintctl_gint_r61523(): fx-CP display driver control */
+void gintctl_gint_r61523(void);
+
 #endif /* GINTCTL_GINT */
