@@ -85,4 +85,7 @@ void gintctl_gint_touch(void);
 /* gintctl_gint_r61523(): fx-CP display driver control */
 void gintctl_gint_r61523(void);
 
+/* gintctl_gint_r61524(): fx-CG display driver control */
+void gintctl_gint_r61524(void);
+
 #endif /* GINTCTL_GINT */

@@ -58,6 +58,9 @@ struct menuentry menu_gint[] = {
 	{ "Touch input",        gintctl_gint_touch, 0 },
 	{ "R61523 control",     gintctl_gint_r61523, 0 },
 	#endif
+	#if GINT_HW_CG
+	{ "R61524 control",     gintctl_gint_r61524, 0 },
+	#endif
 	{ "Timers",             gintctl_gint_timer, 0 },
 	{ "Timer callbacks",    gintctl_gint_timer_callbacks, 0 },
 	{ "DMA control",        gintctl_gint_dma, MENU_SH4_ONLY },
