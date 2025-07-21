@@ -7,7 +7,7 @@
 #include <gint/drivers/states.h>
 #include <gint/drivers/touch.h>
 #include <gint/defs/util.h>
-#include <libprof.h>
+#include <gint/prof.h>
 #include <string.h>
 
 #if GINT_HW_CP

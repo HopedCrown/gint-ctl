@@ -8,7 +8,7 @@
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
 
-#include <libprof.h>
+#include <gint/prof.h>
 #include <stdio.h>
 
 #if (GINT_HW_CG || GINT_HW_CP) && GINT_RENDER_RGB

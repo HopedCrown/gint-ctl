@@ -8,8 +8,7 @@ include(GenerateG3A)
 include(GenerateHH2Bin)
 include(Fxconv)
 
-find_package(Gint 2.8 REQUIRED)
-find_package(LibProf 2.1 REQUIRED)
+find_package(Gint 2.11 REQUIRED)
 find_package(JustUI 1.0 REQUIRED)
 
 set(SOURCES
@@ -125,7 +124,7 @@ target_link_options(gintctl PRIVATE
   -flto=auto -Wl,-Map=map -Wl,--print-memory-usage)
 target_include_directories(gintctl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(gintctl
-  LibProf::LibProf JustUI::JustUI Gint::Gint)
+  JustUI::JustUI Gint::Gint)
 
 if("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G)
   generate_g1a(TARGET gintctl OUTPUT "gintctl.g1a"

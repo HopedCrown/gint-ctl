@@ -7,7 +7,7 @@
 #include <gintctl/util.h>
 #include <gintctl/perf.h>
 
-#include <libprof.h>
+#include <gint/prof.h>
 
 static prof_t prof;
 

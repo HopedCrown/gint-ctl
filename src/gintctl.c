@@ -17,7 +17,7 @@
 #include <gintctl/mem.h>
 #include <gintctl/ui.h>
 
-#include <libprof.h>
+#include <gint/prof.h>
 
 #include <fxlibc/printf.h>
 

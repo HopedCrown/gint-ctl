@@ -21,7 +21,7 @@
 #include <gintctl/util.h>
 #include <gintctl/assets.h>
 
-#include <libprof.h>
+#include <gint/prof.h>
 
 #include <stdio.h>
 #include <stdlib.h>

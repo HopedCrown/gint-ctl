@@ -5,7 +5,7 @@
 #include <gintctl/perf.h>
 #include <gintctl/util.h>
 
-#include <libprof.h>
+#include <gint/prof.h>
 
 #define STRESS_LIMIT 1000
 
