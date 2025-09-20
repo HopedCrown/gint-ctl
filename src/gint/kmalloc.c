@@ -18,7 +18,14 @@
 
 static void draw_info(kmalloc_arena_t *arena)
 {
-	int expected_os_heap_kB = _(48, 128);
+	int expected_os_heap_kB = 0;
+	#if GINT_OS_FX
+	expected_os_heap_kB = gint[HWCALC] == HWCALC_G35PE2 ? 90 : 48;
+	#elif GINT_OS_CG
+	expected_os_heap_kB = 128;
+	#elif GINT_OS_CP
+	expected_os_heap_kB = 1024;
+	#endif
 
 	#if GINT_RENDER_MONO
 	dimage(0, 56, &img_opt_gint_kmalloc);
@@ -148,9 +155,9 @@ static void draw_manual(void *ptr[MANUAL_COUNT], uint16_t size[MANUAL_COUNT],
 //---
 
 #define FILL_CLASSES 12
-#define FILL_CLASS_BASE(i) (32768 >> (i))
+#define FILL_CLASS_BASE(i) (65536 >> (i))
 
-static void run_fill(char const *arena, uint8_t classes[FILL_CLASSES])
+static void run_fill(char const *arena, int classes[FILL_CLASSES])
 {
 	void *ptrs[256];
 	int ptrs_size = 0;
@@ -158,9 +165,9 @@ static void run_fill(char const *arena, uint8_t classes[FILL_CLASSES])
 	int size = FILL_CLASS_BASE(0);
 	int size_class = 0;
 
-	memset(classes, 0, FILL_CLASSES);
+	for(int i = 0; i < FILL_CLASSES; i++) classes[i] = 0;
 
-	while(size >= 16 && ptrs_size < 256)
+	while(size >= 32 && ptrs_size < 256)
 	{
 		void *ptr = kmalloc(size, arena);
 		if(ptr)
@@ -179,7 +186,7 @@ static void run_fill(char const *arena, uint8_t classes[FILL_CLASSES])
 		kfree(ptrs[i]);
 }
 
-static void draw_fill(uint8_t classes[FILL_CLASSES])
+static void draw_fill(int classes[FILL_CLASSES])
 {
 	#if GINT_RENDER_MONO
 	row_title("Heap filler");
@@ -488,7 +495,7 @@ void gintctl_gint_kmalloc(void)
 	for(int i = 0; i < MANUAL_COUNT; i++) m_ptr[i] = NULL, m_size[i] = 0;
 
 	/* Data for the fill test */
-	uint8_t fill_classes[FILL_CLASSES] = { 0 };
+	int fill_classes[FILL_CLASSES] = { 0 };
 
 	/* Data for the mass operation test */
 	struct mass_test mass_test = { .done = 0 };
@@ -526,15 +533,16 @@ void gintctl_gint_kmalloc(void)
 
 		dupdate();
 		key = getkey().key;
+		int keyd = GINT_OS_CP * key;
 
-		if(key == KEY_F1) tab = 0;
-		if(key == KEY_F2) tab = 1;
-		if(key == KEY_F3) tab = 2, m_cursor = 0;
-		if(key == KEY_F4) tab = 3;
-		if(key == KEY_F5) tab = 4;
+		if(key == KEY_F1 || keyd == KEY_EQUALS) tab = 0;
+		if(key == KEY_F2 || keyd == KEY_X) tab = 1;
+		if(key == KEY_F3 || keyd == KEY_Y) tab = 2, m_cursor = 0;
+		if(key == KEY_F4 || keyd == KEY_Z) tab = 3;
+		if(key == KEY_F5 || keyd == KEY_POWER) tab = 4;
 
 		/* Actions on the info tab */
-		if(tab == 0 && key == KEY_F6)
+		if(tab == 0 && (key == KEY_F6 || keyd == KEY_DIV))
 		{
 			/* When changing arena, free all blocks currently held */
 			m_clear(m_ptr, m_size);
@@ -555,7 +563,8 @@ void gintctl_gint_kmalloc(void)
 			if(key == KEY_RIGHT && (m_cursor % 4) < 3) m_cursor++;
 
 			int k[6] = { KEY_XOT, KEY_LOG, KEY_LN, KEY_SIN, KEY_COS, KEY_TAN };
-			for(int i = 0; i < 6; i++) if(key == k[i])
+			int kd[6] = { KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6 };
+			for(int i = 0; i < 6; i++) if(key == k[i] || keyd == kd[i])
 			{
 				if(!m_ptr[m_cursor])
 				{
@@ -573,7 +582,7 @@ void gintctl_gint_kmalloc(void)
 				}
 			}
 
-			if(key == KEY_ACON)
+			if(key == KEY_ACON || keyd == KEY_0)
 			{
 				kfree(m_ptr[m_cursor]);
 				m_ptr[m_cursor] = NULL;

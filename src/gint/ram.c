@@ -112,7 +112,7 @@ static void explore_region(struct region *r)
 
 	cpu_atomic_start();
 
-	while(r->size < (16 << 20))
+	while(r->size < (64 << 20))
 	{
 		int x = r->use_lword
 			? writable_lword(mem + r->size)
