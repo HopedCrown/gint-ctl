@@ -45,6 +45,11 @@ static struct region const regs[] = {
 	{ "RAM_88", 0x88000000, 0x881fffff, 2 },
 	{ "RAM_8C", 0x8c000000, 0x8c7fffff, 8 },
 	{ "RS",     0xfd800000, 0xfd803fff, 1 },
+	#elif GINT_HW_CP
+	{ "ROM",    0x80000000, 0x81ffffff, 32 },
+	{ "RAM_88", 0x88000000, 0x88ffffff, 16 },
+	{ "RAM_8C", 0x8c000000, 0x8cffffff, 16 },
+	{ "RS",     0xfd800000, 0xfd803fff, 1 },
 	#endif
 };
 
