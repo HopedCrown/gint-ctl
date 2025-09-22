@@ -4,6 +4,7 @@
 #include <gint/timer.h>
 #include <gint/clock.h>
 #include <gint/gint.h>
+#include <gint/mpu/rtc.h>
 
 #include <gintctl/gint.h>
 #include <gintctl/util.h>
@@ -236,6 +237,7 @@ static void draw_rtc(rtc_time_t *time)
 
 	#if GINT_RENDER_RGB
 	row_title("Real-Time Clock");
+	fkey_menu(1, "REGS");
 	fkey_action(5, "DATE");
 	fkey_action(6, "TIME");
 	#endif
@@ -545,6 +547,218 @@ static void edit_date(void)
 }
 
 //---
+// Registers menu
+//---
+
+#define _dl8(y, reg, ...) \
+    do { \
+        dtext( 100, 10 + ((y)*12), C_BLACK, #reg); \
+        dprint(100 + 60 + 16, 10 + ((y)*12), C_BLACK, "%02x", SH7305_RTC.reg __VA_ARGS__); \
+    } while(0);
+#define _dl16(y, reg, ...) \
+    do { \
+        dtext(100, 10 + ((y)*12), C_BLACK, #reg); \
+        dprint(100 + 60, 10 + ((y)*12), C_BLACK, "%04x", SH7305_RTC.reg __VA_ARGS__); \
+    } while(0);
+#define _dr8(y, reg, ...) \
+    do { \
+        dprint(208, 10 + ((y)*12), C_BLACK, "%02x", SH7305_RTC.reg __VA_ARGS__); \
+        dtext_opt(                       \
+            208 + 60 + 26, 10 + ((y)*12),  \
+            C_BLACK, C_NONE,             \
+            DTEXT_RIGHT, DTEXT_TOP,      \
+            #reg                         \
+        ); \
+    } while(0);
+#define _dr16(y, reg, ...) \
+    do { \
+        dprint( \
+            208, 10 + ((y)*12), C_BLACK, "%04x", SH7305_RTC.reg __VA_ARGS__); \
+        dtext_opt(                      \
+            208 + 60 + 26, 10 + (y*12), \
+            C_BLACK, C_NONE,            \
+            DTEXT_RIGHT, DTEXT_TOP,     \
+            #reg                        \
+        ); \
+    } while(0);
+#define _t(x, y, fg, ...) \
+    do { \
+        dprint_opt( \
+            (x)*(DWIDTH/8), 10+((y)*12), \
+            (fg), C_NONE, \
+            DTEXT_CENTER, DTEXT_TOP, \
+            __VA_ARGS__ \
+        ); \
+    } while(0);
+
+static volatile int __rtc_perio_cnt = 0;
+static volatile int __rtc_carry_cnt = 0;
+static volatile int __rtc_alarm_cnt = 0;
+
+static void _rtc_inth_carry(void)
+{
+    __rtc_carry_cnt += 1;
+    do SH7305_RTC.RCR1.CF = 0;
+    while (SH7305_RTC.RCR1.CF != 0);
+}
+static void _rtc_inth_alarm(void)
+{
+    __rtc_alarm_cnt += 1;
+    do {
+        SH7305_RTC.RCR1.AF = 0;
+        SH7305_RTC.RCR1.CF = 0;
+    } while (SH7305_RTC.RCR1.CF != 0 || SH7305_RTC.RCR1.AF != 0);
+}
+static void _rtc_inth_periodic(void)
+{
+    __rtc_perio_cnt += 1;
+    do SH7305_RTC.RCR2.PEF = 0;
+    while (SH7305_RTC.RCR2.PEF != 0);
+
+}
+
+static void menu_regs(void)
+{
+    key_event_t ev;
+    int run_loop = 1;
+    int pri_config = 0b101;
+
+    static char const *pri_config_str[8] = {
+        "Nothing", "1/256 sec", "1/64 sec" , "1/16 sec",
+        "1/4 sec", "1/2 sec", "1 sec", "2 sec"};
+
+    __rtc_perio_cnt = 0;
+    __rtc_carry_cnt = 0;
+    __rtc_alarm_cnt = 0;
+    intc_handler_function(0xa80, GINT_CALL(_rtc_inth_alarm));
+    intc_handler_function(0xaa0, GINT_CALL(_rtc_inth_periodic));
+    intc_handler_function(0xac0, GINT_CALL(_rtc_inth_carry));
+    SH7305_RTC.RCR2.PES = 0b000;
+    SH7305_RTC.RCR2.PEF = 0;
+    SH7305_RTC.RCR1.CF = 0;
+    SH7305_RTC.RCR1.AF = 0;
+    SH7305_RTC.RSECAR.byte = 0x10;
+
+    while(run_loop)
+    {
+        dclear(C_WHITE);
+        /* basic title/fkey */
+        row_title("Real-Time Clock");
+        fkey_menu(1, "DATE");
+        fkey_action(2, "ADJ");
+        if(SH7305_RTC.RCR2.START)
+            fkey_button(3, "START");
+        else
+            fkey_action(3, "START");
+        (SH7305_RTC.RCR1.CIE) ? fkey_button(4, "CUI") : fkey_action(4, "CUI");
+        (SH7305_RTC.RCR2.PES) ? fkey_button(5, "PRI") : fkey_action(5, "PRI");
+        (SH7305_RTC.RCR1.AIE) ? fkey_button(6, "ATI") : fkey_action(6, "ATI");
+        /* register dumps */
+        u8 rcrx[3] = {
+            SH7305_RTC.RCR1.byte,
+            SH7305_RTC.RCR2.byte,
+            SH7305_RTC.RCR3.byte,
+        };
+        for(int i = 1 ; i < 4 ; i++) {
+            _t(i << 1, 1, C_BLACK, "RCR%d", i);
+            _t(i << 1, 2, C_BLACK, "%02x", rcrx[i-1]);
+        }
+        _dl8(4, R64CNT);
+        _dl8(5, RSECCNT, .byte);
+        _dl8(6, RMINCNT, .byte);
+        _dl8(7, RHRCNT,  .byte);
+        _dl8(8, RWKCNT);
+        _dl8(9, RDAYCNT,  .byte);
+        _dl8(10, RMONCNT, .byte);
+        _dl16(11, RYRCNT, .word);
+        dline(DWIDTH/2, 50, DWIDTH/2, 160, C_BLACK);
+        _dr8(5, RSECAR, .byte);
+        _dr8(6, RMINAR, .byte);
+        _dr8(7, RHRAR,  .byte);
+        _dr8(8, RWKAR);
+        _dr8(9, RDAYAR,  .byte);
+        _dr8(10, RMONAR, .byte);
+        _dr16(11, RYRAR, .word);
+        /* Interrupt */
+        _t(1, 8, C_BLACK, "Carry");
+        _t(1, 9, 0xdeda,  "%d", __rtc_carry_cnt);
+        _t(4, 13, C_BLACK, "Periodic");
+        _t(4, 14, C_BLACK, "%s", pri_config_str[pri_config]);
+        _t(4, 15, 0xdeda,  "%d", __rtc_perio_cnt);
+        _t(7, 8, C_BLACK, "Alarm");
+        _t(7, 9, 0xdeda,  "%d", __rtc_alarm_cnt);
+        dupdate();
+
+        /* Handle keyboard events */
+        while((ev = pollevent()).type != KEYEV_NONE)
+        {
+            if (ev.type == KEYEV_UP)
+                continue;
+            /* alarm */
+            u8 rsecard = SH7305_RTC.RSECAR.byte & 0x7f;
+            u8 rsecare = SH7305_RTC.RSECAR.byte & 0x80;
+            u8 rminard = SH7305_RTC.RMINAR.byte & 0x7f;
+            u8 rminare = SH7305_RTC.RMINAR.byte & 0x80;
+            u8 rhrard  = SH7305_RTC.RHRAR.byte & 0x3f;
+            u8 rhrare  = SH7305_RTC.RHRAR.byte & 0x80;
+            u8 rwkard  = SH7305_RTC.RWKAR.byte & 0x07;
+            u8 rwkare  = SH7305_RTC.RWKAR.byte & 0x80;
+            u8 rdayard = SH7305_RTC.RDAYAR.byte & 0x3f;
+            u8 rdayare = SH7305_RTC.RDAYAR.byte & 0x80;
+            u8 rmonard = SH7305_RTC.RMONAR.byte & 0x3f;
+            u8 rmonare = SH7305_RTC.RMONAR.byte & 0x80;
+                 if(ev.key == KEY_ALPHA)  rsecard -= 1;
+            else if(ev.key == KEY_SQUARE) rsecard += 1;
+            else if(ev.key == KEY_POWER)  rsecare ^= 0x80;
+            else if(ev.key == KEY_XOT)    rminard -= 1;
+            else if(ev.key == KEY_LOG)    rminard += 1;
+            else if(ev.key == KEY_LN)     rminare ^= 0x80;
+            else if(ev.key == KEY_FRAC)   rhrard -= 1;
+            else if(ev.key == KEY_FD)     rhrard += 1;
+            else if(ev.key == KEY_LEFTP)  rhrare ^= 0x80;
+            else if(ev.key == KEY_7)      rwkard -= 1;
+            else if(ev.key == KEY_8)      rwkard += 1;
+            else if(ev.key == KEY_9)      rwkare ^= 0x80;
+            else if(ev.key == KEY_4)      rdayard -= 1;
+            else if(ev.key == KEY_5)      rdayard += 1;
+            else if(ev.key == KEY_6)      rdayare ^= 0x80;
+            else if(ev.key == KEY_1)      rmonard -= 1;
+            else if(ev.key == KEY_2)      rmonard += 1;
+            else if(ev.key == KEY_3)      rmonare ^= 0x80;
+            else if(ev.key == KEY_0)      SH7305_RTC.RYRAR.word -= 1;
+            else if(ev.key == KEY_DOT)    SH7305_RTC.RYRAR.word += 1;
+            else if(ev.key == KEY_EXP)    SH7305_RTC.RCR3.ENB ^= 1;
+            SH7305_RTC.RSECAR.byte = rsecare | (rsecard & 0x7f);
+            SH7305_RTC.RMINAR.byte = rminare | (rminard & 0x7f);
+            SH7305_RTC.RHRAR.byte = rhrare | (rhrard & 0x3f);
+            SH7305_RTC.RWKAR.byte = rwkare | (rwkard & 0x07);
+            SH7305_RTC.RDAYAR.byte = rdayare | (rdayard & 0x3f);
+            SH7305_RTC.RMONAR.byte = rmonare | (rmonard & 0x3f);
+            /* control */
+            if(ev.type != KEYEV_DOWN)
+                continue;
+            if(ev.key == KEY_EXIT)    run_loop = 0;
+            else if(ev.key == KEY_F1) run_loop = 0;
+            else if(ev.key == KEY_F2) SH7305_RTC.RCR2.ADJ = 1;
+            else if(ev.key == KEY_MENU) gint_osmenu();
+            else if(ev.key == KEY_F3) SH7305_RTC.RCR2.START ^= 1;
+            else if(ev.key == KEY_F4) SH7305_RTC.RCR1.CIE ^= 1;
+            else if(ev.key == KEY_F5) {
+                if(SH7305_RTC.RCR2.PES != 0) SH7305_RTC.RCR2.PES = 0;
+                else SH7305_RTC.RCR2.PES = pri_config;
+            }
+            else if(ev.key == KEY_F6) SH7305_RTC.RCR1.AIE ^= 1;
+            else if(ev.key == KEY_LEFT || ev.key == KEY_RIGHT) {
+                pri_config += (ev.key == KEY_LEFT) ? -1 : 1;
+                pri_config &= 0x7;
+                if(SH7305_RTC.RCR2.PES != 0)
+                    SH7305_RTC.RCR2.PES = pri_config;
+            }
+        }
+    }
+}
+
+//---
 //	Main screen with lazy update
 //---
 
@@ -575,6 +789,7 @@ void gintctl_gint_rtc(void)
 
 			if(ev.key == KEY_EXIT) run_loop = 0;
 			else if(ev.key == KEY_MENU) gint_osmenu();
+			else if(ev.key == KEY_F1) menu_regs();
 			else if(ev.key == KEY_F5) edit_date();
 			else if(ev.key == KEY_F6) edit_time();
 			else action = 0;
