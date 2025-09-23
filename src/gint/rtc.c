@@ -591,6 +591,45 @@ static void edit_date(void)
         ); \
     } while(0);
 
+#define _ml(y, reg, format, ...)                    \
+    do {                                            \
+        if((y) >= 1 && (y) <= 5) {                  \
+            dprint(1, 11 + ((y)*8), C_BLACK, #reg);  \
+            dprint_opt(                             \
+                (DWIDTH/2) - 2, 11 + ((y)*8),        \
+                C_BLACK, C_NONE,                    \
+                DTEXT_RIGHT, DTEXT_TOP,             \
+                format, SH7305_RTC.reg __VA_ARGS__  \
+            );                                      \
+        }                                           \
+    } while(0);
+
+#define _mr(y, reg, format, ...)                     \
+    do {                                             \
+        if((y) >= 1 && (y) <= 5) {                   \
+            dprint(                                  \
+                (DWIDTH/2) + 2, 11 + ((y)*8),        \
+                C_BLACK,                             \
+                format, SH7305_RTC.reg __VA_ARGS__); \
+            dprint_opt(                              \
+                DWIDTH - 3, 11 + ((y)*8),             \
+                C_BLACK, C_NONE,                     \
+                DTEXT_RIGHT, DTEXT_TOP,              \
+                #reg                                 \
+            );                                       \
+        }                                            \
+    } while(0);
+
+#define _mc(y, x, ...)                           \
+    do {                                         \
+        dprint_opt(                              \
+            (x)*(DWIDTH/4), 1 + ((y)*8),         \
+            C_BLACK, C_NONE,                     \
+            DTEXT_CENTER, DTEXT_TOP,             \
+            __VA_ARGS__                          \
+        );                                       \
+    } while(0);
+
 static volatile int __rtc_perio_cnt = 0;
 static volatile int __rtc_carry_cnt = 0;
 static volatile int __rtc_alarm_cnt = 0;
@@ -604,10 +643,8 @@ static void _rtc_inth_carry(void)
 static void _rtc_inth_alarm(void)
 {
     __rtc_alarm_cnt += 1;
-    do {
-        SH7305_RTC.RCR1.AF = 0;
-        SH7305_RTC.RCR1.CF = 0;
-    } while (SH7305_RTC.RCR1.CF != 0 || SH7305_RTC.RCR1.AF != 0);
+    do SH7305_RTC.RCR1.AF = 0;
+    while (SH7305_RTC.RCR1.AF != 0);
 }
 static void _rtc_inth_periodic(void)
 {
@@ -623,9 +660,15 @@ static void menu_regs(void)
     int run_loop = 1;
     int pri_config = 0b101;
 
+    #if GINT_RENDER_MONO
+    int menu_idx = 0;
+    #endif /* GINT_RENDER_MONO */
+
+    #if GINT_RENDER_RGB
     static char const *pri_config_str[8] = {
         "Nothing", "1/256 sec", "1/64 sec" , "1/16 sec",
         "1/4 sec", "1/2 sec", "1 sec", "2 sec"};
+    #endif /* GINT_RENDER_RGB */
 
     __rtc_perio_cnt = 0;
     __rtc_carry_cnt = 0;
@@ -642,6 +685,7 @@ static void menu_regs(void)
     while(run_loop)
     {
         dclear(C_WHITE);
+        #if GINT_RENDER_RGB
         /* basic title/fkey */
         row_title("Real-Time Clock");
         fkey_menu(1, "DATE");
@@ -687,6 +731,42 @@ static void menu_regs(void)
         _t(4, 15, 0xdeda,  "%d", __rtc_perio_cnt);
         _t(7, 8, C_BLACK, "Alarm");
         _t(7, 9, 0xdeda,  "%d", __rtc_alarm_cnt);
+        #endif /* GINT_RENDER_RGB */
+
+        #if GINT_RENDER_MONO
+        __rtc_carry_cnt &= 0xff;
+        __rtc_perio_cnt &= 0xff;
+        __rtc_alarm_cnt &= 0xff;
+        _mc(0, 1, "1:%02x", SH7305_RTC.RCR1.byte);
+        _mc(0, 2, "2:%02x", SH7305_RTC.RCR2.byte);
+        _mc(0, 3, "3:%02x", SH7305_RTC.RCR3.byte);
+        _mc(1, 1, "C:%02x", __rtc_carry_cnt);
+        _mc(1, 2, "P:%02x", __rtc_perio_cnt);
+        _mc(1, 3, "A:%02x", __rtc_alarm_cnt);
+        dline(1, 17, 127, 17, C_BLACK);
+        _ml(1 - menu_idx, R64CNT,  "%02x");
+        _ml(2 - menu_idx, RSECCNT, "%02x", .byte);
+        _ml(3 - menu_idx, RMINCNT, "%02x", .byte);
+        _ml(4 - menu_idx, RHRCNT,  "%02x", .byte);
+        _ml(5 - menu_idx, RWKCNT,  "%02x");
+        _ml(6 - menu_idx, RDAYCNT, "%02x", .byte);
+        _ml(7 - menu_idx, RMONCNT, "%02x", .byte);
+        _ml(8 - menu_idx, RYRCNT,  "%04x", .word);
+        dline(DWIDTH/2, 20, DWIDTH/2, 56, C_BLACK);
+        _mr(2 - menu_idx, RSECAR,  "%02x", .byte);
+        _mr(3 - menu_idx, RMINAR,  "%02x", .byte);
+        _mr(4 - menu_idx, RHRAR,   "%02x", .byte);
+        _mr(5 - menu_idx, RWKAR,   "%02x");
+        _mr(6 - menu_idx, RDAYAR,  "%02x", .byte);
+        _mr(7 - menu_idx, RMONAR,  "%02x", .byte);
+        _mr(8 - menu_idx, RYRAR,   "%04x", .word);
+        extern bopti_image_t img_opt_gint_rtc;
+        drect(0, 55, 128, 64, C_WHITE);
+        dsubimage(0, 56, &img_opt_gint_rtc, 0, 54, 128, 8, DIMAGE_NONE);
+        int size = (55 - 19) / 4;
+        int pos = ((55 - 19 - size) / 4) * menu_idx;
+        dline(127, 19 + pos, 127, 19 + pos + size, C_BLACK);
+        #endif /* GINT_RENDER_MONO */
         dupdate();
 
         /* Handle keyboard events */
@@ -754,6 +834,12 @@ static void menu_regs(void)
                 if(SH7305_RTC.RCR2.PES != 0)
                     SH7305_RTC.RCR2.PES = pri_config;
             }
+            #if GINT_RENDER_MONO
+            else if(ev.key == KEY_UP)   menu_idx -= 1;
+            else if(ev.key == KEY_DOWN) menu_idx += 1;
+            if(menu_idx < 0) menu_idx = 0;
+            if(menu_idx >= 5) menu_idx = 4;
+            #endif /* GINT_RENDER_MONO */
         }
     }
 }
