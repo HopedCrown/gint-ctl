@@ -725,12 +725,12 @@ static void menu_regs(void)
         _dr16(11, RYRAR, .word);
         /* Interrupt */
         _t(1, 8, C_BLACK, "Carry");
-        _t(1, 9, 0xdeda,  "%d", __rtc_carry_cnt);
+        _t(1, 9, C_RGB(16, 16, 16),  "%d", __rtc_carry_cnt);
         _t(4, 13, C_BLACK, "Periodic");
         _t(4, 14, C_BLACK, "%s", pri_config_str[pri_config]);
-        _t(4, 15, 0xdeda,  "%d", __rtc_perio_cnt);
+        _t(4, 15, C_RGB(16, 16, 16),  "%d", __rtc_perio_cnt);
         _t(7, 8, C_BLACK, "Alarm");
-        _t(7, 9, 0xdeda,  "%d", __rtc_alarm_cnt);
+        _t(7, 9, C_RGB(16, 16, 16),  "%d", __rtc_alarm_cnt);
         #endif /* GINT_RENDER_RGB */
 
         #if GINT_RENDER_MONO
