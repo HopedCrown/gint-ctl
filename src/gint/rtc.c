@@ -553,84 +553,84 @@ static void edit_date(void)
 static rtc_t *RTC = &SH7305_RTC;
 
 #define _dl8(y, reg, ...) \
-    do { \
-        dtext( 100, 10 + ((y)*12), C_BLACK, #reg); \
-        dprint(100 + 60 + 16, 10 + ((y)*12), C_BLACK, "%02x", RTC->reg __VA_ARGS__); \
-    } while(0);
+	do { \
+		dtext( 100, 10 + ((y)*12), C_BLACK, #reg); \
+		dprint(100 + 60 + 16, 10 + ((y)*12), C_BLACK, "%02x", RTC->reg __VA_ARGS__); \
+	} while(0);
 #define _dl16(y, reg, ...) \
-    do { \
-        dtext(100, 10 + ((y)*12), C_BLACK, #reg); \
-        dprint(100 + 60, 10 + ((y)*12), C_BLACK, "%04x", RTC->reg __VA_ARGS__); \
-    } while(0);
+	do { \
+		dtext(100, 10 + ((y)*12), C_BLACK, #reg); \
+		dprint(100 + 60, 10 + ((y)*12), C_BLACK, "%04x", RTC->reg __VA_ARGS__); \
+	} while(0);
 #define _dr8(y, reg, ...) \
-    do { \
-        dprint(208, 10 + ((y)*12), C_BLACK, "%02x", RTC->reg __VA_ARGS__); \
-        dtext_opt(                       \
-            208 + 60 + 26, 10 + ((y)*12),  \
-            C_BLACK, C_NONE,             \
-            DTEXT_RIGHT, DTEXT_TOP,      \
-            #reg                         \
-        ); \
-    } while(0);
+	do { \
+		dprint(208, 10 + ((y)*12), C_BLACK, "%02x", RTC->reg __VA_ARGS__); \
+		dtext_opt(					   \
+			208 + 60 + 26, 10 + ((y)*12),  \
+			C_BLACK, C_NONE,			 \
+			DTEXT_RIGHT, DTEXT_TOP,	  \
+			#reg						 \
+		); \
+	} while(0);
 #define _dr16(y, reg, ...) \
-    do { \
-        dprint( \
-            208, 10 + ((y)*12), C_BLACK, "%04x", RTC->reg __VA_ARGS__); \
-        dtext_opt(                      \
-            208 + 60 + 26, 10 + (y*12), \
-            C_BLACK, C_NONE,            \
-            DTEXT_RIGHT, DTEXT_TOP,     \
-            #reg                        \
-        ); \
-    } while(0);
+	do { \
+		dprint( \
+			208, 10 + ((y)*12), C_BLACK, "%04x", RTC->reg __VA_ARGS__); \
+		dtext_opt(					  \
+			208 + 60 + 26, 10 + (y*12), \
+			C_BLACK, C_NONE,			\
+			DTEXT_RIGHT, DTEXT_TOP,	 \
+			#reg						\
+		); \
+	} while(0);
 #define _t(x, y, fg, ...) \
-    do { \
-        dprint_opt( \
-            (x)*(DWIDTH/8), 10+((y)*12), \
-            (fg), C_NONE, \
-            DTEXT_CENTER, DTEXT_TOP, \
-            __VA_ARGS__ \
-        ); \
-    } while(0);
+	do { \
+		dprint_opt( \
+			(x)*(DWIDTH/8), 10+((y)*12), \
+			(fg), C_NONE, \
+			DTEXT_CENTER, DTEXT_TOP, \
+			__VA_ARGS__ \
+		); \
+	} while(0);
 
-#define _ml(y, reg, format, ...)                    \
-    do {                                            \
-        if((y) >= 1 && (y) <= 5) {                  \
-            dprint(1, 11 + ((y)*8), C_BLACK, #reg);  \
-            dprint_opt(                             \
-                (DWIDTH/2) - 2, 11 + ((y)*8),        \
-                C_BLACK, C_NONE,                    \
-                DTEXT_RIGHT, DTEXT_TOP,             \
-                format, RTC->reg __VA_ARGS__        \
-            );                                      \
-        }                                           \
-    } while(0);
+#define _ml(y, reg, format, ...)					\
+	do {											\
+		if((y) >= 1 && (y) <= 5) {				  \
+			dprint(1, 11 + ((y)*8), C_BLACK, #reg);  \
+			dprint_opt(							 \
+				(DWIDTH/2) - 2, 11 + ((y)*8),		\
+				C_BLACK, C_NONE,					\
+				DTEXT_RIGHT, DTEXT_TOP,			 \
+				format, RTC->reg __VA_ARGS__		\
+			);									  \
+		}										   \
+	} while(0);
 
-#define _mr(y, reg, format, ...)                     \
-    do {                                             \
-        if((y) >= 1 && (y) <= 5) {                   \
-            dprint(                                  \
-                (DWIDTH/2) + 2, 11 + ((y)*8),        \
-                C_BLACK,                             \
-                format, RTC->reg __VA_ARGS__);       \
-            dprint_opt(                              \
-                DWIDTH - 3, 11 + ((y)*8),             \
-                C_BLACK, C_NONE,                     \
-                DTEXT_RIGHT, DTEXT_TOP,              \
-                #reg                                 \
-            );                                       \
-        }                                            \
-    } while(0);
+#define _mr(y, reg, format, ...)					 \
+	do {											 \
+		if((y) >= 1 && (y) <= 5) {				   \
+			dprint(								  \
+				(DWIDTH/2) + 2, 11 + ((y)*8),		\
+				C_BLACK,							 \
+				format, RTC->reg __VA_ARGS__);	   \
+			dprint_opt(							  \
+				DWIDTH - 3, 11 + ((y)*8),			 \
+				C_BLACK, C_NONE,					 \
+				DTEXT_RIGHT, DTEXT_TOP,			  \
+				#reg								 \
+			);									   \
+		}											\
+	} while(0);
 
-#define _mc(y, x, ...)                           \
-    do {                                         \
-        dprint_opt(                              \
-            (x)*(DWIDTH/4), 1 + ((y)*8),         \
-            C_BLACK, C_NONE,                     \
-            DTEXT_CENTER, DTEXT_TOP,             \
-            __VA_ARGS__                          \
-        );                                       \
-    } while(0);
+#define _mc(y, x, ...)						   \
+	do {										 \
+		dprint_opt(							  \
+			(x)*(DWIDTH/4), 1 + ((y)*8),		 \
+			C_BLACK, C_NONE,					 \
+			DTEXT_CENTER, DTEXT_TOP,			 \
+			__VA_ARGS__						  \
+		);									   \
+	} while(0);
 
 static volatile int __rtc_perio_cnt = 0;
 static volatile int __rtc_carry_cnt = 0;
@@ -638,212 +638,220 @@ static volatile int __rtc_alarm_cnt = 0;
 
 static void _rtc_inth_carry(void)
 {
-    __rtc_carry_cnt += 1;
-    do RTC->RCR1.CF = 0;
-    while (RTC->RCR1.CF != 0);
+	__rtc_carry_cnt += 1;
+	do RTC->RCR1.CF = 0;
+	while (RTC->RCR1.CF != 0);
 }
 static void _rtc_inth_alarm(void)
 {
-    __rtc_alarm_cnt += 1;
-    do RTC->RCR1.AF = 0;
-    while (RTC->RCR1.AF != 0);
+	__rtc_alarm_cnt += 1;
+	do RTC->RCR1.AF = 0;
+	while (RTC->RCR1.AF != 0);
 }
-static void _rtc_inth_periodic(void)
+static int _rtc_inth_periodic(void)
 {
-    __rtc_perio_cnt += 1;
-    do RTC->RCR2.PEF = 0;
-    while (RTC->RCR2.PEF != 0);
-
+	__rtc_perio_cnt += 1;
+	return 0;
+	// interruption handled by rtc_periodic_enable()
+	// do RTC->RCR2.PEF = 0;
+	// while (RTC->RCR2.PEF != 0);
 }
 
 static void menu_regs(void)
 {
-    key_event_t ev;
-    int run_loop = 1;
-    int pri_config = 0b101;
+	key_event_t ev;
+	int run_loop = 1;
+	int pri_config = 0b101;
 
-    #if GINT_RENDER_MONO
-    int menu_idx = 0;
-    #endif /* GINT_RENDER_MONO */
+	#if GINT_RENDER_MONO
+	int menu_idx = 0;
+	#endif /* GINT_RENDER_MONO */
 
-    #if GINT_RENDER_RGB
-    static char const *pri_config_str[8] = {
-        "Nothing", "1/256 sec", "1/64 sec" , "1/16 sec",
-        "1/4 sec", "1/2 sec", "1 sec", "2 sec"};
-    #endif /* GINT_RENDER_RGB */
+	#if GINT_RENDER_RGB
+	static char const *pri_config_str[8] = {
+		"Nothing", "1/256 sec", "1/64 sec" , "1/16 sec",
+		"1/4 sec", "1/2 sec", "1 sec", "2 sec"};
+	#endif /* GINT_RENDER_RGB */
 
-    __rtc_perio_cnt = 0;
-    __rtc_carry_cnt = 0;
-    __rtc_alarm_cnt = 0;
-    intc_handler_function(0xa80, GINT_CALL(_rtc_inth_alarm));
-    intc_handler_function(0xaa0, GINT_CALL(_rtc_inth_periodic));
-    intc_handler_function(0xac0, GINT_CALL(_rtc_inth_carry));
-    RTC->RCR2.PES = 0b000;
-    RTC->RCR2.PEF = 0;
-    RTC->RCR1.CF = 0;
-    RTC->RCR1.AF = 0;
-    RTC->RSECAR.byte = 0x10;
+	__rtc_perio_cnt = 0;
+	__rtc_carry_cnt = 0;
+	__rtc_alarm_cnt = 0;
+	intc_handler_function(0xa80, GINT_CALL(_rtc_inth_alarm));
+	intc_handler_function(0xac0, GINT_CALL(_rtc_inth_carry));
+	RTC->RCR2.PES = 0b000;
+	RTC->RCR2.PEF = 0;
+	RTC->RCR1.CF = 0;
+	RTC->RCR1.AF = 0;
+	RTC->RSECAR.byte = 0x10;
+	rtc_periodic_enable(pri_config, GINT_CALL(_rtc_inth_periodic));
 
-    while(run_loop)
-    {
-        dclear(C_WHITE);
-        #if GINT_RENDER_RGB
-        /* basic title/fkey */
-        row_title("Real-Time Clock");
-        fkey_menu(1, "DATE");
-        fkey_action(2, "ADJ");
-        if(RTC->RCR2.START)
-            fkey_button(3, "START");
-        else
-            fkey_action(3, "START");
-        (RTC->RCR1.CIE) ? fkey_button(4, "CUI") : fkey_action(4, "CUI");
-        (RTC->RCR2.PES) ? fkey_button(5, "PRI") : fkey_action(5, "PRI");
-        (RTC->RCR1.AIE) ? fkey_button(6, "ATI") : fkey_action(6, "ATI");
-        /* register dumps */
-        u8 rcrx[3] = {
-            RTC->RCR1.byte,
-            RTC->RCR2.byte,
-            RTC->RCR3.byte,
-        };
-        for(int i = 1 ; i < 4 ; i++) {
-            _t(i << 1, 1, C_BLACK, "RCR%d", i);
-            _t(i << 1, 2, C_BLACK, "%02x", rcrx[i-1]);
-        }
-        _dl8(4, R64CNT);
-        _dl8(5, RSECCNT, .byte);
-        _dl8(6, RMINCNT, .byte);
-        _dl8(7, RHRCNT,  .byte);
-        _dl8(8, RWKCNT);
-        _dl8(9, RDAYCNT,  .byte);
-        _dl8(10, RMONCNT, .byte);
-        _dl16(11, RYRCNT, .word);
-        dline(DWIDTH/2, 50, DWIDTH/2, 160, C_BLACK);
-        _dr8(5, RSECAR, .byte);
-        _dr8(6, RMINAR, .byte);
-        _dr8(7, RHRAR,  .byte);
-        _dr8(8, RWKAR);
-        _dr8(9, RDAYAR,  .byte);
-        _dr8(10, RMONAR, .byte);
-        _dr16(11, RYRAR, .word);
-        /* Interrupt */
-        _t(1, 8, C_BLACK, "Carry");
-        _t(1, 9, C_RGB(16, 16, 16),  "%d", __rtc_carry_cnt);
-        _t(4, 13, C_BLACK, "Periodic");
-        _t(4, 14, C_BLACK, "%s", pri_config_str[pri_config]);
-        _t(4, 15, C_RGB(16, 16, 16),  "%d", __rtc_perio_cnt);
-        _t(7, 8, C_BLACK, "Alarm");
-        _t(7, 9, C_RGB(16, 16, 16),  "%d", __rtc_alarm_cnt);
-        #endif /* GINT_RENDER_RGB */
+	while(run_loop)
+	{
+		dclear(C_WHITE);
+		#if GINT_RENDER_RGB
+		/* basic title/fkey */
+		row_title("Real-Time Clock");
+		fkey_menu(1, "DATE");
+		fkey_action(2, "ADJ");
+		if(RTC->RCR2.START)
+			fkey_button(3, "START");
+		else
+			fkey_action(3, "START");
+		(RTC->RCR1.CIE) ? fkey_button(4, "CUI") : fkey_action(4, "CUI");
+		(RTC->RCR2.PES) ? fkey_button(5, "PRI") : fkey_action(5, "PRI");
+		(RTC->RCR1.AIE) ? fkey_button(6, "ATI") : fkey_action(6, "ATI");
+		/* register dumps */
+		u8 rcrx[3] = {
+			RTC->RCR1.byte,
+			RTC->RCR2.byte,
+			RTC->RCR3.byte,
+		};
+		for(int i = 1 ; i < 4 ; i++) {
+			_t(i << 1, 1, C_BLACK, "RCR%d", i);
+			_t(i << 1, 2, C_BLACK, "%02x", rcrx[i-1]);
+		}
+		_dl8(4, R64CNT);
+		_dl8(5, RSECCNT, .byte);
+		_dl8(6, RMINCNT, .byte);
+		_dl8(7, RHRCNT,  .byte);
+		_dl8(8, RWKCNT);
+		_dl8(9, RDAYCNT,  .byte);
+		_dl8(10, RMONCNT, .byte);
+		_dl16(11, RYRCNT, .word);
+		dline(DWIDTH/2, 50, DWIDTH/2, 160, C_BLACK);
+		_dr8(5, RSECAR, .byte);
+		_dr8(6, RMINAR, .byte);
+		_dr8(7, RHRAR,  .byte);
+		_dr8(8, RWKAR);
+		_dr8(9, RDAYAR,  .byte);
+		_dr8(10, RMONAR, .byte);
+		_dr16(11, RYRAR, .word);
+		/* Interrupt */
+		_t(1, 8, C_BLACK, "Carry");
+		_t(1, 9, C_RGB(16, 16, 16),  "%d", __rtc_carry_cnt);
+		_t(4, 13, C_BLACK, "Periodic");
+		_t(4, 14, C_BLACK, "%s", pri_config_str[pri_config]);
+		_t(4, 15, C_RGB(16, 16, 16),  "%d", __rtc_perio_cnt);
+		_t(7, 8, C_BLACK, "Alarm");
+		_t(7, 9, C_RGB(16, 16, 16),  "%d", __rtc_alarm_cnt);
+		#endif /* GINT_RENDER_RGB */
 
-        #if GINT_RENDER_MONO
-        __rtc_carry_cnt &= 0xff;
-        __rtc_perio_cnt &= 0xff;
-        __rtc_alarm_cnt &= 0xff;
-        _mc(0, 1, "1:%02x", RTC->RCR1.byte);
-        _mc(0, 2, "2:%02x", RTC->RCR2.byte);
-        _mc(0, 3, "3:%02x", RTC->RCR3.byte);
-        _mc(1, 1, "C:%02x", __rtc_carry_cnt);
-        _mc(1, 2, "P:%02x", __rtc_perio_cnt);
-        _mc(1, 3, "A:%02x", __rtc_alarm_cnt);
-        dline(1, 17, 127, 17, C_BLACK);
-        _ml(1 - menu_idx, R64CNT,  "%02x");
-        _ml(2 - menu_idx, RSECCNT, "%02x", .byte);
-        _ml(3 - menu_idx, RMINCNT, "%02x", .byte);
-        _ml(4 - menu_idx, RHRCNT,  "%02x", .byte);
-        _ml(5 - menu_idx, RWKCNT,  "%02x");
-        _ml(6 - menu_idx, RDAYCNT, "%02x", .byte);
-        _ml(7 - menu_idx, RMONCNT, "%02x", .byte);
-        _ml(8 - menu_idx, RYRCNT,  "%04x", .word);
-        dline(DWIDTH/2, 20, DWIDTH/2, 56, C_BLACK);
-        _mr(2 - menu_idx, RSECAR,  "%02x", .byte);
-        _mr(3 - menu_idx, RMINAR,  "%02x", .byte);
-        _mr(4 - menu_idx, RHRAR,   "%02x", .byte);
-        _mr(5 - menu_idx, RWKAR,   "%02x");
-        _mr(6 - menu_idx, RDAYAR,  "%02x", .byte);
-        _mr(7 - menu_idx, RMONAR,  "%02x", .byte);
-        _mr(8 - menu_idx, RYRAR,   "%04x", .word);
-        extern bopti_image_t img_opt_gint_rtc;
-        drect(0, 55, 128, 64, C_WHITE);
-        dsubimage(0, 56, &img_opt_gint_rtc, 0, 54, 128, 8, DIMAGE_NONE);
-        int size = (55 - 19) / 4;
-        int pos = ((55 - 19 - size) / 4) * menu_idx;
-        dline(127, 19 + pos, 127, 19 + pos + size, C_BLACK);
-        #endif /* GINT_RENDER_MONO */
-        dupdate();
+		#if GINT_RENDER_MONO
+		__rtc_carry_cnt &= 0xff;
+		__rtc_perio_cnt &= 0xff;
+		__rtc_alarm_cnt &= 0xff;
+		_mc(0, 1, "1:%02x", RTC->RCR1.byte);
+		_mc(0, 2, "2:%02x", RTC->RCR2.byte);
+		_mc(0, 3, "3:%02x", RTC->RCR3.byte);
+		_mc(1, 1, "C:%02x", __rtc_carry_cnt);
+		_mc(1, 2, "P:%02x", __rtc_perio_cnt);
+		_mc(1, 3, "A:%02x", __rtc_alarm_cnt);
+		dline(1, 17, 127, 17, C_BLACK);
+		_ml(1 - menu_idx, R64CNT,  "%02x");
+		_ml(2 - menu_idx, RSECCNT, "%02x", .byte);
+		_ml(3 - menu_idx, RMINCNT, "%02x", .byte);
+		_ml(4 - menu_idx, RHRCNT,  "%02x", .byte);
+		_ml(5 - menu_idx, RWKCNT,  "%02x");
+		_ml(6 - menu_idx, RDAYCNT, "%02x", .byte);
+		_ml(7 - menu_idx, RMONCNT, "%02x", .byte);
+		_ml(8 - menu_idx, RYRCNT,  "%04x", .word);
+		dline(DWIDTH/2, 20, DWIDTH/2, 56, C_BLACK);
+		_mr(2 - menu_idx, RSECAR,  "%02x", .byte);
+		_mr(3 - menu_idx, RMINAR,  "%02x", .byte);
+		_mr(4 - menu_idx, RHRAR,   "%02x", .byte);
+		_mr(5 - menu_idx, RWKAR,   "%02x");
+		_mr(6 - menu_idx, RDAYAR,  "%02x", .byte);
+		_mr(7 - menu_idx, RMONAR,  "%02x", .byte);
+		_mr(8 - menu_idx, RYRAR,   "%04x", .word);
+		extern bopti_image_t img_opt_gint_rtc;
+		drect(0, 55, 128, 64, C_WHITE);
+		dsubimage(0, 56, &img_opt_gint_rtc, 0, 54, 128, 8, DIMAGE_NONE);
+		int size = (55 - 19) / 4;
+		int pos = ((55 - 19 - size) / 4) * menu_idx;
+		dline(127, 19 + pos, 127, 19 + pos + size, C_BLACK);
+		#endif /* GINT_RENDER_MONO */
+		dupdate();
 
-        /* Handle keyboard events */
-        while((ev = pollevent()).type != KEYEV_NONE)
-        {
-            if (ev.type == KEYEV_UP)
-                continue;
-            /* alarm */
-            u8 rsecard = RTC->RSECAR.byte & 0x7f;
-            u8 rsecare = RTC->RSECAR.byte & 0x80;
-            u8 rminard = RTC->RMINAR.byte & 0x7f;
-            u8 rminare = RTC->RMINAR.byte & 0x80;
-            u8 rhrard  = RTC->RHRAR.byte & 0x3f;
-            u8 rhrare  = RTC->RHRAR.byte & 0x80;
-            u8 rwkard  = RTC->RWKAR.byte & 0x07;
-            u8 rwkare  = RTC->RWKAR.byte & 0x80;
-            u8 rdayard = RTC->RDAYAR.byte & 0x3f;
-            u8 rdayare = RTC->RDAYAR.byte & 0x80;
-            u8 rmonard = RTC->RMONAR.byte & 0x3f;
-            u8 rmonare = RTC->RMONAR.byte & 0x80;
-                 if(ev.key == KEY_ALPHA)  rsecard -= 1;
-            else if(ev.key == KEY_SQUARE) rsecard += 1;
-            else if(ev.key == KEY_POWER)  rsecare ^= 0x80;
-            else if(ev.key == KEY_XOT)    rminard -= 1;
-            else if(ev.key == KEY_LOG)    rminard += 1;
-            else if(ev.key == KEY_LN)     rminare ^= 0x80;
-            else if(ev.key == KEY_FRAC)   rhrard -= 1;
-            else if(ev.key == KEY_FD)     rhrard += 1;
-            else if(ev.key == KEY_LEFTP)  rhrare ^= 0x80;
-            else if(ev.key == KEY_7)      rwkard -= 1;
-            else if(ev.key == KEY_8)      rwkard += 1;
-            else if(ev.key == KEY_9)      rwkare ^= 0x80;
-            else if(ev.key == KEY_4)      rdayard -= 1;
-            else if(ev.key == KEY_5)      rdayard += 1;
-            else if(ev.key == KEY_6)      rdayare ^= 0x80;
-            else if(ev.key == KEY_1)      rmonard -= 1;
-            else if(ev.key == KEY_2)      rmonard += 1;
-            else if(ev.key == KEY_3)      rmonare ^= 0x80;
-            else if(ev.key == KEY_0)      RTC->RYRAR.word -= 1;
-            else if(ev.key == KEY_DOT)    RTC->RYRAR.word += 1;
-            else if(ev.key == KEY_EXP)    RTC->RCR3.ENB ^= 1;
-            RTC->RSECAR.byte = rsecare | (rsecard & 0x7f);
-            RTC->RMINAR.byte = rminare | (rminard & 0x7f);
-            RTC->RHRAR.byte = rhrare | (rhrard & 0x3f);
-            RTC->RWKAR.byte = rwkare | (rwkard & 0x07);
-            RTC->RDAYAR.byte = rdayare | (rdayard & 0x3f);
-            RTC->RMONAR.byte = rmonare | (rmonard & 0x3f);
-            /* control */
-            if(ev.type != KEYEV_DOWN)
-                continue;
-            if(ev.key == KEY_EXIT)    run_loop = 0;
-            else if(ev.key == KEY_F1) run_loop = 0;
-            else if(ev.key == KEY_F2) RTC->RCR2.ADJ = 1;
-            else if(ev.key == KEY_MENU) gint_osmenu();
-            else if(ev.key == KEY_F3) RTC->RCR2.START ^= 1;
-            else if(ev.key == KEY_F4) RTC->RCR1.CIE ^= 1;
-            else if(ev.key == KEY_F5) {
-                if(RTC->RCR2.PES != 0) RTC->RCR2.PES = 0;
-                else RTC->RCR2.PES = pri_config;
-            }
-            else if(ev.key == KEY_F6) RTC->RCR1.AIE ^= 1;
-            else if(ev.key == KEY_LEFT || ev.key == KEY_RIGHT) {
-                pri_config += (ev.key == KEY_LEFT) ? -1 : 1;
-                pri_config &= 0x7;
-                if(RTC->RCR2.PES != 0)
-                    RTC->RCR2.PES = pri_config;
-            }
-            #if GINT_RENDER_MONO
-            else if(ev.key == KEY_UP)   menu_idx -= 1;
-            else if(ev.key == KEY_DOWN) menu_idx += 1;
-            if(menu_idx < 0) menu_idx = 0;
-            if(menu_idx >= 5) menu_idx = 4;
-            #endif /* GINT_RENDER_MONO */
-        }
-    }
+		/* Handle keyboard events */
+		while((ev = pollevent()).type != KEYEV_NONE)
+		{
+			if (ev.type == KEYEV_UP)
+				continue;
+			#if GINT_RENDER_MONO
+			/* scroll */
+			if(ev.key == KEY_UP)   menu_idx -= 1;
+			if(ev.key == KEY_DOWN) menu_idx += 1;
+			if(menu_idx < 0) menu_idx = 0;
+			if(menu_idx >= 5) menu_idx = 4;
+			#endif /* GINT_RENDER_MONO */
+			/* alarm */
+			u8 rsecard = RTC->RSECAR.byte & 0x7f;
+			u8 rsecare = RTC->RSECAR.byte & 0x80;
+			u8 rminard = RTC->RMINAR.byte & 0x7f;
+			u8 rminare = RTC->RMINAR.byte & 0x80;
+			u8 rhrard  = RTC->RHRAR.byte & 0x3f;
+			u8 rhrare  = RTC->RHRAR.byte & 0x80;
+			u8 rwkard  = RTC->RWKAR.byte & 0x07;
+			u8 rwkare  = RTC->RWKAR.byte & 0x80;
+			u8 rdayard = RTC->RDAYAR.byte & 0x3f;
+			u8 rdayare = RTC->RDAYAR.byte & 0x80;
+			u8 rmonard = RTC->RMONAR.byte & 0x3f;
+			u8 rmonare = RTC->RMONAR.byte & 0x80;
+				 if(ev.key == KEY_ALPHA)  rsecard -= 1;
+			else if(ev.key == KEY_SQUARE) rsecard += 1;
+			else if(ev.key == KEY_POWER)  rsecare ^= 0x80;
+			else if(ev.key == KEY_XOT)	rminard -= 1;
+			else if(ev.key == KEY_LOG)	rminard += 1;
+			else if(ev.key == KEY_LN)	 rminare ^= 0x80;
+			else if(ev.key == KEY_FRAC)   rhrard -= 1;
+			else if(ev.key == KEY_FD)	 rhrard += 1;
+			else if(ev.key == KEY_LEFTP)  rhrare ^= 0x80;
+			else if(ev.key == KEY_7)	  rwkard -= 1;
+			else if(ev.key == KEY_8)	  rwkard += 1;
+			else if(ev.key == KEY_9)	  rwkare ^= 0x80;
+			else if(ev.key == KEY_4)	  rdayard -= 1;
+			else if(ev.key == KEY_5)	  rdayard += 1;
+			else if(ev.key == KEY_6)	  rdayare ^= 0x80;
+			else if(ev.key == KEY_1)	  rmonard -= 1;
+			else if(ev.key == KEY_2)	  rmonard += 1;
+			else if(ev.key == KEY_3)	  rmonare ^= 0x80;
+			else if(ev.key == KEY_0)	  RTC->RYRAR.word -= 1;
+			else if(ev.key == KEY_DOT)	RTC->RYRAR.word += 1;
+			else if(ev.key == KEY_EXP)	RTC->RCR3.ENB ^= 1;
+			RTC->RSECAR.byte = rsecare | (rsecard & 0x7f);
+			RTC->RMINAR.byte = rminare | (rminard & 0x7f);
+			RTC->RHRAR.byte = rhrare | (rhrard & 0x3f);
+			RTC->RWKAR.byte = rwkare | (rwkard & 0x07);
+			RTC->RDAYAR.byte = rdayare | (rdayard & 0x3f);
+			RTC->RMONAR.byte = rmonare | (rmonard & 0x3f);
+			/* control */
+			if(ev.type != KEYEV_DOWN)
+				continue;
+			if(ev.key == KEY_EXIT)	run_loop = 0;
+			else if(ev.key == KEY_F1) run_loop = 0;
+			else if(ev.key == KEY_F2) RTC->RCR2.ADJ = 1;
+			else if(ev.key == KEY_MENU) gint_osmenu();
+			else if(ev.key == KEY_F3) RTC->RCR2.START ^= 1;
+			else if(ev.key == KEY_F4) RTC->RCR1.CIE ^= 1;
+			else if(ev.key == KEY_F5) {
+				if(RTC->RCR2.PES != 0) {
+					rtc_periodic_disable();
+				} else {
+					rtc_periodic_disable();
+					rtc_periodic_enable(
+						pri_config, GINT_CALL(_rtc_inth_periodic));
+				}
+			}
+			else if(ev.key == KEY_F6) RTC->RCR1.AIE ^= 1;
+			else if(ev.key == KEY_LEFT || ev.key == KEY_RIGHT) {
+				pri_config += (ev.key == KEY_LEFT) ? -1 : 1;
+				pri_config &= 0x7;
+				rtc_periodic_disable();
+				rtc_periodic_enable(
+					pri_config, GINT_CALL(_rtc_inth_periodic));
+			}
+		}
+	}
 }
 
 //---
@@ -880,7 +888,18 @@ void gintctl_gint_rtc(void)
 
 			if(ev.key == KEY_EXIT) run_loop = 0;
 			else if(ev.key == KEY_MENU) gint_osmenu();
-			else if(ev.key == KEY_F1) menu_regs();
+			else if(ev.key == KEY_F1) {
+				int cui = intc_priority(INTC_RTC_CUI, 1); // perio
+				int ati = intc_priority(INTC_RTC_ATI, 1); // carry
+				int pri = intc_priority(INTC_RTC_PRI, 1); // alarm
+				rtc_periodic_disable();
+				menu_regs();
+				intc_priority(INTC_RTC_CUI, cui); // perio
+				intc_priority(INTC_RTC_ATI, ati); // carry
+				intc_priority(INTC_RTC_PRI, pri); // alarm
+				rtc_periodic_disable();
+				rtc_periodic_enable(RTC_1Hz, GINT_CALL_SET(&frame_needed));
+			}
 			else if(ev.key == KEY_F5) edit_date();
 			else if(ev.key == KEY_F6) edit_time();
 			else action = 0;
