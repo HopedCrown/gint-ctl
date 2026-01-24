@@ -39,6 +39,7 @@ set(SOURCES
   src/gint/touch.c
   src/gint/usb.c
   src/gint/usbtrace.c
+  src/gint/spu.c
   src/mem/mem.c
   src/perf/cpucache.c
   src/perf/cpucache.S

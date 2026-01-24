@@ -82,4 +82,7 @@ void gintctl_gint_bfile(void);
 /* gintctl_gint_touch(): Internals of the I2C and touch screen drivers. */
 void gintctl_gint_touch(void);
 
+/* gintctl_gint_spu(): Research related to the SPU2 module. */
+void gintctl_gint_spu(void);
+
 #endif /* GINTCTL_GINT */

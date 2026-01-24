@@ -79,6 +79,7 @@ struct menuentry menu_gint[] = {
 	#if !GINT_HW_CP && GINTCTL_ENABLE_USB
 	{ "GDB",                gintctl_gint_gdb, MENU_SH4_ONLY },
 	#endif
+	{ "SPU research",       gintctl_gint_spu, MENU_SH4_ONLY },
 	{ NULL, NULL, 0 },
 };
 
