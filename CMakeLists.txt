@@ -5,7 +5,7 @@ project(gintctl VERSION 2.10.0 LANGUAGES C ASM)
 
 include(GenerateG1A)
 include(GenerateG3A)
-include(GenerateHH2Bin)
+include(GenerateHH3)
 include(Fxconv)
 
 find_package(Gint 2.11 REQUIRED)
@@ -140,5 +140,5 @@ elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fx9860G_G3A)
   generate_g3a(TARGET gintctl OUTPUT "gintctl-fx.g3a"
     NAME "" ICONS assets-cg/icon-uns.png assets-cg/icon-sel.png)
 elseif("${FXSDK_PLATFORM_LONG}" STREQUAL fxCP)
-  generate_hh2_bin(TARGET gintctl OUTPUT "gintctl-hh2.bin")
+  generate_hh3(TARGET gintctl OUTPUT "gintctl.hh3")
 endif()

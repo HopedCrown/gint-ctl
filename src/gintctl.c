@@ -21,10 +21,10 @@
 
 #include <fxlibc/printf.h>
 
-#if GINT_HW_CP
-GSECTION(".hh2.info") GVISIBLE
-char _hh2info[] = "GINTCTL\0gint control application\0Lephe\0" "2.10";
-#endif
+HHK_NAME("GINTCTL")
+HHK_DESCRIPTION("gint control application")
+HHK_AUTHOR("Lephe")
+HHK_VERSION("2.10")
 
 /* TODO:
    * Interrupt controller state?
